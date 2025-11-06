@@ -188,16 +188,21 @@ Lihat: `DEPLOYMENT.md` untuk panduan deployment lengkap.
 
 ## 📚 Documentation
 
-- `README.md` - Overview & installation
-- `DEPLOYMENT.md` - Deployment guide
-- `DEPLOYMENT_READY.md` - Deployment summary
-- `PRE_DEPLOYMENT_CHECKLIST.md` - Deployment checklist
+Dokumentasi lengkap tersedia di folder **`docs/`**:
+
+- **`README.md`** - Overview & installation
+- **`docs/deployment/DEPLOYMENT.md`** - Deployment guide lengkap
+- **`docs/deployment/DEPLOYMENT_UBUNTU_AAPANEL.md`** - Ubuntu + aaPanel guide
+- **`docs/deployment/DEPLOYMENT_READY.md`** - Deployment summary
+- **`docs/deployment/PRE_DEPLOYMENT_CHECKLIST.md`** - Deployment checklist
+- **`docs/guides/DATABASE_SEED.md`** - Database seeding guide
+- **`docs/guides/TROUBLESHOOTING.md`** - Troubleshooting guide
 
 ## 🎉 Next Steps
 
 1. **Test semua fitur** - Login sebagai admin dan puskesmas
 2. **Customize** - Sesuaikan dengan kebutuhan spesifik
-3. **Deploy** - Ikuti `DEPLOYMENT.md` untuk production
+3. **Deploy** - Ikuti **`docs/deployment/DEPLOYMENT.md`** untuk production
 4. **Monitor** - Setup monitoring dan logging
 
 ---

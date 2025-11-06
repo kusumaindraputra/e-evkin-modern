@@ -1,6 +1,8 @@
-# E-EVKIN Modern - Deployment Guide
+# E-EVKIN Modern - Manual Deployment Guide
 
-## Deployment ke Server Staging
+## Deployment ke Server (Alternative Method)
+
+**Note**: Untuk aaPanel deployment, gunakan `DEPLOYMENT_UBUNTU_AAPANEL.md`
 
 ### Prerequisites
 - Node.js v18 atau lebih tinggi
@@ -44,8 +46,8 @@ GRANT ALL PRIVILEGES ON DATABASE e_evkin_staging TO evkin_user;
 ### 3. Deploy Aplikasi
 
 ```bash
-# Clone repository
-cd /var/www
+# Clone repository (adjust path as needed)
+cd /var/www  # or /www/wwwroot for aaPanel
 sudo git clone https://github.com/kusumaindraputra/e-evkin-modern.git
 sudo chown -R $USER:$USER e-evkin-modern
 cd e-evkin-modern

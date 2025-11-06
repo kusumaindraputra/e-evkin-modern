@@ -25,16 +25,14 @@
 - [ ] **Test load `dist/index.html`** di browser
 - [ ] **Tidak ada console errors**
 
-## ✅ Server Checklist
+## ✅ Server Checklist (aaPanel)
 
-- [ ] **Node.js v18+ terinstall**
-- [ ] **PostgreSQL 14+ terinstall dan running**
+- [ ] **Node.js v18+ terinstall** (via aaPanel Package Manager)
+- [ ] **PostgreSQL 14+ terinstall** (via aaPanel Package Manager)
 - [ ] **PM2 terinstall** (`npm install -g pm2`)
-- [ ] **Nginx terinstall dan running**
-- [ ] **Port 80 dan 443 terbuka** (untuk HTTP/HTTPS)
-- [ ] **Port 5000 available** untuk backend
-- [ ] **Firewall configured** (allow port 80, 443, 5432)
-- [ ] **SSL certificate** (opsional tapi recommended)
+- [ ] **aaPanel interface** accessible dan configured
+- [ ] **Firewall configured** via aaPanel (allow port 80, 443, 8888)
+- [ ] **SSL certificate** managed via aaPanel (Let's Encrypt)
 
 ## ✅ Database Checklist
 
@@ -62,16 +60,17 @@
 - [ ] **Max memory restart** configured (500MB default)
 - [ ] **PM2 monit** bisa diakses untuk monitoring
 
-## ✅ Nginx Checklist
+## ✅ Nginx Checklist (aaPanel)
 
-- [ ] **Config file** dibuat di `/etc/nginx/sites-available/`
-- [ ] **Symlink** dibuat di `/etc/nginx/sites-enabled/`
-- [ ] **Server name** sesuai domain
-- [ ] **Root path** ke `frontend/dist` benar
-- [ ] **Proxy pass** ke backend (port 5000) configured
-- [ ] **Nginx test** berhasil (`sudo nginx -t`)
-- [ ] **Nginx restarted** setelah config
-- [ ] **Gzip compression** enabled
+- [ ] **Site created** di aaPanel Web interface
+- [ ] **Domain** sudah ditambahkan dan pointing ke server
+- [ ] **Root path** diset ke `/www/wwwroot/[domain]/frontend/dist/`
+- [ ] **Backend uploaded** ke `/www/wwwroot/[domain]/backend/`
+- [ ] **Reverse proxy** configured untuk API (`location /api`)
+- [ ] **Static files** configured dengan proper cache headers
+- [ ] **Nginx config** updated via aaPanel interface
+- [ ] **SSL certificate** installed (Let's Encrypt via aaPanel)
+- [ ] **Gzip compression** enabled via aaPanel
 - [ ] **Security headers** ditambahkan
 
 ## ✅ Post-Deployment Testing
@@ -105,7 +104,7 @@
 - [ ] **Contact person** untuk support
 - [ ] **Rollback procedure** documented
 
-## 🔧 Quick Commands Reference
+## 🔧 Quick Commands Reference (aaPanel Environment)
 
 ```bash
 # Check PM2 status
@@ -117,23 +116,25 @@ pm2 logs e-evkin-backend
 # Restart backend
 pm2 restart e-evkin-backend
 
-# Check Nginx status
+# Check Nginx status (via aaPanel or terminal)
 sudo systemctl status nginx
-
-# Test Nginx config
-sudo nginx -t
-
-# Reload Nginx
-sudo systemctl reload nginx
 
 # Check disk space
 df -h
 
-# Check PostgreSQL
+# Check PostgreSQL (via aaPanel Database Manager)
 sudo systemctl status postgresql
 
 # Monitor system resources
 htop
+
+# aaPanel specific paths
+ls -la /www/wwwroot/       # Website files
+ls -la /www/backup/        # Backups
+ls -la /www/server/        # Server software
+
+# View aaPanel logs
+tail -f /www/server/panel/logs/error.log
 ```
 
 ## 🆘 Emergency Contacts
@@ -152,6 +153,6 @@ htop
 
 ---
 
-**Last Updated:** November 6, 2025
+**Last Updated:** January 2025
+**Target Environment:** Ubuntu 24.04 + aaPanel + 2GB RAM
 **Deployment Version:** v1.0.0
-**Environment:** Staging

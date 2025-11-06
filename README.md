@@ -77,6 +77,25 @@ npm run dev:frontend  # Frontend: http://localhost:5173
 
 ```
 e-evkin-modern/
+├── docs/                   # 📚 Documentation
+│   ├── deployment/         # Deployment guides
+│   ├── guides/             # User guides
+│   ├── security/           # Security documentation
+│   └── README.md           # Documentation index
+│
+├── config/                 # ⚙️ Configuration Files
+│   ├── ecosystem.config.js # PM2 configuration
+│   ├── nginx.conf          # Nginx configuration
+│   └── README.md           # Configuration guide
+│
+├── scripts/                # 🔧 Utility Scripts
+│   ├── backup.sh           # Backup script
+│   ├── optimize-server.sh  # Server optimization
+│   ├── health-check.sh     # Health monitoring
+│   ├── generate-jwt-secret.sh
+│   ├── make-executable.sh  # Set script permissions
+│   └── README.md           # Scripts documentation
+│
 ├── backend/
 │   ├── src/
 │   │   ├── config/         # Database & app config
@@ -113,12 +132,10 @@ e-evkin-modern/
 │   │   └── main.tsx
 │   └── package.json
 │
-├── DEPLOYMENT.md           # Panduan deployment
-├── DEPLOYMENT_READY.md     # Summary deployment
-├── PRE_DEPLOYMENT_CHECKLIST.md
-├── DATABASE_SEED.md        # Panduan database seeding
-├── SEED_SUMMARY.md         # Summary seed data
-└── package.json
+├── deploy.sh               # 🚀 Main deployment script
+├── QUICK_START.md          # Quick start guide
+├── README.md               # Project documentation
+└── package.json            # Root package configuration
 ```
 
 ## 🎯 Fitur Aplikasi
@@ -184,12 +201,22 @@ npm run preview      # Preview build
 
 ## 📦 Deployment
 
-Lihat dokumentasi lengkap:
-- **`DEPLOYMENT.md`** - Panduan deployment step-by-step
-- **`DEPLOYMENT_READY.md`** - Summary & quick reference
-- **`PRE_DEPLOYMENT_CHECKLIST.md`** - Checklist sebelum deploy
-- **`DATABASE_SEED.md`** - Panduan database seeding
-- **`SEED_SUMMARY.md`** - Summary seed data
+Lihat dokumentasi lengkap di folder **`docs/`**:
+
+### 🚀 Quick Start
+- **`QUICK_START.md`** - Panduan memulai cepat (5 menit)
+- **`docs/deployment/DEPLOYMENT_QUICK_GUIDE.md`** - Deployment cepat
+
+### 📖 Deployment Guides
+- **`docs/deployment/DEPLOYMENT.md`** - Panduan deployment lengkap
+- **`docs/deployment/DEPLOYMENT_UBUNTU_AAPANEL.md`** - Khusus Ubuntu 24 + aaPanel
+- **`docs/deployment/DEPLOYMENT_READY.md`** - Status dan summary
+- **`docs/deployment/PRE_DEPLOYMENT_CHECKLIST.md`** - Checklist sebelum deploy
+
+### 🔧 Setup Guides
+- **`docs/guides/DATABASE_SEED.md`** - Database seeding
+- **`docs/security/SECURITY.md`** - Security setup
+- **`docs/guides/TROUBLESHOOTING.md`** - Troubleshooting
 
 Quick deploy:
 ```bash
@@ -199,11 +226,30 @@ npm run build
 # Seed database (first time only!)
 cd backend && npm run seed
 
-# Copy files to server
-# Configure .env
-# Start with PM2
-pm2 start ecosystem.config.js
+# Deploy to server
+./deploy.sh --production
+
+# Or use npm scripts
+npm run deploy:production
 ```
+
+## 🗂️ Project Organization
+
+### **📚 `docs/`** - Documentation
+- **`deployment/`** - All deployment guides and checklists
+- **`guides/`** - User guides, database seeding, troubleshooting
+- **`security/`** - Security setup and JWT configuration
+
+### **⚙️ `config/`** - Configuration Files  
+- **`ecosystem.config.js`** - PM2 process management (optimized for 2GB RAM)
+- **`nginx.conf`** - Nginx web server configuration (aaPanel compatible)
+
+### **🔧 `scripts/`** - Utility Scripts
+- **`optimize-server.sh`** - Server optimization for Ubuntu + aaPanel
+- **`backup.sh`** - Application backup utility
+- **`health-check.sh`** - Health monitoring
+- **`generate-jwt-secret.sh`** - JWT secret generator
+- **`make-executable.sh`** - Set script permissions
 
 ## 🧪 Testing
 
@@ -248,8 +294,9 @@ Open Source - Free to use
 
 Untuk bantuan atau pertanyaan:
 - Buka issue di GitHub
-- Hubungi tim development
-- Lihat dokumentasi di folder `docs/`
+- Hubungi tim development  
+- Lihat dokumentasi lengkap di **`docs/`** folder
+- Quick troubleshooting: **`docs/guides/TROUBLESHOOTING.md`**
 
 ---
 

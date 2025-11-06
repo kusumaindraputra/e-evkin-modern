@@ -14,7 +14,18 @@
     "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
     "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
     "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "deploy": "./deploy.sh",
+    "deploy:staging": "./deploy.sh",
+    "deploy:production": "./deploy.sh --production",
+    "deploy:quick": "./deploy.sh --skip-deps",
+    "make-executable": "./scripts/make-executable.sh",
+    "backup": "./scripts/backup.sh",
+    "health-check": "./scripts/health-check.sh",
+    "optimize-server": "sudo ./scripts/optimize-server.sh",
+    "generate-jwt": "./scripts/generate-jwt-secret.sh",
+    "create-db": "./scripts/create-database.bat",
+    "setup-db": "./scripts/create-database.bat"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

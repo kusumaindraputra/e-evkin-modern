@@ -16,7 +16,7 @@
  * - 7 Sub Kegiatan (sub-activities)
  * - 1 Admin user (username: dinkes, password: dinkes123)
  * - 102 Puskesmas users (password: bogorkab for all)
- * - Sample Laporan data for testing
+ * - Sample Laporan data for 2025 (Januari-November) with status 'terkirim'
  * 
  * Default credentials:
  * - Admin: dinkes / dinkes123
@@ -32,7 +32,6 @@ import Satuan from '../models/Satuan';
 import SumberAnggaran from '../models/SumberAnggaran';
 import Kegiatan from '../models/Kegiatan';
 import SubKegiatan from '../models/SubKegiatan';
-import bcrypt from 'bcrypt';
 
 async function seed() {
   try {
@@ -156,18 +155,16 @@ async function seed() {
     }
     console.log(`✅ ${subKegiatanData.length} Sub Kegiatan created`);
 
-    // Seed Admin User (with bcrypt)
-    const adminPassword = await bcrypt.hash('dinkes123', 10);
+    // Seed Admin User (let User model handle bcrypt hashing)
     await User.create({
       username: 'dinkes',
-      password: adminPassword,
+      password: 'dinkes123', // Plain password, will be hashed by User model hook
       nama: 'Administrator Dinkes',
       role: 'admin',
     });
     console.log('✅ Admin user created (username: dinkes, password: dinkes123)');
 
-    // Seed Puskesmas data (102 puskesmas dari Bogor dengan bcrypt password)
-    const puskesmasPassword = await bcrypt.hash('bogorkab', 10);
+    // Seed Puskesmas data (102 puskesmas dari Bogor, let User model handle password hashing)
     const puskesmasData = [
       { nama: 'Bojonggede', username: 'bojonggede', kecamatan: 'Bojonggede', wilayah: 'Parung', id_blud: 'BLUD' },
       { nama: 'Bagoang', username: 'bagoang', kecamatan: 'Jasinga', wilayah: 'Jasinga', id_blud: 'JKN' },
@@ -276,7 +273,7 @@ async function seed() {
     for (const puskesmas of puskesmasData) {
       await User.create({
         username: puskesmas.username,
-        password: puskesmasPassword, // bcrypt hashed password
+        password: 'bogorkab', // Plain password, will be hashed by User model hook
         nama: puskesmas.nama,
         nama_puskesmas: puskesmas.nama,
         role: 'puskesmas',
@@ -290,12 +287,27 @@ async function seed() {
     // Seed sample Laporan data untuk 5 puskesmas pertama
     const users = await User.findAll({ 
       where: { role: 'puskesmas' },
+      attributes: ['id'], // Only fetch ID to reduce memory
       limit: 5,
       raw: true
     });
 
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus'];
-    const subKegiatanIds = [1, 2, 3, 4, 5, 6, 7]; // IDs from sub kegiatan yang baru dibuat
+    // Pre-fetch sub kegiatan mapping to avoid repeated queries 
+    const subKegiatanMap = await SubKegiatan.findAll({
+      attributes: ['id_sub_kegiatan', 'id_kegiatan'],
+      raw: true
+    }).then(data => 
+      data.reduce((map: Record<number, number>, item: any) => {
+        map[item.id_sub_kegiatan] = item.id_kegiatan;
+        return map;
+      }, {})
+    );
+
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November'];
+    const subKegiatanIds = Object.keys(subKegiatanMap).map(Number);
+    
+    // Create laporan data in batch
+    const laporanBulkData = [];
     
     for (const user of users) {
       for (const month of months) {
@@ -303,11 +315,10 @@ async function seed() {
         const numReports = Math.floor(Math.random() * 2) + 2;
         for (let i = 0; i < numReports; i++) {
           const subKegiatanId = subKegiatanIds[Math.floor(Math.random() * subKegiatanIds.length)];
-          const subKegiatan = await SubKegiatan.findByPk(subKegiatanId);
           
-          await Laporan.create({
+          laporanBulkData.push({
             user_id: user.id,
-            id_kegiatan: subKegiatan?.id_kegiatan || 2,
+            id_kegiatan: subKegiatanMap[subKegiatanId] || 2,
             id_sub_kegiatan: subKegiatanId,
             id_sumber_anggaran: Math.floor(Math.random() * 4) + 1, // Random 1-4
             id_satuan: Math.floor(Math.random() * 20) + 1, // Random 1-20
@@ -316,14 +327,18 @@ async function seed() {
             target_rp: Math.floor(Math.random() * 800000000) + 200000000,
             realisasi_k: Math.floor(Math.random() * 40) + 5,
             realisasi_rp: Math.floor(Math.random() * 700000000) + 100000000,
-            permasalahan: `Permasalahan sample untuk ${subKegiatan?.kegiatan} bulan ${month}`,
-            upaya: `Upaya penyelesaian untuk ${subKegiatan?.kegiatan} bulan ${month}`,
+            permasalahan: `Permasalahan sample untuk kegiatan ${subKegiatanId} bulan ${month}`,
+            upaya: `Upaya penyelesaian untuk kegiatan ${subKegiatanId} bulan ${month}`,
             bulan: month,
             tahun: 2025,
+            status: 'terkirim' as const, // Set status ke terkirim agar muncul di dashboard
           });
         }
       }
     }
+
+    // Insert all laporan in single batch operation
+    await Laporan.bulkCreate(laporanBulkData);
     console.log(`✅ Sample laporan data created for ${users.length} puskesmas`);
 
     console.log('\n🎉 Seeding completed successfully!');

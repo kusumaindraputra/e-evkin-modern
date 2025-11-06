@@ -113,9 +113,9 @@ sudo -u postgres psql
 ```bash
 sudo -u postgres psql
 
-CREATE DATABASE evkin_db;
+CREATE DATABASE e_evkin_modern;
 CREATE USER admin_evkin WITH ENCRYPTED PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE evkin_db TO admin_evkin;
+GRANT ALL PRIVILEGES ON DATABASE e_evkin_modern TO admin_evkin;
 \q
 ```
 
@@ -123,7 +123,7 @@ GRANT ALL PRIVILEGES ON DATABASE evkin_db TO admin_evkin;
 ```properties
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=evkin_db
+DB_NAME=e_evkin_modern
 DB_USER=admin_evkin
 DB_PASSWORD=your_password
 ```
@@ -364,9 +364,9 @@ npm run seed
 # If you really need to reset
 sudo -u postgres psql
 
-DROP DATABASE evkin_db;
-CREATE DATABASE evkin_db;
-GRANT ALL PRIVILEGES ON DATABASE evkin_db TO admin_evkin;
+DROP DATABASE e_evkin_modern;
+CREATE DATABASE e_evkin_modern;
+GRANT ALL PRIVILEGES ON DATABASE e_evkin_modern TO admin_evkin;
 \q
 
 # Then seed
@@ -538,7 +538,7 @@ netstat -tulpn | grep 5000
 ### Database Check
 ```bash
 # Connect to database
-psql -U admin_evkin -d evkin_db -h localhost
+psql -U admin_evkin -d e_evkin_modern -h localhost
 
 # Check tables
 \dt

@@ -71,7 +71,7 @@ PORT=5000
 # Database Configuration
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=evkin_db
+DB_NAME=e_evkin_modern
 DB_USER=admin_evkin
 DB_PASSWORD=password_evkin
 

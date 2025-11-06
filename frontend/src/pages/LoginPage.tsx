@@ -131,7 +131,7 @@ export const LoginPage: React.FC = () => {
                     <Button
                       size="small"
                       block
-                      onClick={() => quickLogin('dinkes', 'dinkes')}
+                      onClick={() => quickLogin('dinkes', 'dinkes123')}
                       disabled={loading}
                       style={{ fontSize: 12 }}
                     >

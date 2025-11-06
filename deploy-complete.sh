@@ -179,21 +179,66 @@ EOF
 # APPLICATION SETUP
 # ===========================================
 
+setup_directories() {
+    log "Setting up application directories..."
+    
+    # Create main directories with proper permissions
+    mkdir -p /www
+    mkdir -p /www/wwwroot
+    mkdir -p /var/log/e-evkin-modern
+    mkdir -p /etc/nginx/sites-available
+    mkdir -p /etc/nginx/sites-enabled
+    
+    # Set proper ownership
+    chown -R www-data:www-data /www
+    chown -R www-data:www-data /var/log/e-evkin-modern
+    
+    # Set proper permissions
+    chmod -R 755 /www
+    chmod -R 755 /var/log/e-evkin-modern
+    
+    success "Application directories created"
+}
+
 clone_repository() {
     log "Cloning application repository..."
     
     # Remove existing directory if any
     rm -rf "$APP_DIR"
     
-    # Create parent directory
+    # Create parent directory with proper permissions
     mkdir -p "$(dirname "$APP_DIR")"
+    chown -R www-data:www-data "$(dirname "$APP_DIR")"
+    
+    # Ensure we're in a safe directory for git operations
+    cd /tmp
     
     # Clone repository
-    git clone "$REPO_URL" "$APP_DIR"
+    if ! git clone "$REPO_URL" "$APP_DIR"; then
+        error "Failed to clone repository. Trying alternative method..."
+        
+        # Alternative: clone to temp then move
+        TEMP_DIR="/tmp/e-evkin-modern-$(date +%s)"
+        git clone "$REPO_URL" "$TEMP_DIR"
+        
+        # Create target directory and move files
+        mkdir -p "$APP_DIR"
+        mv "$TEMP_DIR"/* "$APP_DIR/"
+        mv "$TEMP_DIR"/.[^.]* "$APP_DIR/" 2>/dev/null || true
+        rm -rf "$TEMP_DIR"
+    fi
+    
+    # Verify directory exists and navigate to it
+    if [ ! -d "$APP_DIR" ]; then
+        error "Application directory not created"
+        exit 1
+    fi
+    
     cd "$APP_DIR"
     
-    # Set proper ownership
+    # Set proper ownership recursively
     chown -R www-data:www-data "$APP_DIR"
+    chmod -R 755 "$APP_DIR"
     
     success "Repository cloned successfully"
 }
@@ -762,6 +807,7 @@ main() {
     setup_swap
     install_nodejs
     setup_postgresql
+    setup_directories
     clone_repository
     setup_backend
     setup_frontend

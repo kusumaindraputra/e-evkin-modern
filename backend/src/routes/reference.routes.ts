@@ -1,7 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { SumberAnggaran, Satuan, Kegiatan, SubKegiatan } from '../models';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
+
+// Apply authentication to all routes
+router.use(authenticate);
 
 // GET /api/reference/sumber-anggaran - Get all sumber anggaran
 router.get('/sumber-anggaran', async (_req: Request, res: Response) => {

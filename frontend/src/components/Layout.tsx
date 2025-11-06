@@ -11,6 +11,7 @@ import {
   MenuUnfoldOutlined,
   QuestionCircleOutlined,
   TeamOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -85,6 +86,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <TeamOutlined />,
         label: 'Daftar Puskesmas',
         onClick: () => navigate('/admin/puskesmas'),
+      },
+      {
+        key: '/admin/puskesmas-config',
+        icon: <AppstoreOutlined />,
+        label: 'Konfigurasi Sub Kegiatan',
+        onClick: () => navigate('/admin/puskesmas-config'),
       },
       {
         key: '/admin/laporan-sub-kegiatan',

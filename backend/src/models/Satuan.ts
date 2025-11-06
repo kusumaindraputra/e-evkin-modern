@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
 interface SatuanAttributes {
@@ -6,7 +6,9 @@ interface SatuanAttributes {
   satuannya: string;
 }
 
-class Satuan extends Model<SatuanAttributes> implements SatuanAttributes {
+interface SatuanCreationAttributes extends Optional<SatuanAttributes, 'id_satuan'> {}
+
+class Satuan extends Model<SatuanAttributes, SatuanCreationAttributes> implements SatuanAttributes {
   declare id_satuan: number;
   declare satuannya: string;
 

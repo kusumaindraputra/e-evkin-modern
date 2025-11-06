@@ -4,6 +4,7 @@ import SumberAnggaran from './SumberAnggaran';
 import Satuan from './Satuan';
 import Kegiatan from './Kegiatan';
 import SubKegiatan from './SubKegiatan';
+import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 
 // Define associations
 User.hasMany(Laporan, {
@@ -54,4 +55,4 @@ SubKegiatan.hasMany(Laporan, {
   as: 'laporan',
 });
 
-export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan };
+export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan };

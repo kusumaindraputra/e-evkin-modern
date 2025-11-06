@@ -151,8 +151,8 @@ async function seed() {
           user_id: user.id,
           id_kegiatan: 2,
           id_sub_kegiatan: 30,
-          sumber_anggaran: 'APBD',
-          satuan: 'Kegiatan',
+          id_sumber_anggaran: 1,
+          id_satuan: 1,
           target_k: 12,
           angkas: 1000000000,
           target_rp: 1500000000,
@@ -161,7 +161,7 @@ async function seed() {
           permasalahan: `Permasalahan sample bulan ${month}`,
           upaya: `Upaya penyelesaian untuk bulan ${month}`,
           bulan: month,
-          tahun: '2022',
+          tahun: 2022,
         });
       }
     }

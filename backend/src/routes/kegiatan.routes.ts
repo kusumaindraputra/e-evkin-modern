@@ -23,10 +23,10 @@ router.get('/kegiatan', authenticate, async (req: Request, res: Response) => {
       order: [['kode', 'ASC']],
     });
 
-    res.json(kegiatan);
+    return res.json(kegiatan);
   } catch (error) {
     console.error('Error fetching kegiatan:', error);
-    res.status(500).json({ message: 'Error fetching kegiatan' });
+    return res.status(500).json({ message: 'Error fetching kegiatan' });
   }
 });
 
@@ -47,10 +47,10 @@ router.get('/kegiatan/:id', authenticate, async (req: Request, res: Response) =>
       return res.status(404).json({ message: 'Kegiatan not found' });
     }
 
-    res.json(kegiatan);
+    return res.json(kegiatan);
   } catch (error) {
     console.error('Error fetching kegiatan:', error);
-    res.status(500).json({ message: 'Error fetching kegiatan' });
+    return res.status(500).json({ message: 'Error fetching kegiatan' });
   }
 });
 
@@ -69,10 +69,10 @@ router.post('/kegiatan', authenticate, authorizeAdmin, async (req: Request, res:
       kegiatan,
     });
 
-    res.status(201).json(newKegiatan);
+    return res.status(201).json(newKegiatan);
   } catch (error) {
     console.error('Error creating kegiatan:', error);
-    res.status(500).json({ message: 'Error creating kegiatan' });
+    return res.status(500).json({ message: 'Error creating kegiatan' });
   }
 });
 
@@ -93,10 +93,10 @@ router.put('/kegiatan/:id', authenticate, authorizeAdmin, async (req: Request, r
       kegiatan,
     });
 
-    res.json(kegiatanRecord);
+    return res.json(kegiatanRecord);
   } catch (error) {
     console.error('Error updating kegiatan:', error);
-    res.status(500).json({ message: 'Error updating kegiatan' });
+    return res.status(500).json({ message: 'Error updating kegiatan' });
   }
 });
 
@@ -119,10 +119,10 @@ router.delete('/kegiatan/:id', authenticate, authorizeAdmin, async (req: Request
     }
 
     await kegiatan.destroy();
-    res.json({ message: 'Kegiatan deleted successfully' });
+    return res.json({ message: 'Kegiatan deleted successfully' });
   } catch (error) {
     console.error('Error deleting kegiatan:', error);
-    res.status(500).json({ message: 'Error deleting kegiatan' });
+    return res.status(500).json({ message: 'Error deleting kegiatan' });
   }
 });
 
@@ -146,10 +146,10 @@ router.get('/sub-kegiatan', authenticate, async (req: Request, res: Response) =>
       order: [['kode_sub', 'ASC']],
     });
 
-    res.json(subKegiatan);
+    return res.json(subKegiatan);
   } catch (error) {
     console.error('Error fetching sub kegiatan:', error);
-    res.status(500).json({ message: 'Error fetching sub kegiatan' });
+    return res.status(500).json({ message: 'Error fetching sub kegiatan' });
   }
 });
 
@@ -170,10 +170,10 @@ router.get('/sub-kegiatan/:id', authenticate, async (req: Request, res: Response
       return res.status(404).json({ message: 'Sub kegiatan not found' });
     }
 
-    res.json(subKegiatan);
+    return res.json(subKegiatan);
   } catch (error) {
     console.error('Error fetching sub kegiatan:', error);
-    res.status(500).json({ message: 'Error fetching sub kegiatan' });
+    return res.status(500).json({ message: 'Error fetching sub kegiatan' });
   }
 });
 
@@ -201,10 +201,10 @@ router.post('/sub-kegiatan', authenticate, authorizeAdmin, async (req: Request, 
       indikator_kinerja,
     });
 
-    res.status(201).json(newSubKegiatan);
+    return res.status(201).json(newSubKegiatan);
   } catch (error) {
     console.error('Error creating sub kegiatan:', error);
-    res.status(500).json({ message: 'Error creating sub kegiatan' });
+    return res.status(500).json({ message: 'Error creating sub kegiatan' });
   }
 });
 
@@ -234,10 +234,10 @@ router.put('/sub-kegiatan/:id', authenticate, authorizeAdmin, async (req: Reques
       indikator_kinerja,
     });
 
-    res.json(subKegiatanRecord);
+    return res.json(subKegiatanRecord);
   } catch (error) {
     console.error('Error updating sub kegiatan:', error);
-    res.status(500).json({ message: 'Error updating sub kegiatan' });
+    return res.status(500).json({ message: 'Error updating sub kegiatan' });
   }
 });
 
@@ -252,10 +252,10 @@ router.delete('/sub-kegiatan/:id', authenticate, authorizeAdmin, async (req: Req
     }
 
     await subKegiatan.destroy();
-    res.json({ message: 'Sub kegiatan deleted successfully' });
+    return res.json({ message: 'Sub kegiatan deleted successfully' });
   } catch (error) {
     console.error('Error deleting sub kegiatan:', error);
-    res.status(500).json({ message: 'Error deleting sub kegiatan' });
+    return res.status(500).json({ message: 'Error deleting sub kegiatan' });
   }
 });
 

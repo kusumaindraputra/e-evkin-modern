@@ -11,7 +11,6 @@ import {
   Col,
   Modal,
   Tag,
-  Descriptions,
   message,
 } from 'antd';
 import { FileTextOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';

@@ -39,7 +39,7 @@ router.post('/login', async (req: Request, res: Response) => {
     );
 
     // Return user data (without password)
-    res.json({
+    return res.json({
       token,
       user: {
         id: user.id,
@@ -53,7 +53,7 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed', message: error.message });
+    return res.status(500).json({ error: 'Login failed', message: error.message });
   }
 });
 
@@ -73,7 +73,7 @@ router.get('/me', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({
+    return res.json({
       id: user.id,
       username: user.username,
       nama: user.nama,
@@ -84,7 +84,7 @@ router.get('/me', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Auth verification error:', error);
-    res.status(401).json({ error: 'Invalid or expired token' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 });
 

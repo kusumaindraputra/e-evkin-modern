@@ -270,7 +270,7 @@ export const AdminKegiatanPage: React.FC = () => {
       dataIndex: ['kegiatanParent', 'kegiatan'],
       key: 'parent',
       width: 200,
-      render: (text: string, record: SubKegiatan) => 
+      render: (_: string, record: SubKegiatan) => 
         record.kegiatanParent?.kegiatan || `ID: ${record.id_kegiatan}`,
     },
     {

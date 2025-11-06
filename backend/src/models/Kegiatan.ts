@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
 interface KegiatanAttributes {
@@ -8,7 +8,9 @@ interface KegiatanAttributes {
   kegiatan: string;
 }
 
-class Kegiatan extends Model<KegiatanAttributes> implements KegiatanAttributes {
+interface KegiatanCreationAttributes extends Optional<KegiatanAttributes, 'id_kegiatan'> {}
+
+class Kegiatan extends Model<KegiatanAttributes, KegiatanCreationAttributes> implements KegiatanAttributes {
   declare id_kegiatan: number;
   declare id_uraian: number;
   declare kode: string;

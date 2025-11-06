@@ -15,10 +15,10 @@ router.get('/puskesmas', authenticate, authorizeAdmin, async (req: Request, res:
       order: [['nama_puskesmas', 'ASC']],
     });
 
-    res.json(users);
+    return res.json(users);
   } catch (error) {
     console.error('Error fetching puskesmas users:', error);
-    res.status(500).json({ message: 'Error fetching puskesmas users' });
+    return res.status(500).json({ message: 'Error fetching puskesmas users' });
   }
 });
 
@@ -35,10 +35,10 @@ router.get('/puskesmas/:id', authenticate, authorizeAdmin, async (req: Request, 
       return res.status(404).json({ message: 'Puskesmas user not found' });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
     console.error('Error fetching puskesmas user:', error);
-    res.status(500).json({ message: 'Error fetching puskesmas user' });
+    return res.status(500).json({ message: 'Error fetching puskesmas user' });
   }
 });
 
@@ -89,10 +89,10 @@ router.post('/puskesmas', authenticate, authorizeAdmin, async (req: Request, res
     const userWithoutPassword = newUser.toJSON();
     delete userWithoutPassword.password;
 
-    res.status(201).json(userWithoutPassword);
+    return res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error('Error creating puskesmas user:', error);
-    res.status(500).json({ message: 'Error creating puskesmas user' });
+    return res.status(500).json({ message: 'Error creating puskesmas user' });
   }
 });
 
@@ -146,10 +146,10 @@ router.put('/puskesmas/:id', authenticate, authorizeAdmin, async (req: Request, 
     const userWithoutPassword = user.toJSON();
     delete userWithoutPassword.password;
 
-    res.json(userWithoutPassword);
+    return res.json(userWithoutPassword);
   } catch (error) {
     console.error('Error updating puskesmas user:', error);
-    res.status(500).json({ message: 'Error updating puskesmas user' });
+    return res.status(500).json({ message: 'Error updating puskesmas user' });
   }
 });
 
@@ -164,10 +164,10 @@ router.delete('/puskesmas/:id', authenticate, authorizeAdmin, async (req: Reques
     }
 
     await user.destroy();
-    res.json({ message: 'Puskesmas user deleted successfully' });
+    return res.json({ message: 'Puskesmas user deleted successfully' });
   } catch (error) {
     console.error('Error deleting puskesmas user:', error);
-    res.status(500).json({ message: 'Error deleting puskesmas user' });
+    return res.status(500).json({ message: 'Error deleting puskesmas user' });
   }
 });
 

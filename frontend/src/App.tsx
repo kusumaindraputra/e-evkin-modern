@@ -3,12 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LaporanPage } from './pages/LaporanPage';
+import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
 import AdminVerifikasiPage from './pages/AdminVerifikasiPage';
-import AdminLaporanDetailPage from './pages/AdminLaporanDetailPage';
+import { AdminLaporanDetailPage } from './pages/AdminLaporanDetailPage';
 import { AdminMasterDataPage } from './pages/AdminMasterDataPage';
 import { AdminPuskesmasPage } from './pages/AdminPuskesmasPage';
 import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage';
 import { AdminLaporanSumberAnggaranPage } from './pages/AdminLaporanSumberAnggaranPage';
+import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
 import { CaraPengisianPage } from './pages/CaraPengisianPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
@@ -66,6 +68,16 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
+                <LaporanBulkInputPage />
+              </Layout>
+            </PuskesmasRoute>
+          }
+        />
+        <Route
+          path="/laporan-old"
+          element={
+            <PuskesmasRoute>
+              <Layout>
                 <LaporanPage />
               </Layout>
             </PuskesmasRoute>
@@ -109,6 +121,16 @@ function App() {
             <AdminRoute>
               <Layout>
                 <AdminPuskesmasPage />
+              </Layout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/puskesmas-config"
+          element={
+            <AdminRoute>
+              <Layout>
+                <AdminPuskesmasConfigPage />
               </Layout>
             </AdminRoute>
           }

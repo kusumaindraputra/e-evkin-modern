@@ -17,9 +17,9 @@ router.get('/satuan', authenticate, async (req, res, next) => {
     const satuan = await Satuan.findAll({
       order: [['satuannya', 'ASC']],
     });
-    res.json(satuan);
+    return res.json(satuan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -30,9 +30,9 @@ router.get('/satuan/:id', authenticate, async (req, res, next) => {
     if (!satuan) {
       return res.status(404).json({ message: 'Satuan tidak ditemukan' });
     }
-    res.json(satuan);
+    return res.json(satuan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -51,9 +51,9 @@ router.post('/satuan', authenticate, async (req, res, next) => {
     }
 
     const satuan = await Satuan.create({ satuannya });
-    res.status(201).json(satuan);
+    return res.status(201).json(satuan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -76,9 +76,9 @@ router.put('/satuan/:id', authenticate, async (req, res, next) => {
     }
 
     await satuan.update({ satuannya });
-    res.json(satuan);
+    return res.json(satuan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -96,9 +96,9 @@ router.delete('/satuan/:id', authenticate, async (req, res, next) => {
     }
 
     await satuan.destroy();
-    res.json({ message: 'Satuan berhasil dihapus' });
+    return res.json({ message: 'Satuan berhasil dihapus' });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -112,9 +112,9 @@ router.get('/sumber-anggaran', authenticate, async (req, res, next) => {
     const sumberAnggaran = await SumberAnggaran.findAll({
       order: [['sumber', 'ASC']],
     });
-    res.json(sumberAnggaran);
+    return res.json(sumberAnggaran);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -125,9 +125,9 @@ router.get('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
     if (!sumberAnggaran) {
       return res.status(404).json({ message: 'Sumber anggaran tidak ditemukan' });
     }
-    res.json(sumberAnggaran);
+    return res.json(sumberAnggaran);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -144,9 +144,9 @@ router.post('/sumber-anggaran', authenticate, async (req, res, next) => {
     }
 
     const sumberAnggaran = await SumberAnggaran.create({ sumber });
-    res.status(201).json(sumberAnggaran);
+    return res.status(201).json(sumberAnggaran);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -168,9 +168,9 @@ router.put('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
     }
 
     await sumberAnggaran.update({ sumber });
-    res.json(sumberAnggaran);
+    return res.json(sumberAnggaran);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -187,9 +187,9 @@ router.delete('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
     }
 
     await sumberAnggaran.destroy();
-    res.json({ message: 'Sumber anggaran berhasil dihapus' });
+    return res.json({ message: 'Sumber anggaran berhasil dihapus' });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -212,9 +212,9 @@ router.get('/kegiatan', authenticate, async (req, res, next) => {
       order: [['kode', 'ASC']],
     });
 
-    res.json(kegiatan);
+    return res.json(kegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -235,9 +235,9 @@ router.get('/kegiatan/:id', authenticate, async (req, res, next) => {
       return res.status(404).json({ message: 'Kegiatan tidak ditemukan' });
     }
 
-    res.json(kegiatan);
+    return res.json(kegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -260,9 +260,9 @@ router.post('/kegiatan', authenticate, async (req, res, next) => {
       kegiatan,
     });
 
-    res.status(201).json(newKegiatan);
+    return res.status(201).json(newKegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -287,9 +287,9 @@ router.put('/kegiatan/:id', authenticate, async (req, res, next) => {
       kegiatan,
     });
 
-    res.json(kegiatanRecord);
+    return res.json(kegiatanRecord);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -316,9 +316,9 @@ router.delete('/kegiatan/:id', authenticate, async (req, res, next) => {
     }
 
     await kegiatan.destroy();
-    res.json({ message: 'Kegiatan berhasil dihapus' });
+    return res.json({ message: 'Kegiatan berhasil dihapus' });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -344,9 +344,9 @@ router.get('/sub-kegiatan', authenticate, async (req, res, next) => {
       order: [['kode_sub', 'ASC']],
     });
 
-    res.json(subKegiatan);
+    return res.json(subKegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -367,9 +367,9 @@ router.get('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
       return res.status(404).json({ message: 'Sub kegiatan tidak ditemukan' });
     }
 
-    res.json(subKegiatan);
+    return res.json(subKegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -401,9 +401,9 @@ router.post('/sub-kegiatan', authenticate, async (req, res, next) => {
       indikator_kinerja,
     });
 
-    res.status(201).json(newSubKegiatan);
+    return res.status(201).json(newSubKegiatan);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -437,9 +437,9 @@ router.put('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
       indikator_kinerja,
     });
 
-    res.json(subKegiatanRecord);
+    return res.json(subKegiatanRecord);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -458,9 +458,9 @@ router.delete('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
     }
 
     await subKegiatan.destroy();
-    res.json({ message: 'Sub kegiatan berhasil dihapus' });
+    return res.json({ message: 'Sub kegiatan berhasil dihapus' });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

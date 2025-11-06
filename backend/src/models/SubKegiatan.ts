@@ -1,4 +1,4 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
 import Kegiatan from './Kegiatan';
 
@@ -10,7 +10,9 @@ interface SubKegiatanAttributes {
   indikator_kinerja: string;
 }
 
-class SubKegiatan extends Model<SubKegiatanAttributes> implements SubKegiatanAttributes {
+interface SubKegiatanCreationAttributes extends Optional<SubKegiatanAttributes, 'id_sub_kegiatan'> {}
+
+class SubKegiatan extends Model<SubKegiatanAttributes, SubKegiatanCreationAttributes> implements SubKegiatanAttributes {
   declare id_sub_kegiatan: number;
   declare id_kegiatan: number;
   declare kode_sub: string;

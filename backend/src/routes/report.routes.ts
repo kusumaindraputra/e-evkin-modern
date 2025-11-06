@@ -95,10 +95,10 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
       };
     });
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     console.error('Error fetching laporan by sub kegiatan:', error);
-    res.status(500).json({ message: 'Error fetching laporan by sub kegiatan' });
+    return res.status(500).json({ message: 'Error fetching laporan by sub kegiatan' });
   }
 });
 
@@ -113,7 +113,7 @@ router.get('/by-sub-kegiatan/detail', authenticate, authorizeAdmin, async (req: 
 
     const laporan = await Laporan.findAll({
       where: {
-        bulan,
+        bulan: String(bulan),
         tahun: Number(tahun),
         id_sub_kegiatan: Number(id_sub_kegiatan),
       },
@@ -137,10 +137,10 @@ router.get('/by-sub-kegiatan/detail', authenticate, authorizeAdmin, async (req: 
       order: [['created_at', 'DESC']],
     });
 
-    res.json(laporan);
+    return res.json(laporan);
   } catch (error) {
     console.error('Error fetching detail laporan:', error);
-    res.status(500).json({ message: 'Error fetching detail laporan' });
+    return res.status(500).json({ message: 'Error fetching detail laporan' });
   }
 });
 
@@ -214,10 +214,10 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
       };
     });
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     console.error('Error fetching laporan by sumber anggaran:', error);
-    res.status(500).json({ message: 'Error fetching laporan by sumber anggaran' });
+    return res.status(500).json({ message: 'Error fetching laporan by sumber anggaran' });
   }
 });
 
@@ -232,7 +232,7 @@ router.get('/by-sumber-anggaran/detail', authenticate, authorizeAdmin, async (re
 
     const laporan = await Laporan.findAll({
       where: {
-        bulan,
+        bulan: String(bulan),
         tahun: Number(tahun),
         id_sumber_anggaran: Number(id_sumber_anggaran),
       },
@@ -256,10 +256,10 @@ router.get('/by-sumber-anggaran/detail', authenticate, authorizeAdmin, async (re
       order: [['created_at', 'DESC']],
     });
 
-    res.json(laporan);
+    return res.json(laporan);
   } catch (error) {
     console.error('Error fetching detail laporan by sumber anggaran:', error);
-    res.status(500).json({ message: 'Error fetching detail laporan' });
+    return res.status(500).json({ message: 'Error fetching detail laporan' });
   }
 });
 

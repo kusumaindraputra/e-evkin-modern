@@ -39,18 +39,40 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
+        // Get user info to fetch only assigned sub kegiatan
+        const userStr = localStorage.getItem('user');
+        let userId: number | null = null;
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          userId = user.id;
+        }
+
         const [sumberAnggaranRes, satuanRes, kegiatanRes, subKegiatanRes] = await Promise.all([
           axios.get('http://localhost:5000/api/reference/sumber-anggaran', config),
           axios.get('http://localhost:5000/api/reference/satuan', config),
           axios.get('http://localhost:5000/api/reference/kegiatan', config),
-          axios.get('http://localhost:5000/api/reference/sub-kegiatan', config),
+          // Fetch only assigned sub kegiatan for puskesmas
+          userId 
+            ? axios.get(`http://localhost:5000/api/puskesmas-config/puskesmas/${userId}/sub-kegiatan`, config)
+            : axios.get('http://localhost:5000/api/reference/sub-kegiatan', config),
         ]);
+
+        // Transform assigned sub kegiatan data to match reference format
+        let subKegiatanData = subKegiatanRes.data;
+        if (userId && subKegiatanRes.data.assignments) {
+          subKegiatanData = subKegiatanRes.data.assignments.map((assignment: any) => ({
+            value: assignment.subKegiatan.id_sub_kegiatan,
+            label: assignment.subKegiatan.kegiatan,
+            id_kegiatan: assignment.subKegiatan.kegiatanParent?.id_kegiatan,
+            indikator_kinerja: assignment.subKegiatan.indikator_kinerja,
+          }));
+        }
 
         const refData: ReferenceData = {
           sumberAnggaran: sumberAnggaranRes.data,
           satuan: satuanRes.data,
           kegiatan: kegiatanRes.data,
-          subKegiatan: subKegiatanRes.data,
+          subKegiatan: subKegiatanData,
         };
 
         setReferenceData(refData);

@@ -24,7 +24,55 @@
 ./deploy.sh --production
 ```
 
-## 🔧 **Common aaPanel Deployment Issues**
+## � **Memory Issues (JavaScript heap out of memory)**
+
+### **Error: "JavaScript heap out of memory" during build**
+```bash
+# Quick fix - run memory cleanup script
+./fix-memory.sh
+
+# Use low-memory optimized deployment
+./deploy-low-memory.sh --production
+
+# Or manual build with memory limits
+cd backend
+export NODE_OPTIONS="--max-old-space-size=512"
+npm install --only=production
+npm install typescript @types/node --save-dev
+npx tsc --sourceMap false --incremental false
+
+cd ../frontend
+export NODE_OPTIONS="--max-old-space-size=768"
+npm install --only=production  
+npm install vite @vitejs/plugin-react typescript --save-dev
+npm run build
+```
+
+### **For 2GB RAM Servers:**
+```bash
+# Stop all processes first
+pm2 kill
+
+# Add swap file for extra memory
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# Use memory-optimized script
+./deploy-low-memory.sh --production
+```
+
+### **Alternative: Build Locally**
+```bash
+# On development machine:
+npm run build (both backend and frontend)
+
+# Upload only dist/ folders via aaPanel File Manager
+# Skip npm install/build on server entirely
+```
+
+## �🔧 **Common aaPanel Deployment Issues**
 
 ### **1. Permission Denied Errors**
 ```bash

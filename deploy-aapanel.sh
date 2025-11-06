@@ -76,16 +76,36 @@ cd $BACKEND_DIR
 
 # Install backend dependencies
 log "📦 Installing backend dependencies..."
-npm install
+# Use production-only install first to save memory
+export NODE_OPTIONS="--max-old-space-size=512"
+npm ci --only=production
+
+# Then install dev dependencies needed for build
+log "📦 Installing dev dependencies for build..."
+npm install typescript @types/node --save-dev
 
 # Build backend
 log "🔨 Building backend..."
 rm -rf dist/
-npx tsc
+
+# TypeScript compilation with memory optimization for 2GB server
+log "⚡ Running TypeScript compilation with memory optimization..."
+export NODE_OPTIONS="--max-old-space-size=1024"
+npx tsc --incremental false --tsBuildInfoFile null
 
 if [ ! -f "dist/server.js" ]; then
     log "❌ Backend build failed"
-    exit 1
+    log "💡 Trying alternative build method..."
+    
+    # Alternative: build without source maps and with smaller memory
+    export NODE_OPTIONS="--max-old-space-size=768"
+    npx tsc --sourceMap false --incremental false
+    
+    if [ ! -f "dist/server.js" ]; then
+        log "❌ Backend build failed completely"
+        log "💭 Try manual compilation or increase server memory"
+        exit 1
+    fi
 fi
 
 log "✅ Backend built successfully"
@@ -96,16 +116,37 @@ cd $FRONTEND_DIR
 
 # Install frontend dependencies
 log "📦 Installing frontend dependencies..."
-npm install
+# Clear memory before frontend build
+unset NODE_OPTIONS
+export NODE_OPTIONS="--max-old-space-size=768"
+npm ci --only=production
+
+# Install dev dependencies for Vite build
+log "📦 Installing frontend dev dependencies..."
+npm install vite @vitejs/plugin-react typescript --save-dev
 
 # Build frontend
 log "🔨 Building frontend..."
 rm -rf dist/
+
+# Vite build with memory optimization
+log "⚡ Running Vite build with memory optimization..."
+export NODE_OPTIONS="--max-old-space-size=1024"
 npm run build
 
 if [ ! -f "dist/index.html" ]; then
     log "❌ Frontend build failed"
-    exit 1
+    log "💡 Trying alternative build method..."
+    
+    # Alternative: smaller memory allocation
+    export NODE_OPTIONS="--max-old-space-size=768"
+    npm run build
+    
+    if [ ! -f "dist/index.html" ]; then
+        log "❌ Frontend build failed completely"
+        log "💭 Try manual compilation or increase server memory"
+        exit 1
+    fi
 fi
 
 BUILD_SIZE=$(du -sh dist/ | cut -f1)

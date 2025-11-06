@@ -1,76 +1,64 @@
 #!/bin/bash
 
-# E-EVKIN Modern - Comprehensive Deploy Script for Staging/Production
-# Run this script on your staging/production server
+# E-EVKIN Modern - Complete Deployment Script for aaPanel Ubuntu Server
+# This script handles EVERYTHING from initial setup to production deployment
 # 
-# This script handles:
-# - Git pull latest changes
-# - Root and backend dependencies installation
-# - Frontend dependencies installation
-# - TypeScript compilation for backend
-# - Frontend production build
+# Features:
+# - First-time setup (dependencies, database, nginx)
+# - Regular deployments (git pull, build, restart)
+# - Memory optimization for 2GB servers
+# - Complete nginx configuration
+# - Database setup and seeding
 # - PM2 process management
-# - Nginx reload
-# - Health checks
+# - Health checks and validation
 #
-# Usage: ./deploy.sh [--skip-deps] [--skip-build] [--production]
+# Usage: 
+#   ./deploy.sh --first-time    # First deployment (installs everything)
+#   ./deploy.sh                 # Regular deployment (updates only)
+#   ./deploy.sh --quick         # Quick deployment (skip deps)
 
 set -e
 
-echo "🚀 E-EVKIN Modern - Comprehensive Deployment"
-echo "============================================="
+echo "🚀 E-EVKIN Modern - Complete aaPanel Deployment"
+echo "==============================================="
 
-# Variables - Updated for aaPanel Ubuntu server
+# Variables - aaPanel Ubuntu Server Configuration
 APP_DIR="/www/wwwroot/e-evkin-modern"
 BACKEND_DIR="$APP_DIR/backend"
 FRONTEND_DIR="$APP_DIR/frontend"
 LOG_FILE="$APP_DIR/deploy.log"
-SKIP_DEPS=false
-SKIP_BUILD=false
-IS_PRODUCTION=false
+FIRST_TIME=false
+QUICK_DEPLOY=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --skip-deps)
-      SKIP_DEPS=true
+    --first-time)
+      FIRST_TIME=true
       shift
       ;;
-    --skip-build)
-      SKIP_BUILD=true
-      shift
-      ;;
-    --production)
-      IS_PRODUCTION=true
+    --quick)
+      QUICK_DEPLOY=true
       shift
       ;;
     *)
       echo "Unknown option $1"
-      echo "Usage: $0 [--skip-deps] [--skip-build] [--production]"
+      echo "Usage: $0 [--first-time] [--quick]"
+      echo "  --first-time : Complete first-time setup (database, nginx, etc.)"
+      echo "  --quick      : Quick deployment (skip dependency installation)"
       exit 1
       ;;
   esac
 done
 
-# Check if running as root - Warning but allow for aaPanel
-if [[ $EUID -eq 0 ]]; then
-   echo "⚠️  WARNING: Running as root user"
-   echo "   This is generally not recommended for security reasons"
-   echo "   On aaPanel servers, this might be necessary"
-   read -p "Continue anyway? (y/N): " -n 1 -r
-   echo
-   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-       echo "❌ Deployment cancelled"
-       exit 1
-   fi
-   echo "✅ Continuing with root privileges..."
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+   echo "❌ This script must be run as root on aaPanel servers"
+   echo "   Please run: sudo bash deploy.sh"
+   exit 1
 fi
 
-# Check if app directory exists
-if [ ! -d "$APP_DIR" ]; then
-    echo "❌ Application directory $APP_DIR does not exist"
-    exit 1
-fi
+echo "✅ Running with root privileges on aaPanel server..."
 
 # Function to log with timestamp
 log() {
@@ -82,216 +70,437 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Check required tools
-log "🔍 Checking required tools..."
-required_tools=("git" "node" "npm" "pm2")
-for tool in "${required_tools[@]}"; do
-    if ! command_exists $tool; then
-        echo "❌ Required tool '$tool' is not installed"
-        exit 1
-    fi
-done
+# FIRST TIME SETUP FUNCTIONS
+# ==========================
 
-# Check Node.js version
-NODE_VERSION=$(node --version | cut -d'v' -f2)
-REQUIRED_NODE_VERSION="18.0.0"
-if ! command_exists npx; then
-    echo "❌ npx is not available"
-    exit 1
+install_system_dependencies() {
+    log "📦 Installing system dependencies..."
+    apt update
+    apt install -y curl wget git build-essential nginx postgresql postgresql-contrib
+    log "✅ System dependencies installed"
+}
+
+install_nodejs() {
+    log "📦 Installing Node.js 18..."
+    if ! command_exists node; then
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        apt install -y nodejs
+    fi
+    
+    # Install/update npm and PM2
+    npm install -g npm@latest pm2@latest
+    
+    log "✅ Node.js $(node --version) and PM2 installed"
+}
+
+setup_database() {
+    log "🗄️ Setting up PostgreSQL database..."
+    
+    # Start PostgreSQL service
+    systemctl start postgresql
+    systemctl enable postgresql
+    
+    # Create database and user
+    sudo -u postgres psql << EOF
+CREATE DATABASE eevkin_modern;
+CREATE USER eevkin_user WITH ENCRYPTED PASSWORD 'eevkin_secure_2024';
+GRANT ALL PRIVILEGES ON DATABASE eevkin_modern TO eevkin_user;
+ALTER USER eevkin_user CREATEDB;
+\q
+EOF
+    
+    log "✅ Database setup completed"
+}
+
+setup_environment() {
+    log "🔧 Setting up environment configuration..."
+    
+    # Create .env file for backend
+    cat > "$BACKEND_DIR/.env" << EOF
+NODE_ENV=production
+PORT=5000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=eevkin_modern
+DB_USER=eevkin_user
+DB_PASSWORD=eevkin_secure_2024
+JWT_SECRET=$(openssl rand -base64 32)
+CORS_ORIGIN=http://103.197.189.168
+EOF
+    
+    log "✅ Environment configuration created"
+}
+
+seed_database() {
+    log "🌱 Seeding database..."
+    cd "$BACKEND_DIR"
+    
+    # Run database migrations and seeding
+    npx tsx src/seeders/seedAll.ts
+    
+    log "✅ Database seeded with initial data"
+}
+
+configure_nginx() {
+    log "🌐 Configuring Nginx..."
+    
+    # Remove default site
+    rm -f /etc/nginx/sites-enabled/default
+    
+    # Create our site configuration
+    cat > "/etc/nginx/sites-available/e-evkin-modern" << 'EOF'
+server {
+    listen 80;
+    server_name 103.197.189.168;
+    
+    root /www/wwwroot/e-evkin-modern/frontend/dist;
+    index index.html;
+
+    access_log /var/log/nginx/e-evkin-modern.access.log;
+    error_log /var/log/nginx/e-evkin-modern.error.log;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # API proxy to backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://127.0.0.1:5000/health;
+        access_log off;
+    }
+
+    # Handle React Router (SPA routing)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Static assets caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # Deny access to sensitive files
+    location ~ /\.(ht|git|env) {
+        deny all;
+        return 404;
+    }
+
+    # Performance optimizations
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    
+    client_max_body_size 10M;
+    server_tokens off;
+}
+EOF
+
+    # Enable the site
+    ln -sf "/etc/nginx/sites-available/e-evkin-modern" "/etc/nginx/sites-enabled/e-evkin-modern"
+    
+    # Test and reload nginx
+    nginx -t && systemctl reload nginx
+    
+    log "✅ Nginx configured and reloaded"
+}
+
+# DEPLOYMENT FUNCTIONS
+# ===================
+
+# Check required tools
+log "🔍 Checking system requirements..."
+
+# For first time setup, we'll install missing tools
+if [ "$FIRST_TIME" = true ]; then
+    log "🎯 First-time setup detected - installing all requirements..."
+    
+    # Check if app directory exists, create if needed
+    if [ ! -d "$APP_DIR" ]; then
+        log "📁 Creating application directory: $APP_DIR"
+        mkdir -p "$APP_DIR"
+        cd "$APP_DIR"
+        
+        # Clone or initialize git repository
+        if [ ! -d ".git" ]; then
+            log "📥 Initializing git repository..."
+            git init
+            # You would typically clone from your repository here
+            # git clone https://github.com/kusumaindraputra/e-evkin-modern.git .
+        fi
+    fi
+    
+    # Install system dependencies
+    install_system_dependencies
+    install_nodejs
+    setup_database
+    setup_environment
+    
+else
+    # Regular deployment - check if tools exist
+    required_tools=("git" "node" "npm" "pm2" "nginx")
+    for tool in "${required_tools[@]}"; do
+        if ! command_exists $tool; then
+            echo "❌ Required tool '$tool' is not installed"
+            echo "   Run with --first-time flag for initial setup"
+            exit 1
+        fi
+    done
 fi
 
-log "✅ Node.js version: $NODE_VERSION"
-
-# Navigate to app directory
-cd $APP_DIR
+# Ensure we're in the app directory
+cd "$APP_DIR"
 log "📂 Working directory: $(pwd)"
 
-# Backup current deployment (production only)
-if [ "$IS_PRODUCTION" = true ]; then
-    log "💾 Creating backup..."
-    BACKUP_DIR="$APP_DIR/backups/$(date +'%Y%m%d_%H%M%S')"
-    mkdir -p $BACKUP_DIR
-    cp -r $BACKEND_DIR/dist $BACKUP_DIR/backend_dist 2>/dev/null || true
-    cp -r $FRONTEND_DIR/dist $BACKUP_DIR/frontend_dist 2>/dev/null || true
-    log "✅ Backup created at: $BACKUP_DIR"
+# Git operations (if not first time)
+if [ "$FIRST_TIME" = false ]; then
+    log "📥 Updating code from Git..."
+    git fetch origin
+    git reset --hard origin/$(git branch --show-current)
+    log "✅ Code updated"
 fi
 
-# Pull latest changes
-log "📥 Pulling latest changes from Git..."
-git fetch origin
-git reset --hard origin/$(git branch --show-current)
-log "✅ Git pull completed"
-
-# Install/update root dependencies
-if [ "$SKIP_DEPS" = false ]; then
-    log "📦 Installing root dependencies..."
-    npm ci --only=production
-    log "✅ Root dependencies installed"
-
-    # Install backend dependencies
-    log "📦 Installing backend dependencies..."
-    cd $BACKEND_DIR
+# Memory-optimized dependency installation
+install_dependencies() {
+    log "📦 Installing dependencies with memory optimization..."
     
-    # Clear npm cache if needed
-    npm cache verify
+    # Set memory limits for Node.js operations
+    export NODE_OPTIONS="--max-old-space-size=1024"
     
-    # Install dependencies (use ci for production, install for development)
-    if [ "$IS_PRODUCTION" = true ]; then
-        npm ci --only=production
-    else
-        npm install
+    # Root dependencies
+    if [ "$QUICK_DEPLOY" = false ]; then
+        npm ci --only=production --no-audit --prefer-offline
+        log "✅ Root dependencies installed"
     fi
     
-    # Install dev dependencies needed for build
-    npm install --only=dev
-    log "✅ Backend dependencies installed"
-
-    # Install frontend dependencies
-    log "📦 Installing frontend dependencies..."
-    cd $FRONTEND_DIR
-    
-    # Clear npm cache if needed
-    npm cache verify
-    
-    # Install dependencies
-    if [ "$IS_PRODUCTION" = true ]; then
-        npm ci --only=production
-    else
-        npm install
+    # Backend dependencies
+    cd "$BACKEND_DIR"
+    if [ "$QUICK_DEPLOY" = false ]; then
+        npm ci --no-audit --prefer-offline
+        log "✅ Backend dependencies installed"
     fi
     
-    # Install dev dependencies needed for build (Vite, TypeScript, etc.)
-    npm install --only=dev
-    log "✅ Frontend dependencies installed"
-else
-    log "⏭️  Skipping dependency installation"
-fi
+    # Frontend dependencies  
+    cd "$FRONTEND_DIR"
+    if [ "$QUICK_DEPLOY" = false ]; then
+        npm ci --no-audit --prefer-offline
+        log "✅ Frontend dependencies installed"
+    fi
+}
 
-# Build backend
-if [ "$SKIP_BUILD" = false ]; then
-    log "🔨 Building backend..."
-    cd $BACKEND_DIR
+# Build applications with memory optimization
+build_applications() {
+    log "🔨 Building applications..."
     
-    # Clean previous build
+    # Backend build
+    cd "$BACKEND_DIR"
     rm -rf dist/
     
-    # TypeScript compilation
-    npx tsc
+    # Memory-optimized TypeScript compilation
+    export NODE_OPTIONS="--max-old-space-size=1024"
+    if ! npx tsc; then
+        log "⚠️ TypeScript compilation failed with 1024MB, trying 768MB..."
+        export NODE_OPTIONS="--max-old-space-size=768"
+        npx tsc
+    fi
     
-    # Verify build output
     if [ ! -f "dist/server.js" ]; then
-        log "❌ Backend build failed - server.js not found"
+        log "❌ Backend build failed"
         exit 1
     fi
+    log "✅ Backend built successfully"
     
-    log "✅ Backend build completed"
-
-    # Build frontend
-    log "🎨 Building frontend..."
-    cd $FRONTEND_DIR
-    
-    # Clean previous build
+    # Frontend build
+    cd "$FRONTEND_DIR"
     rm -rf dist/
-    
-    # Vite production build
     npm run build
     
-    # Verify build output
     if [ ! -f "dist/index.html" ]; then
-        log "❌ Frontend build failed - index.html not found"
+        log "❌ Frontend build failed"
         exit 1
     fi
     
-    # Check build size
     BUILD_SIZE=$(du -sh dist/ | cut -f1)
-    log "✅ Frontend build completed (Size: $BUILD_SIZE)"
-else
-    log "⏭️  Skipping build process"
-fi
+    log "✅ Frontend built successfully (Size: $BUILD_SIZE)"
+}
 
-# Stop backend gracefully
-log "🛑 Stopping backend process..."
-cd $APP_DIR
-pm2 stop e-evkin-backend 2>/dev/null || log "⚠️  Backend was not running"
+# PM2 process management
+manage_backend_process() {
+    log "� Managing backend process..."
+    cd "$APP_DIR"
+    
+    # Stop existing process
+    pm2 stop e-evkin-backend 2>/dev/null || log "⚠️ Backend was not running"
+    
+    # Start backend
+    pm2 start "$BACKEND_DIR/dist/server.js" --name "e-evkin-backend" \
+        --cwd "$BACKEND_DIR" \
+        --env "NODE_ENV=production" \
+        --max-memory-restart 1500M \
+        --node-args="--max-old-space-size=1024"
+    
+    # Save PM2 configuration
+    pm2 save
+    
+    log "✅ Backend process started with PM2"
+}
 
-# Start/restart backend with PM2
-log "🔄 Starting backend with PM2..."
-pm2 start config/ecosystem.config.js
-
-# Wait for backend to start
-log "⏳ Waiting for backend to start..."
-sleep 5
-
-# Health check
-log "🏥 Performing health check..."
-BACKEND_URL="http://localhost:5000/health"
-if curl -f -s $BACKEND_URL > /dev/null; then
-    log "✅ Backend health check passed"
-else
-    log "❌ Backend health check failed"
-    log "📝 PM2 logs:"
-    pm2 logs e-evkin-backend --lines 10 --nostream
-    exit 1
-fi
-
-# Reload Nginx if available
-if command_exists nginx; then
-    # Check if we're root or need sudo
-    if [[ $EUID -eq 0 ]]; then
-        # Running as root, no sudo needed
-        if nginx -t 2>/dev/null; then
-            log "🔄 Reloading Nginx..."
-            nginx -s reload
-            log "✅ Nginx reloaded"
-        else
-            log "⚠️  Nginx configuration test failed, skipping reload"
+# Health checks
+perform_health_checks() {
+    log "🏥 Performing health checks..."
+    
+    # Wait for backend to start
+    sleep 10
+    
+    # Backend health check
+    for i in {1..30}; do
+        if curl -f -s http://localhost:5000/health > /dev/null; then
+            log "✅ Backend health check passed"
+            break
         fi
+        
+        if [ $i -eq 30 ]; then
+            log "❌ Backend health check failed after 30 attempts"
+            log "📝 PM2 logs:"
+            pm2 logs e-evkin-backend --lines 10 --nostream
+            exit 1
+        fi
+        
+        sleep 2
+    done
+    
+    # Nginx check
+    if nginx -t 2>/dev/null; then
+        log "✅ Nginx configuration is valid"
     else
-        # Not root, use sudo
-        if sudo nginx -t 2>/dev/null; then
-            log "🔄 Reloading Nginx..."
-            sudo nginx -s reload
-            log "✅ Nginx reloaded"
-        else
-            log "⚠️  Nginx configuration test failed, skipping reload"
-        fi
+        log "❌ Nginx configuration has errors"
+        exit 1
     fi
-else
-    log "⚠️  Nginx not found, skipping reload"
+    
+    # Frontend accessibility check
+    if curl -f -s http://localhost/ > /dev/null; then
+        log "✅ Frontend is accessible"
+    else
+        log "⚠️ Frontend accessibility check failed"
+    fi
+}
+
+# MAIN DEPLOYMENT LOGIC
+# ====================
+
+log "🚀 Starting deployment process..."
+
+# Install dependencies
+install_dependencies
+
+# Build applications
+build_applications
+
+# First-time database setup
+if [ "$FIRST_TIME" = true ]; then
+    seed_database
+    configure_nginx
 fi
 
-# Save PM2 configuration
-pm2 save
+# Manage backend process
+manage_backend_process
 
-# Final status check
-log "📊 Final status check..."
+# Reload nginx for regular deployments
+if [ "$FIRST_TIME" = false ]; then
+    log "🔄 Reloading Nginx..."
+    nginx -s reload
+    log "✅ Nginx reloaded"
+fi
+
+# Health checks
+perform_health_checks
+
+# Final status and summary
+log "📊 Final deployment status..."
 pm2 list
-log "✅ Deployment completed successfully!"
-log "📊 Check detailed status: pm2 status"
-log "📝 View logs: pm2 logs e-evkin-backend"
-log "🌐 Frontend: Check your domain"
-log "🔗 API Health: curl http://localhost:5000/health"
 
-# Print deployment summary
+# Print comprehensive deployment summary
 echo ""
-echo "� DEPLOYMENT SUMMARY"
-echo "===================="
+echo "🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!"
+echo "===================================="
 echo "📅 Date: $(date)"
 echo "🏠 Directory: $APP_DIR"
-echo "🔧 Backend: Built and running with PM2"
-echo "🎨 Frontend: Built and ready to serve"
-echo "🔗 Backend Health: $BACKEND_URL"
-echo "📊 PM2 Status: pm2 status"
+echo "🔧 Backend: Running with PM2 on port 5000"
+echo "� Frontend: Served by Nginx on port 80" 
+echo "�️ Database: PostgreSQL with seeded data"
+echo ""
+echo "🌐 ACCESS URLS:"
+echo "──────────────"
+echo "✅ Website: http://103.197.189.168"
+echo "✅ API: http://103.197.189.168/api/"
+echo "✅ Health: http://103.197.189.168/health"
+echo ""
+echo "🔐 LOGIN CREDENTIALS:"
+echo "────────────────────"
+echo "👨‍💼 Admin: dinkes / dinkes123"
+echo "🏥 Puskesmas: cibinong / bogorkab"
+echo ""
+echo "📊 MONITORING COMMANDS:"
+echo "──────────────────────"
+echo "� PM2 Status: pm2 status"
+echo "📝 Backend Logs: pm2 logs e-evkin-backend"
+echo "� Nginx Status: systemctl status nginx"
+echo "�️ DB Status: systemctl status postgresql"
+echo ""
+echo "🔧 MAINTENANCE COMMANDS:"
+echo "───────────────────────"
+echo "🔄 Regular Deploy: bash deploy.sh"
+echo "⚡ Quick Deploy: bash deploy.sh --quick"
+echo "🆕 Fresh Setup: bash deploy.sh --first-time"
 echo ""
 
-if [ "$IS_PRODUCTION" = true ]; then
-    echo "🚀 PRODUCTION DEPLOYMENT COMPLETED"
-    echo "⚠️  Remember to:"
-    echo "   - Monitor logs: pm2 logs e-evkin-backend"
-    echo "   - Check application functionality"
-    echo "   - Verify SSL certificates if applicable"
-    echo "   - Update DNS if needed"
+if [ "$FIRST_TIME" = true ]; then
+    echo "🚀 FIRST-TIME SETUP COMPLETED!"
+    echo "✅ All services installed and configured"
+    echo "✅ Database created and seeded"
+    echo "✅ Nginx configured for production"
+    echo "✅ PM2 process management enabled"
+    echo "✅ Application fully functional"
+    echo ""
+    echo "🎯 Next Steps:"
+    echo "1. Visit http://103.197.189.168 to test the application"
+    echo "2. Login with the credentials above"
+    echo "3. Verify all features work correctly"
+    echo "4. Set up SSL certificate if needed"
+    echo "5. Configure domain name if applicable"
 else
-    echo "🧪 STAGING DEPLOYMENT COMPLETED"
-    echo "✅ Ready for testing"
+    echo "🔄 REGULAR DEPLOYMENT COMPLETED!"
+    echo "✅ Code updated and applications rebuilt"
+    echo "✅ Services restarted and health checked"
+    echo "✅ Application updated successfully"
 fi
+
+echo ""
+echo "📞 SUPPORT:"
+echo "──────────"
+echo "📊 Health Check: curl http://103.197.189.168/health"
+echo "🔍 Quick Test: curl -I http://103.197.189.168"
+echo "📝 View Logs: tail -f $LOG_FILE"
+echo ""
+echo "🎊 Happy coding! Your E-EVKIN Modern app is ready!"

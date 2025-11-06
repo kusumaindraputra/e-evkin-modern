@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Laporan, User, SubKegiatan, Kegiatan } from '../models';
 import { authenticate } from '../middleware/auth';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 
 const router = Router();
 
@@ -241,6 +241,223 @@ router.post('/laporan/bulk-return', authenticate, async (req: Request, res: Resp
   } catch (error: any) {
     console.error('Bulk return error:', error);
     res.status(500).json({ message: 'Gagal mengembalikan laporan', error: error.message });
+  }
+});
+
+// Get dashboard statistics for admin
+router.get('/dashboard/stats', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Access denied. Admin only.' });
+      return;
+    }
+
+    const { tahun, bulan } = req.query;
+    const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
+    const currentMonth = bulan as string || undefined;
+
+    // Build where clause
+    const where: any = { tahun: currentYear };
+    if (currentMonth) {
+      where.bulan = currentMonth;
+    }
+
+    // Get total laporan count
+    const totalLaporan = await Laporan.count({ where });
+
+    // Get status counts
+    const statusCounts = await Laporan.findAll({
+      attributes: [
+        'status',
+        [Laporan.sequelize!.fn('COUNT', Laporan.sequelize!.col('id')), 'count']
+      ],
+      where,
+      group: ['status'],
+      raw: true
+    }) as any[];
+
+    const tersimpan = statusCounts.find(s => s.status === 'tersimpan')?.count || 0;
+    const terkirim = statusCounts.find(s => s.status === 'terkirim')?.count || 0;
+
+    // Get total puskesmas
+    const totalPuskesmas = await User.count({
+      where: { role: 'puskesmas' }
+    });
+
+    // Get puskesmas yang sudah mengirim laporan
+    const puskesmasReporting = await Laporan.count({
+      where: { ...where, status: 'terkirim' },
+      distinct: true,
+      col: 'user_id'
+    });
+
+    res.status(200).json({
+      message: 'Dashboard statistics retrieved successfully',
+      data: {
+        totalLaporan,
+        tersimpan,
+        terkirim,
+        totalPuskesmas,
+        puskesmasReporting,
+        persentasePuskesmasReporting: totalPuskesmas > 0 ? Math.round((puskesmasReporting / totalPuskesmas) * 100 * 100) / 100 : 0
+      },
+      tahun: currentYear,
+      bulan: currentMonth
+    });
+  } catch (error: any) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ message: 'Gagal mengambil statistik dashboard', error: error.message });
+  }
+});
+
+// Get budget realization per month for dashboard (with month filter)
+router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Access denied. Admin only.' });
+      return;
+    }
+
+    const { tahun, bulan } = req.query;
+    const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
+    const currentMonth = bulan as string;
+
+    if (!currentMonth) {
+      res.status(400).json({ message: 'Bulan parameter is required' });
+      return;
+    }
+
+    // Query untuk mendapatkan data per sub kegiatan untuk bulan tertentu
+    const query = `
+      SELECT 
+        l.id_sub_kegiatan,
+        sk.kode_sub,
+        sk.kegiatan as sub_kegiatan_nama,
+        k.kode as kegiatan_kode,
+        k.kegiatan as kegiatan_nama,
+        SUM(l.target_rp) as target_rp,
+        SUM(l.realisasi_rp) as realisasi_rp
+      FROM laporan l
+      INNER JOIN sub_kegiatan sk ON l.id_sub_kegiatan = sk.id_sub_kegiatan
+      INNER JOIN kegiatan k ON sk.id_kegiatan = k.id_kegiatan
+      WHERE l.tahun = :tahun 
+        AND l.bulan = :bulan
+        AND l.status = 'terkirim'
+      GROUP BY l.id_sub_kegiatan, sk.kode_sub, sk.kegiatan, k.kode, k.kegiatan
+      ORDER BY sk.kode_sub ASC
+    `;
+
+    const monthlyData = await Laporan.sequelize!.query(query, {
+      replacements: { tahun: currentYear, bulan: currentMonth },
+      type: QueryTypes.SELECT
+    }) as any[];
+
+    // Process data
+    const processedData = monthlyData.map((item: any) => {
+      const targetRp = parseFloat(item.target_rp) || 0;
+      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
+      const persentase = targetRp > 0 ? (realisasiRp / targetRp) * 100 : 0;
+
+      return {
+        sub_kegiatan: `${item.kode_sub} - ${item.sub_kegiatan_nama}`,
+        kegiatan: `${item.kegiatan_kode} - ${item.kegiatan_nama}`,
+        target_rp: targetRp,
+        realisasi_rp: realisasiRp,
+        persentase: Math.round(persentase * 100) / 100
+      };
+    });
+
+    // Calculate totals
+    const totalTarget = processedData.reduce((sum, item) => sum + item.target_rp, 0);
+    const totalRealisasi = processedData.reduce((sum, item) => sum + item.realisasi_rp, 0);
+    const totalPersentase = totalTarget > 0 ? (totalRealisasi / totalTarget) * 100 : 0;
+
+    res.status(200).json({
+      message: 'Monthly budget data retrieved successfully',
+      data: processedData,
+      summary: {
+        totalTarget,
+        totalRealisasi,
+        totalPersentase: Math.round(totalPersentase * 100) / 100
+      },
+      tahun: currentYear,
+      bulan: currentMonth
+    });
+  } catch (error: any) {
+    console.error('Monthly budget error:', error);
+    res.status(500).json({ message: 'Gagal mengambil data anggaran bulanan', error: error.message });
+  }
+});
+
+// Get budget realization year to date for dashboard
+router.get('/dashboard/budget-ytd', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Access denied. Admin only.' });
+      return;
+    }
+
+    const { tahun } = req.query;
+    const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
+
+    // Query untuk mendapatkan total target_rp dan realisasi_rp per bulan
+    const budgetData = await Laporan.findAll({
+      attributes: [
+        'bulan',
+        [Laporan.sequelize!.fn('SUM', Laporan.sequelize!.col('target_rp')), 'target_rp'],
+        [Laporan.sequelize!.fn('SUM', Laporan.sequelize!.col('realisasi_rp')), 'realisasi_rp']
+      ],
+      where: {
+        tahun: currentYear,
+        status: 'terkirim' // Only count submitted reports
+      },
+      group: ['bulan'],
+      order: [
+        [Laporan.sequelize!.literal(`
+          CASE bulan 
+            WHEN 'Januari' THEN 1 
+            WHEN 'Februari' THEN 2 
+            WHEN 'Maret' THEN 3 
+            WHEN 'April' THEN 4 
+            WHEN 'Mei' THEN 5 
+            WHEN 'Juni' THEN 6 
+            WHEN 'Juli' THEN 7 
+            WHEN 'Agustus' THEN 8 
+            WHEN 'September' THEN 9 
+            WHEN 'Oktober' THEN 10 
+            WHEN 'November' THEN 11 
+            WHEN 'Desember' THEN 12 
+          END
+        `), 'ASC']
+      ],
+      raw: true
+    });
+
+    // Calculate percentage for each month
+    const processedData = budgetData.map((item: any) => {
+      const targetRp = parseFloat(item.target_rp) || 0;
+      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
+      const persentase = targetRp > 0 ? (realisasiRp / targetRp) * 100 : 0;
+
+      return {
+        bulan: item.bulan,
+        target_rp: targetRp,
+        realisasi_rp: realisasiRp,
+        persentase: Math.round(persentase * 100) / 100
+      };
+    });
+
+    res.json({
+      message: 'Data realisasi anggaran berhasil diambil',
+      data: processedData,
+      tahun: currentYear
+    });
+  } catch (error: any) {
+    console.error('Budget YTD error:', error);
+    res.status(500).json({ message: 'Gagal mengambil data anggaran', error: error.message });
   }
 });
 

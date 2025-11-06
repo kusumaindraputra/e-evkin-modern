@@ -134,6 +134,11 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       req.body.user_id = req.user.id;
     }
     
+    // Set default status to 'tersimpan' if not provided
+    if (!req.body.status) {
+      req.body.status = 'tersimpan';
+    }
+    
     const laporan = await Laporan.create(req.body);
     res.status(201).json(laporan);
   } catch (error: any) {
@@ -232,7 +237,7 @@ router.post('/submit', authenticate, async (req: Request, res: Response): Promis
       return;
     }
 
-    // Update all 'menunggu' laporan to 'terkirim'
+    // Update all 'tersimpan' laporan to 'terkirim'
     const [updatedCount] = await Laporan.update(
       { status: 'terkirim' },
       {
@@ -240,7 +245,7 @@ router.post('/submit', authenticate, async (req: Request, res: Response): Promis
           user_id,
           bulan,
           tahun,
-          status: 'menunggu'
+          status: 'tersimpan'
         }
       }
     );
@@ -248,7 +253,7 @@ router.post('/submit', authenticate, async (req: Request, res: Response): Promis
     if (updatedCount === 0) {
       res.status(404).json({
         error: 'No laporan found',
-        message: `Tidak ada laporan dengan status "menunggu" untuk ${bulan} ${tahun}`
+        message: `Tidak ada laporan dengan status "tersimpan" untuk ${bulan} ${tahun}`
       });
       return;
     }

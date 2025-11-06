@@ -177,11 +177,11 @@ export const LaporanBulkInputPage: React.FC = () => {
           status: existing?.status,
           id_sumber_anggaran: existing?.id_sumber_anggaran,
           id_satuan: existing?.id_satuan,
-          target_k: existing?.target_k,
-          angkas: existing?.angkas,
-          target_rp: existing?.target_rp,
-          realisasi_k: existing?.realisasi_k,
-          realisasi_rp: existing?.realisasi_rp,
+          target_k: existing?.target_k ? Number(existing.target_k) : undefined,
+          angkas: existing?.angkas ? Number(existing.angkas) : undefined,
+          target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
+          realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
+          realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
           permasalahan: existing?.permasalahan || '',
           upaya: existing?.upaya || '',
         };
@@ -298,11 +298,6 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   };
 
-  const formatNumber = (num: number | undefined) => {
-    if (num === null || num === undefined) return '';
-    return num.toLocaleString('id-ID');
-  };
-
   const columns: ColumnsType<LaporanRow> = [
     {
       title: 'No',
@@ -352,7 +347,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           }
           options={referenceData.sumberAnggaran}
           placeholder="Pilih"
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -369,7 +364,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           }
           options={referenceData.satuan}
           placeholder="Pilih"
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -385,9 +380,17 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'target_k', value)
           }
           min={0}
-          formatter={(value) => formatNumber(value as number)}
-          parser={(value) => value?.replace(/\./g, '') as any}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          step={1}
+          controls={false}
+          formatter={(value) => {
+            if (!value) return '0';
+            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          }}
+          parser={(value) => {
+            const parsed = value?.replace(/\./g, '');
+            return parsed ? Number(parsed) : 0;
+          }}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -403,9 +406,17 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'angkas', value)
           }
           min={0}
-          formatter={(value) => formatNumber(value as number)}
-          parser={(value) => value?.replace(/\./g, '') as any}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          step={1}
+          controls={false}
+          formatter={(value) => {
+            if (!value) return '0';
+            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          }}
+          parser={(value) => {
+            const parsed = value?.replace(/\./g, '');
+            return parsed ? Number(parsed) : 0;
+          }}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -421,9 +432,17 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'target_rp', value)
           }
           min={0}
-          formatter={(value) => formatNumber(value as number)}
-          parser={(value) => value?.replace(/\./g, '') as any}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          step={1}
+          controls={false}
+          formatter={(value) => {
+            if (!value) return '0';
+            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          }}
+          parser={(value) => {
+            const parsed = value?.replace(/\./g, '');
+            return parsed ? Number(parsed) : 0;
+          }}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -439,9 +458,17 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'realisasi_k', value)
           }
           min={0}
-          formatter={(value) => formatNumber(value as number)}
-          parser={(value) => value?.replace(/\./g, '') as any}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          step={1}
+          controls={false}
+          formatter={(value) => {
+            if (!value) return '0';
+            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          }}
+          parser={(value) => {
+            const parsed = value?.replace(/\./g, '');
+            return parsed ? Number(parsed) : 0;
+          }}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -457,9 +484,17 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'realisasi_rp', value)
           }
           min={0}
-          formatter={(value) => formatNumber(value as number)}
-          parser={(value) => value?.replace(/\./g, '') as any}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          step={1}
+          controls={false}
+          formatter={(value) => {
+            if (!value) return '0';
+            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          }}
+          parser={(value) => {
+            const parsed = value?.replace(/\./g, '');
+            return parsed ? Number(parsed) : 0;
+          }}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -474,7 +509,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'permasalahan', e.target.value)
           }
           rows={2}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -489,7 +524,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, 'upaya', e.target.value)
           }
           rows={2}
-          disabled={record.status === 'terkirim' || record.status === 'diverifikasi'}
+          disabled={record.status === 'terkirim'}
         />
       ),
     },
@@ -501,20 +536,30 @@ export const LaporanBulkInputPage: React.FC = () => {
       render: (_: any, record: LaporanRow) => {
         if (!record.status) return <Tag>Belum Disimpan</Tag>;
         const color =
-          record.status === 'diverifikasi'
-            ? 'success'
-            : record.status === 'terkirim'
+          record.status === 'terkirim'
             ? 'processing'
-            : record.status === 'ditolak'
-            ? 'error'
+            : record.status === 'tersimpan'
+            ? 'default'
             : 'warning';
-        return <Tag color={color}>{record.status}</Tag>;
+        
+        const label = 
+          record.status === 'tersimpan' ? 'Tersimpan' :
+          record.status === 'terkirim' ? 'Terkirim' :
+          record.status;
+        
+        return <Tag color={color}>{label}</Tag>;
       },
     },
   ];
 
+  // Check if all saved rows have "tersimpan" status
+  const allRowsAreDraft = rows.length > 0 && rows.every(
+    (row) => row.laporan_id && row.status === 'tersimpan'
+  );
+  
+  // Check if there are unsaved changes (no laporan_id or missing required fields)
   const hasUnsavedChanges = rows.some(
-    (row) => row.status === 'menunggu' || !row.laporan_id
+    (row) => !row.laporan_id || (!row.id_sumber_anggaran && !row.id_satuan)
   );
 
   return (
@@ -582,12 +627,12 @@ export const LaporanBulkInputPage: React.FC = () => {
                 onConfirm={handleSubmit}
                 okText="Ya, Kirim"
                 cancelText="Batal"
-                disabled={hasUnsavedChanges}
+                disabled={!allRowsAreDraft || hasUnsavedChanges}
               >
                 <Button
                   icon={<SendOutlined />}
                   loading={loading}
-                  disabled={rows.length === 0 || hasUnsavedChanges}
+                  disabled={rows.length === 0 || !allRowsAreDraft || hasUnsavedChanges}
                 >
                   Kirim Laporan {filterBulan} {filterTahun}
                 </Button>
@@ -597,6 +642,13 @@ export const LaporanBulkInputPage: React.FC = () => {
               <div style={{ marginTop: 8 }}>
                 <Text type="warning">
                   * Simpan terlebih dahulu sebelum mengirim laporan
+                </Text>
+              </div>
+            )}
+            {!allRowsAreDraft && !hasUnsavedChanges && rows.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <Text type="warning">
+                  * Semua laporan harus berstatus "Tersimpan" untuk dapat dikirim
                 </Text>
               </div>
             )}

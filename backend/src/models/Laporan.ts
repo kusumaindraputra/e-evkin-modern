@@ -17,7 +17,7 @@ interface LaporanAttributes {
   upaya: string;
   bulan: string;
   tahun: number;
-  status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak';
+  status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak' | 'tersimpan';
   catatan?: string;
   verified_by?: string;
   verified_at?: Date;
@@ -44,7 +44,7 @@ class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes> implem
   declare upaya: string;
   declare bulan: string;
   declare tahun: number;
-  declare status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak';
+  declare status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak' | 'tersimpan';
   declare catatan?: string;
   declare verified_by?: string;
   declare verified_at?: Date;

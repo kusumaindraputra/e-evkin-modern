@@ -18,7 +18,7 @@ router.get('/verifikasi', authenticate, async (req: Request, res: Response): Pro
 
     // Build where clause
     const where: any = {
-      status: { [Op.in]: ['terkirim', 'diverifikasi', 'ditolak'] }
+      status: 'terkirim' // Only show submitted reports
     };
 
     if (bulan) where.bulan = bulan;
@@ -74,13 +74,11 @@ router.get('/verifikasi', authenticate, async (req: Request, res: Response): Pro
           tahun: lap.tahun,
           total_laporan: 0,
           terkirim: 0,
-          diverifikasi: 0,
-          ditolak: 0,
           laporan: []
         };
       }
       grouped[key].total_laporan++;
-      grouped[key][lap.status]++;
+      if (lap.status === 'terkirim') grouped[key].terkirim++;
       grouped[key].laporan.push(lap);
     });
 
@@ -122,7 +120,7 @@ router.get('/laporan/:userId/:bulan/:tahun', authenticate, async (req: Request, 
     if (status) {
       where.status = status;
     } else {
-      where.status = { [Op.in]: ['terkirim', 'diverifikasi', 'ditolak'] };
+      where.status = 'terkirim'; // Only show submitted reports
     }
 
     const offset = (parseInt(page as string) - 1) * parseInt(pageSize as string);
@@ -167,8 +165,8 @@ router.get('/laporan/:userId/:bulan/:tahun', authenticate, async (req: Request, 
   }
 });
 
-// Verify or reject laporan
-router.put('/laporan/:id/verify', authenticate, async (req: Request, res: Response): Promise<void> => {
+// Return laporan back to puskesmas for correction
+router.put('/laporan/:id/return', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
     if (userRole !== 'admin') {
@@ -177,12 +175,7 @@ router.put('/laporan/:id/verify', authenticate, async (req: Request, res: Respon
     }
 
     const { id } = req.params;
-    const { action, catatan } = req.body;
-
-    if (!action || !['approve', 'reject'].includes(action)) {
-      res.status(400).json({ message: 'Invalid action. Use "approve" or "reject".' });
-      return;
-    }
+    const { catatan } = req.body;
 
     const laporan = await Laporan.findByPk(id);
     if (!laporan) {
@@ -191,28 +184,27 @@ router.put('/laporan/:id/verify', authenticate, async (req: Request, res: Respon
     }
 
     if (laporan.status !== 'terkirim') {
-      res.status(400).json({ message: 'Hanya laporan dengan status "terkirim" yang dapat diverifikasi' });
+      res.status(400).json({ message: 'Hanya laporan dengan status "terkirim" yang dapat dikembalikan' });
       return;
     }
 
-    const newStatus = action === 'approve' ? 'diverifikasi' : 'ditolak';
     await laporan.update({ 
-      status: newStatus,
+      status: 'tersimpan',
       catatan: catatan || null
     });
 
     res.json({
-      message: `Laporan berhasil ${action === 'approve' ? 'diverifikasi' : 'ditolak'}`,
+      message: 'Laporan berhasil dikembalikan ke puskesmas',
       data: laporan
     });
   } catch (error: any) {
-    console.error('Verify laporan error:', error);
-    res.status(500).json({ message: 'Gagal memverifikasi laporan', error: error.message });
+    console.error('Return laporan error:', error);
+    res.status(500).json({ message: 'Gagal mengembalikan laporan', error: error.message });
   }
 });
 
-// Bulk verify or reject laporan
-router.post('/laporan/bulk-verify', authenticate, async (req: Request, res: Response): Promise<void> => {
+// Bulk return laporan back to puskesmas
+router.post('/laporan/bulk-return', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
     if (userRole !== 'admin') {
@@ -220,23 +212,16 @@ router.post('/laporan/bulk-verify', authenticate, async (req: Request, res: Resp
       return;
     }
 
-    const { userId, bulan, tahun, action, catatan } = req.body;
+    const { userId, bulan, tahun, catatan } = req.body;
 
     if (!userId || !bulan || !tahun) {
       res.status(400).json({ message: 'userId, bulan, dan tahun wajib diisi' });
       return;
     }
 
-    if (!action || !['approve', 'reject'].includes(action)) {
-      res.status(400).json({ message: 'Invalid action. Use "approve" or "reject".' });
-      return;
-    }
-
-    const newStatus = action === 'approve' ? 'diverifikasi' : 'ditolak';
-
     const [updated] = await Laporan.update(
       { 
-        status: newStatus,
+        status: 'tersimpan',
         catatan: catatan || null
       },
       {
@@ -250,12 +235,12 @@ router.post('/laporan/bulk-verify', authenticate, async (req: Request, res: Resp
     );
 
     res.json({
-      message: `${updated} laporan berhasil ${action === 'approve' ? 'diverifikasi' : 'ditolak'}`,
+      message: `${updated} laporan berhasil dikembalikan ke puskesmas`,
       updated
     });
   } catch (error: any) {
-    console.error('Bulk verify error:', error);
-    res.status(500).json({ message: 'Gagal melakukan bulk verifikasi', error: error.message });
+    console.error('Bulk return error:', error);
+    res.status(500).json({ message: 'Gagal mengembalikan laporan', error: error.message });
   }
 });
 

@@ -52,11 +52,18 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Check if running as root
+# Check if running as root - Warning but allow for aaPanel
 if [[ $EUID -eq 0 ]]; then
-   echo "❌ This script should not be run as root"
-   echo "   Run as regular user with sudo privileges"
-   exit 1
+   echo "⚠️  WARNING: Running as root user"
+   echo "   This is generally not recommended for security reasons"
+   echo "   On aaPanel servers, this might be necessary"
+   read -p "Continue anyway? (y/N): " -n 1 -r
+   echo
+   if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+       echo "❌ Deployment cancelled"
+       exit 1
+   fi
+   echo "✅ Continuing with root privileges..."
 fi
 
 # Check if app directory exists
@@ -229,12 +236,25 @@ fi
 
 # Reload Nginx if available
 if command_exists nginx; then
-    if sudo nginx -t 2>/dev/null; then
-        log "🔄 Reloading Nginx..."
-        sudo nginx -s reload
-        log "✅ Nginx reloaded"
+    # Check if we're root or need sudo
+    if [[ $EUID -eq 0 ]]; then
+        # Running as root, no sudo needed
+        if nginx -t 2>/dev/null; then
+            log "🔄 Reloading Nginx..."
+            nginx -s reload
+            log "✅ Nginx reloaded"
+        else
+            log "⚠️  Nginx configuration test failed, skipping reload"
+        fi
     else
-        log "⚠️  Nginx configuration test failed, skipping reload"
+        # Not root, use sudo
+        if sudo nginx -t 2>/dev/null; then
+            log "🔄 Reloading Nginx..."
+            sudo nginx -s reload
+            log "✅ Nginx reloaded"
+        else
+            log "⚠️  Nginx configuration test failed, skipping reload"
+        fi
     fi
 else
     log "⚠️  Nginx not found, skipping reload"

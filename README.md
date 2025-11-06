@@ -116,6 +116,8 @@ e-evkin-modern/
 ├── DEPLOYMENT.md           # Panduan deployment
 ├── DEPLOYMENT_READY.md     # Summary deployment
 ├── PRE_DEPLOYMENT_CHECKLIST.md
+├── DATABASE_SEED.md        # Panduan database seeding
+├── SEED_SUMMARY.md         # Summary seed data
 └── package.json
 ```
 
@@ -180,17 +182,22 @@ npm run preview      # Preview build
 
 ⚠️ **Ganti password setelah first login!**
 
-## � Deployment
+## 📦 Deployment
 
 Lihat dokumentasi lengkap:
 - **`DEPLOYMENT.md`** - Panduan deployment step-by-step
 - **`DEPLOYMENT_READY.md`** - Summary & quick reference
 - **`PRE_DEPLOYMENT_CHECKLIST.md`** - Checklist sebelum deploy
+- **`DATABASE_SEED.md`** - Panduan database seeding
+- **`SEED_SUMMARY.md`** - Summary seed data
 
 Quick deploy:
 ```bash
 # Build production
 npm run build
+
+# Seed database (first time only!)
+cd backend && npm run seed
 
 # Copy files to server
 # Configure .env

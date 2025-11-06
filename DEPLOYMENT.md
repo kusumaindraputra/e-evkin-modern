@@ -64,6 +64,9 @@ nano .env
 # Build backend
 npm run build
 
+# Seed database dengan data awal (master data + user default)
+npm run seed
+
 # Kembali ke root
 cd ..
 ```

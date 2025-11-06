@@ -1,22 +1,173 @@
+/**
+ * E-EVKIN Modern - Database Seeder
+ * 
+ * This script initializes the database with master data and default users.
+ * 
+ * ⚠️ WARNING: This will DROP ALL EXISTING TABLES and recreate them!
+ * Only run this on a fresh database or if you want to reset all data.
+ * 
+ * Usage:
+ *   npm run seed
+ * 
+ * What gets seeded:
+ * - 20 Satuan (units)
+ * - 4 Sumber Anggaran (budget sources)
+ * - 3 Kegiatan (activities)
+ * - 7 Sub Kegiatan (sub-activities)
+ * - 1 Admin user (username: dinkes, password: dinkes123)
+ * - 102 Puskesmas users (password: bogorkab for all)
+ * - Sample Laporan data for testing
+ * 
+ * Default credentials:
+ * - Admin: dinkes / dinkes123
+ * - Puskesmas: cibinong / bogorkab (or any username from the list)
+ * 
+ * @see DATABASE_SEED.md for complete documentation
+ */
+
 import { sequelize } from '../config/database';
 import User from '../models/User';
 import Laporan from '../models/Laporan';
+import Satuan from '../models/Satuan';
+import SumberAnggaran from '../models/SumberAnggaran';
+import Kegiatan from '../models/Kegiatan';
+import SubKegiatan from '../models/SubKegiatan';
+import bcrypt from 'bcrypt';
 
 async function seed() {
   try {
     await sequelize.sync({ force: true }); // This will drop and recreate tables
     console.log('✅ Database synced');
 
-    // Seed Admin User
+    // Seed Satuan (Master Data)
+    const satuanData = [
+      { satuannya: 'Orang' },
+      { satuannya: 'Kegiatan' },
+      { satuannya: 'Dokumen' },
+      { satuannya: 'Paket' },
+      { satuannya: 'Kali' },
+      { satuannya: 'Unit' },
+      { satuannya: 'Bulan' },
+      { satuannya: 'Tahun' },
+      { satuannya: 'Hari' },
+      { satuannya: 'Jam' },
+      { satuannya: 'Lembar' },
+      { satuannya: 'Set' },
+      { satuannya: 'Kelas' },
+      { satuannya: 'Kelompok' },
+      { satuannya: 'Desa' },
+      { satuannya: 'Posyandu' },
+      { satuannya: 'Puskesmas' },
+      { satuannya: 'Laporan' },
+      { satuannya: 'Kasus' },
+      { satuannya: 'Sampel' },
+    ];
+    
+    for (const satuan of satuanData) {
+      await Satuan.create(satuan);
+    }
+    console.log(`✅ ${satuanData.length} Satuan created`);
+
+    // Seed Sumber Anggaran (Master Data)
+    const sumberAnggaranData = [
+      { sumber: 'BLUD Puskesmas' },
+      { sumber: 'DAK Non Fisik' },
+      { sumber: 'APBD Kabupaten' },
+      { sumber: 'JKN' },
+    ];
+    
+    for (const sumber of sumberAnggaranData) {
+      await SumberAnggaran.create(sumber);
+    }
+    console.log(`✅ ${sumberAnggaranData.length} Sumber Anggaran created`);
+
+    // Seed Kegiatan (Master Data)
+    const kegiatanData = [
+      {
+        id_uraian: 1,
+        kode: '1.02.01',
+        kegiatan: 'Peningkatan Kapasitas SDM Kesehatan',
+      },
+      {
+        id_uraian: 2,
+        kode: '1.02.02',
+        kegiatan: 'Penyelenggaraan Pelayanan Kesehatan Masyarakat',
+      },
+      {
+        id_uraian: 3,
+        kode: '1.02.03',
+        kegiatan: 'Pembinaan dan Pengawasan Upaya Kesehatan',
+      },
+    ];
+    
+    for (const kegiatan of kegiatanData) {
+      await Kegiatan.create(kegiatan);
+    }
+    console.log(`✅ ${kegiatanData.length} Kegiatan created`);
+
+    // Seed Sub Kegiatan (Master Data)
+    const subKegiatanData = [
+      {
+        id_kegiatan: 1,
+        kode_sub: '1.02.01.01',
+        kegiatan: 'Pelatihan Tenaga Kesehatan Puskesmas',
+        indikator_kinerja: 'Jumlah tenaga kesehatan yang mengikuti pelatihan',
+      },
+      {
+        id_kegiatan: 1,
+        kode_sub: '1.02.01.02',
+        kegiatan: 'Sosialisasi Program Kesehatan',
+        indikator_kinerja: 'Jumlah kegiatan sosialisasi yang dilaksanakan',
+      },
+      {
+        id_kegiatan: 2,
+        kode_sub: '1.02.02.01',
+        kegiatan: 'Pelayanan Kesehatan Ibu dan Anak',
+        indikator_kinerja: 'Jumlah ibu hamil yang mendapat pelayanan ANC',
+      },
+      {
+        id_kegiatan: 2,
+        kode_sub: '1.02.02.02',
+        kegiatan: 'Pelayanan Imunisasi Dasar',
+        indikator_kinerja: 'Cakupan imunisasi dasar lengkap',
+      },
+      {
+        id_kegiatan: 2,
+        kode_sub: '1.02.02.03',
+        kegiatan: 'Pelayanan Gizi Masyarakat',
+        indikator_kinerja: 'Jumlah balita yang mendapat PMT',
+      },
+      {
+        id_kegiatan: 3,
+        kode_sub: '1.02.03.01',
+        kegiatan: 'Monitoring dan Evaluasi Program Kesehatan',
+        indikator_kinerja: 'Jumlah kegiatan monitoring yang dilaksanakan',
+      },
+      {
+        id_kegiatan: 3,
+        kode_sub: '1.02.03.02',
+        kegiatan: 'Pembinaan Posyandu',
+        indikator_kinerja: 'Jumlah posyandu yang dibina',
+      },
+    ];
+    
+    for (const subKegiatan of subKegiatanData) {
+      await SubKegiatan.create(subKegiatan);
+    }
+    console.log(`✅ ${subKegiatanData.length} Sub Kegiatan created`);
+
+    // Seed Admin User (with bcrypt)
+    const adminPassword = await bcrypt.hash('dinkes123', 10);
     await User.create({
       username: 'dinkes',
-      password: 'dinkes',
+      password: adminPassword,
       nama: 'Administrator Dinkes',
       role: 'admin',
     });
-    console.log('✅ Admin user created (username: dinkes, password: dinkes)');
+    console.log('✅ Admin user created (username: dinkes, password: dinkes123)');
 
-    // Seed Puskesmas data (102 puskesmas dari Bogor)
+    // Seed Puskesmas data (102 puskesmas dari Bogor dengan bcrypt password)
+    const puskesmasPassword = await bcrypt.hash('bogorkab', 10);
     const puskesmasData = [
       { nama: 'Bojonggede', username: 'bojonggede', kecamatan: 'Bojonggede', wilayah: 'Parung', id_blud: 'BLUD' },
       { nama: 'Bagoang', username: 'bagoang', kecamatan: 'Jasinga', wilayah: 'Jasinga', id_blud: 'JKN' },
@@ -125,7 +276,7 @@ async function seed() {
     for (const puskesmas of puskesmasData) {
       await User.create({
         username: puskesmas.username,
-        password: 'bogorkab', // Default password untuk semua puskesmas
+        password: puskesmasPassword, // bcrypt hashed password
         nama: puskesmas.nama,
         nama_puskesmas: puskesmas.nama,
         role: 'puskesmas',
@@ -144,34 +295,48 @@ async function seed() {
     });
 
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus'];
+    const subKegiatanIds = [1, 2, 3, 4, 5, 6, 7]; // IDs from sub kegiatan yang baru dibuat
     
     for (const user of users) {
       for (const month of months) {
-        await Laporan.create({
-          user_id: user.id,
-          id_kegiatan: 2,
-          id_sub_kegiatan: 30,
-          id_sumber_anggaran: 1,
-          id_satuan: 1,
-          target_k: 12,
-          angkas: 1000000000,
-          target_rp: 1500000000,
-          realisasi_k: Math.floor(Math.random() * 10) + 1,
-          realisasi_rp: Math.floor(Math.random() * 800000000) + 200000000,
-          permasalahan: `Permasalahan sample bulan ${month}`,
-          upaya: `Upaya penyelesaian untuk bulan ${month}`,
-          bulan: month,
-          tahun: 2022,
-        });
+        // Create 2-3 laporan per puskesmas per bulan dengan sub kegiatan yang berbeda
+        const numReports = Math.floor(Math.random() * 2) + 2;
+        for (let i = 0; i < numReports; i++) {
+          const subKegiatanId = subKegiatanIds[Math.floor(Math.random() * subKegiatanIds.length)];
+          const subKegiatan = await SubKegiatan.findByPk(subKegiatanId);
+          
+          await Laporan.create({
+            user_id: user.id,
+            id_kegiatan: subKegiatan?.id_kegiatan || 2,
+            id_sub_kegiatan: subKegiatanId,
+            id_sumber_anggaran: Math.floor(Math.random() * 4) + 1, // Random 1-4
+            id_satuan: Math.floor(Math.random() * 20) + 1, // Random 1-20
+            target_k: Math.floor(Math.random() * 50) + 10,
+            angkas: Math.floor(Math.random() * 500000000) + 100000000,
+            target_rp: Math.floor(Math.random() * 800000000) + 200000000,
+            realisasi_k: Math.floor(Math.random() * 40) + 5,
+            realisasi_rp: Math.floor(Math.random() * 700000000) + 100000000,
+            permasalahan: `Permasalahan sample untuk ${subKegiatan?.kegiatan} bulan ${month}`,
+            upaya: `Upaya penyelesaian untuk ${subKegiatan?.kegiatan} bulan ${month}`,
+            bulan: month,
+            tahun: 2025,
+          });
+        }
       }
     }
     console.log(`✅ Sample laporan data created for ${users.length} puskesmas`);
 
     console.log('\n🎉 Seeding completed successfully!');
-    console.log('\nCredentials:');
-    console.log('Admin - username: dinkes, password: dinkes');
-    console.log('Puskesmas - username: bojonggede (or any from list), password: bogorkab');
-    console.log(`\nTotal: 1 Admin + ${puskesmasData.length} Puskesmas + ${users.length * months.length} Laporan`);
+    console.log('\n=== Master Data ===');
+    console.log(`✅ ${satuanData.length} Satuan`);
+    console.log(`✅ ${sumberAnggaranData.length} Sumber Anggaran`);
+    console.log(`✅ ${kegiatanData.length} Kegiatan`);
+    console.log(`✅ ${subKegiatanData.length} Sub Kegiatan`);
+    console.log('\n=== User Credentials ===');
+    console.log('Admin - username: dinkes, password: dinkes123');
+    console.log('Puskesmas - username: cibinong (or any from list), password: bogorkab');
+    console.log(`\n=== Summary ===`);
+    console.log(`Total: 1 Admin + ${puskesmasData.length} Puskesmas + Sample Laporan Data`);
     
     process.exit(0);
   } catch (error) {

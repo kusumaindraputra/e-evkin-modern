@@ -56,7 +56,6 @@ EOF
     echo "✅ .env file created"
     echo "⚠️  IMPORTANT: Update VITE_API_URL in .env file!"
     echo "   Example: VITE_API_URL=https://your-backend-domain.com/api"
-    exit 1
 fi
 
 # Display current configuration

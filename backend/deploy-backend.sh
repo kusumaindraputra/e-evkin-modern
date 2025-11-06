@@ -106,6 +106,8 @@ npm install
 
 # Build
 echo "🔨 Building backend..."
+echo "   (This may take a few minutes...)"
+export NODE_OPTIONS="--max-old-space-size=4096"
 npm run build
 
 echo "✅ Backend build completed successfully!"

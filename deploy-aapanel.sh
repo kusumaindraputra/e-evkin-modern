@@ -78,11 +78,26 @@ cd $BACKEND_DIR
 log "📦 Installing backend dependencies..."
 # Use production-only install first to save memory
 export NODE_OPTIONS="--max-old-space-size=512"
-npm ci --only=production
+
+# Remove old installations
+rm -rf node_modules package-lock.json
+
+# Install production dependencies
+npm install --only=production --no-audit --no-fund
 
 # Then install dev dependencies needed for build
 log "📦 Installing dev dependencies for build..."
-npm install typescript @types/node --save-dev
+npm install typescript @types/node ts-node --save-dev
+
+# Verify critical modules are installed
+log "🔍 Verifying critical dependencies..."
+critical_modules=("express" "cors" "helmet" "dotenv" "sequelize" "pg" "jsonwebtoken" "bcryptjs")
+for module in "${critical_modules[@]}"; do
+    if [ ! -d "node_modules/$module" ]; then
+        log "❌ Missing critical module: $module"
+        npm install "$module"
+    fi
+done
 
 # Build backend
 log "🔨 Building backend..."
@@ -91,7 +106,28 @@ rm -rf dist/
 # TypeScript compilation with memory optimization for 2GB server
 log "⚡ Running TypeScript compilation with memory optimization..."
 export NODE_OPTIONS="--max-old-space-size=1024"
-npx tsc --incremental false --tsBuildInfoFile null
+
+# Create production tsconfig
+cat > tsconfig.prod.json << 'EOF'
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": false,
+    "declaration": false,
+    "removeComments": true,
+    "incremental": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
+  },
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "src/__tests__"]
+}
+EOF
+
+npx tsc -p tsconfig.prod.json
 
 if [ ! -f "dist/server.js" ]; then
     log "❌ Backend build failed"
@@ -99,7 +135,7 @@ if [ ! -f "dist/server.js" ]; then
     
     # Alternative: build without source maps and with smaller memory
     export NODE_OPTIONS="--max-old-space-size=768"
-    npx tsc --sourceMap false --incremental false
+    npx tsc --outDir dist --rootDir src --skipLibCheck --esModuleInterop
     
     if [ ! -f "dist/server.js" ]; then
         log "❌ Backend build failed completely"
@@ -107,6 +143,9 @@ if [ ! -f "dist/server.js" ]; then
         exit 1
     fi
 fi
+
+# Clean up build config
+rm -f tsconfig.prod.json
 
 log "✅ Backend built successfully"
 

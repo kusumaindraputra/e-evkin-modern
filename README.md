@@ -1,183 +1,250 @@
 # E-EVKIN Modern
 
-Modern full-stack application for Health Center Performance Evaluation System (Sistem Evaluasi Kinerja Puskesmas).
+Aplikasi modern berbasis web untuk Sistem Evaluasi Kinerja Puskesmas Dinas Kesehatan Kabupaten Bogor.
 
-## Tech Stack
+## 🚀 Tech Stack
 
 ### Backend
-- Node.js 20+ with TypeScript
-- Express.js
-- PostgreSQL with Sequelize ORM
-- JWT Authentication
-- Zod Validation
-- Security: Helmet, CORS, Rate Limiting
+- **Node.js 18+** with TypeScript 5.3
+- **Express.js** - Web framework
+- **PostgreSQL** - Database
+- **Sequelize ORM** - Database ORM
+- **JWT** - Authentication
+- **Security**: Helmet, CORS, Rate Limiting, Bcrypt
 
 ### Frontend
-- React 18 with TypeScript
-- Vite
-- Ant Design UI Library
-- React Router v6
-- Zustand for State Management
-- Axios for HTTP Requests
-- Recharts for Data Visualization
+- **React 18** with TypeScript 5.3
+- **Vite 5** - Build tool
+- **Ant Design 5** - UI Library
+- **React Router v6** - Routing
+- **Zustand** - State Management
+- **Axios** - HTTP Client
+- **Recharts** - Data Visualization
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Node.js 20 or higher
-- PostgreSQL 16 or higher
-- npm or pnpm
+- Node.js 18 atau lebih tinggi
+- PostgreSQL 14 atau lebih tinggi
+- npm (included with Node.js)
 
-## Installation
+## 🛠️ Installation
 
-1. **Clone and install dependencies**
+### 1. Clone dan Install Dependencies
 ```bash
+git clone <repository-url>
 cd e-evkin-modern
 npm install
 ```
 
-2. **Setup Backend**
+### 2. Setup Backend Environment
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env with your database credentials
 ```
 
-3. **Setup Database**
-```bash
-# Create PostgreSQL database
-createdb evkin_db
+Edit file `.env`:
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=e_evkin_modern
+DB_USER=postgres
+DB_PASSWORD=your_password
 
-# Run migrations (when available)
-npm run db:migrate
+JWT_SECRET=your_secure_random_string_here
+CORS_ORIGIN=http://localhost:5173
 ```
 
-4. **Start Development**
-
+### 3. Setup Database
 ```bash
-# From root directory - runs both backend and frontend
+# Buat database PostgreSQL
+createdb e_evkin_modern
+
+# Import data (jika ada)
+# psql -U postgres e_evkin_modern < database_dump.sql
+```
+
+### 4. Start Development
+```bash
+# Dari root directory - jalankan backend dan frontend
 npm run dev
 
-# Or run separately:
-npm run dev:backend  # Backend on http://localhost:5000
-npm run dev:frontend # Frontend on http://localhost:5173
+# Atau jalankan terpisah:
+npm run dev:backend   # Backend: http://localhost:5000
+npm run dev:frontend  # Frontend: http://localhost:5173
 ```
 
-## Project Structure
+## 📁 Struktur Project
 
 ```
 e-evkin-modern/
 ├── backend/
 │   ├── src/
-│   │   ├── config/       # Configuration files
-│   │   ├── models/       # Sequelize models
-│   │   ├── controllers/  # Route controllers
-│   │   ├── routes/       # API routes
-│   │   ├── middleware/   # Custom middleware
-│   │   ├── services/     # Business logic
-│   │   ├── utils/        # Utility functions
-│   │   ├── app.ts        # Express app setup
-│   │   └── server.ts     # Server entry point
+│   │   ├── config/         # Database & app config
+│   │   ├── models/         # Sequelize models
+│   │   ├── routes/         # API routes
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── admin.routes.ts
+│   │   │   ├── puskesmas.routes.ts
+│   │   │   ├── laporan.routes.ts
+│   │   │   ├── kegiatan.routes.ts
+│   │   │   ├── masterdata.routes.ts
+│   │   │   ├── users.routes.ts
+│   │   │   └── report.routes.ts
+│   │   ├── middleware/     # Auth, error handler
+│   │   ├── app.ts
+│   │   └── server.ts
 │   └── package.json
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── pages/        # Page components
-│   │   ├── services/     # API services
-│   │   ├── store/        # Zustand stores
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── utils/        # Utility functions
-│   │   ├── types/        # TypeScript types
-│   │   ├── App.tsx       # Main app component
-│   │   └── main.tsx      # Entry point
+│   │   ├── components/     # Layout component
+│   │   ├── pages/          # Page components
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── LaporanBulkInputPage.tsx
+│   │   │   ├── CaraPengisianPage.tsx
+│   │   │   ├── AdminMasterDataPage.tsx
+│   │   │   ├── AdminPuskesmasPage.tsx
+│   │   │   ├── AdminPuskesmasConfigPage.tsx
+│   │   │   ├── AdminLaporanSubKegiatanPage.tsx
+│   │   │   └── AdminLaporanSumberAnggaranPage.tsx
+│   │   ├── store/          # Zustand state
+│   │   ├── App.tsx
+│   │   └── main.tsx
 │   └── package.json
 │
-└── package.json          # Root package.json
+├── DEPLOYMENT.md           # Panduan deployment
+├── DEPLOYMENT_READY.md     # Summary deployment
+├── PRE_DEPLOYMENT_CHECKLIST.md
+└── package.json
 ```
 
-## Available Scripts
+## 🎯 Fitur Aplikasi
+
+### Untuk Admin (Dinkes)
+- ✅ **Dashboard** - Statistik dan grafik realisasi anggaran
+- ✅ **Master Data** - Kelola Satuan, Sumber Anggaran, Kegiatan, Sub Kegiatan
+- ✅ **Daftar Puskesmas** - Kelola user puskesmas
+- ✅ **Konfigurasi Sub Kegiatan** - Assign sub kegiatan ke puskesmas
+- ✅ **Laporan Per Sub Kegiatan** - Export Excel laporan agregat
+- ✅ **Laporan Per Sumber Anggaran** - Export Excel per sumber dana
+
+### Untuk Puskesmas
+- ✅ **Laporan Kinerja** - Input laporan dengan tabel bulk input
+- ✅ **Cara Pengisian** - Panduan lengkap pengisian laporan
+- ✅ **Status Laporan** - Tersimpan (draft) dan Terkirim (submitted)
+
+### Keamanan
+- ✅ JWT Authentication dengan refresh token
+- ✅ Role-based access control (Admin, Puskesmas)
+- ✅ Rate limiting (100 requests/15 minutes)
+- ✅ CORS protection
+- ✅ Helmet security headers
+- ✅ Password hashing dengan bcrypt
+- ✅ Input validation
+
+## 📝 Available Scripts
 
 ### Root Level
-- `npm run dev` - Start both backend and frontend
-- `npm run build` - Build both projects
-- `npm run lint` - Lint both projects
-- `npm run format` - Format code with Prettier
-
-### Backend
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JavaScript
-- `npm run start` - Start production server
-- `npm run test` - Run tests
-- `npm run db:migrate` - Run database migrations
-
-### Frontend
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests
-
-## Environment Variables
-
-### Backend (.env)
-```env
-NODE_ENV=development
-PORT=5000
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=evkin_db
-DB_USER=postgres
-DB_PASSWORD=your_password
-
-JWT_SECRET=your-secret-key
-JWT_EXPIRE=7d
-
-CORS_ORIGIN=http://localhost:5173
+```bash
+npm run dev          # Start backend & frontend
+npm run build        # Build production
+npm run dev:backend  # Start backend only
+npm run dev:frontend # Start frontend only
 ```
 
-## Features
+### Backend (cd backend)
+```bash
+npm run dev          # Development dengan hot reload
+npm run build        # Build TypeScript
+npm run start        # Start production
+npm test             # Run tests
+```
 
-- 🔐 **Authentication** - JWT-based secure authentication
-- 👥 **User Management** - Puskesmas and Admin users
-- 📊 **Dashboard** - Performance metrics and visualizations
-- 📝 **Reports** - Create, view, and manage performance reports
-- 📈 **Charts** - Interactive data visualizations
-- 📤 **Export** - Excel/PDF export functionality
-- 🔒 **Security** - Rate limiting, CORS, Helmet, input validation
-- 📱 **Responsive** - Mobile-friendly UI with Ant Design
-- 🌐 **Modern UX** - SPA with smooth navigation
+### Frontend (cd frontend)
+```bash
+npm run dev          # Vite dev server
+npm run build        # Build production
+npm run preview      # Preview build
+```
 
-## API Documentation
+## 🔐 Default Credentials
 
-API documentation will be available at `/api-docs` (Swagger) when the server is running.
+**Admin Dinkes:**
+- Username: `dinkes`
+- Password: `dinkes123`
 
-## Testing
+**Puskesmas (contoh):**
+- Username: `cibinong`
+- Password: `cibinong123`
+
+⚠️ **Ganti password setelah first login!**
+
+## � Deployment
+
+Lihat dokumentasi lengkap:
+- **`DEPLOYMENT.md`** - Panduan deployment step-by-step
+- **`DEPLOYMENT_READY.md`** - Summary & quick reference
+- **`PRE_DEPLOYMENT_CHECKLIST.md`** - Checklist sebelum deploy
+
+Quick deploy:
+```bash
+# Build production
+npm run build
+
+# Copy files to server
+# Configure .env
+# Start with PM2
+pm2 start ecosystem.config.js
+```
+
+## 🧪 Testing
 
 ```bash
 # Run all tests
-npm run test
+npm test
 
-# Run backend tests
-npm run test --workspace=backend
+# Backend tests
+npm test --workspace=backend
 
-# Run frontend tests
-npm run test --workspace=frontend
+# Frontend tests  
+npm test --workspace=frontend
 ```
 
-## License
+## 📊 Database Schema
 
-Open Source - MIT License
+- **users** - Admin dan Puskesmas users
+- **kegiatan** - Master kegiatan
+- **sub_kegiatan** - Master sub kegiatan
+- **satuan** - Master satuan
+- **sumber_anggaran** - Master sumber anggaran
+- **laporan** - Laporan kinerja puskesmas
+- **puskesmas_sub_kegiatan** - Mapping puskesmas ke sub kegiatan
 
-## Migration from PHP Version
+## 🔄 Migration dari PHP Version
 
-This is a complete rewrite of the original PHP-based E-EVKIN application with:
-- Modern technology stack
-- Better security practices
-- Improved user experience
-- Better performance and scalability
-- TypeScript for type safety
-- Comprehensive testing
+Ini adalah rewrite lengkap dari aplikasi E-EVKIN PHP lama dengan:
+- ✅ Modern tech stack (React + TypeScript)
+- ✅ Better security practices
+- ✅ Improved UX dengan Ant Design
+- ✅ Better performance
+- ✅ Type safety dengan TypeScript
+- ✅ Responsive mobile-friendly UI
+- ✅ Bulk input untuk efisiensi
+- ✅ Real-time validation
+
+## 📄 License
+
+Open Source - Free to use
+
+## 🤝 Support
+
+Untuk bantuan atau pertanyaan:
+- Buka issue di GitHub
+- Hubungi tim development
+- Lihat dokumentasi di folder `docs/`
 
 ---
 
-Built with ❤️ using 100% open source technologies
+**Built with ❤️ for Dinas Kesehatan Kabupaten Bogor**  
+*100% Open Source Technologies*

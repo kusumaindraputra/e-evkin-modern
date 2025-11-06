@@ -15,6 +15,11 @@ build/
 .env.local
 .env.*.local
 
+# Keep example and template files
+!.env.example
+!.env.staging
+!.env.production
+
 # IDE
 .vscode/*
 !.vscode/extensions.json
@@ -33,6 +38,10 @@ coverage/
 # Logs
 logs/
 *.log
+
+# PM2 logs
+backend/logs/
+.pm2/
 
 # OS
 Thumbs.db
@@ -70,4 +79,10 @@ MENU_ACCESS.md
 !README.md
 !QUICK_START.md
 !SECURITY.md
+!DEPLOYMENT.md
 !.github/copilot-instructions.md
+
+# Deployment configs (tracked)
+!ecosystem.config.js
+!nginx.conf
+!deploy.sh

@@ -7,6 +7,37 @@ set -e
 
 echo "🚀 E-EVKIN Backend Deployment"
 echo "=============================="
+echo ""
+
+# Check prerequisites
+echo "🔍 Checking prerequisites..."
+
+# Check Node.js
+if ! command -v node &> /dev/null; then
+    echo "❌ Error: Node.js is not installed!"
+    echo ""
+    echo "📋 Install Node.js first:"
+    echo "   Ubuntu/Debian: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - && sudo apt-get install -y nodejs"
+    echo "   CentOS/RHEL:   curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash - && sudo yum install -y nodejs"
+    echo "   Or visit: https://nodejs.org/"
+    exit 1
+else
+    NODE_VERSION=$(node --version)
+    echo "✅ Node.js installed: $NODE_VERSION"
+fi
+
+# Check npm
+if ! command -v npm &> /dev/null; then
+    echo "❌ Error: npm is not installed!"
+    echo ""
+    echo "📋 npm usually comes with Node.js. Try reinstalling Node.js"
+    exit 1
+else
+    NPM_VERSION=$(npm --version)
+    echo "✅ npm installed: $NPM_VERSION"
+fi
+
+echo ""
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

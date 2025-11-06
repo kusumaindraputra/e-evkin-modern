@@ -16,8 +16,23 @@ cd "$SCRIPT_DIR"
 if [ ! -f ".env" ]; then
     echo "⚠️  .env file not found!"
     echo "📝 Creating .env from template..."
+    echo ""
     
-    cat > .env << 'EOF'
+    # Generate secure JWT_SECRET
+    echo "🔐 Generating secure JWT_SECRET..."
+    if command -v node &> /dev/null; then
+        JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+        echo "✅ JWT_SECRET generated using Node.js crypto"
+    elif command -v openssl &> /dev/null; then
+        JWT_SECRET=$(openssl rand -hex 64)
+        echo "✅ JWT_SECRET generated using OpenSSL"
+    else
+        JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+        echo "⚠️  Could not auto-generate JWT_SECRET (Node.js/OpenSSL not found)"
+        echo "⚠️  Using default - MUST CHANGE before production!"
+    fi
+    
+    cat > .env << EOF
 # Environment Configuration
 NODE_ENV=production
 PORT=5000
@@ -30,7 +45,7 @@ DB_USER=admin_evkin
 DB_PASSWORD=password_evkin
 
 # JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_SECRET=$JWT_SECRET
 JWT_EXPIRE=7d
 
 # CORS Configuration
@@ -42,7 +57,16 @@ RATE_LIMIT_MAX_REQUESTS=100
 EOF
     
     echo "✅ .env file created"
-    echo "⚠️  IMPORTANT: Update DB_PASSWORD and JWT_SECRET in .env file!"
+    echo ""
+    echo "⚠️  IMPORTANT: Update these values in .env file:"
+    echo "   - DB_PASSWORD (currently: password_evkin)"
+    echo "   - CORS_ORIGIN (currently: http://localhost)"
+    if [ "$JWT_SECRET" = "your-super-secret-jwt-key-change-this-in-production" ]; then
+        echo "   - JWT_SECRET (currently: default - MUST CHANGE!)"
+    else
+        echo "   ✅ JWT_SECRET already set to secure random value"
+    fi
+    echo ""
     exit 1
 fi
 

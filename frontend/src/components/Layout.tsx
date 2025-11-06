@@ -34,14 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-      onClick: () => navigate('/dashboard'),
-    },
-  ];
+  const menuItems = [];
 
   // Different menus for puskesmas vs admin
   if (user?.role === 'puskesmas') {
@@ -57,12 +50,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <QuestionCircleOutlined />,
         label: 'Cara Pengisian',
         onClick: () => navigate('/cara-pengisian'),
-      },
-      {
-        key: '/statistik',
-        icon: <BarChartOutlined />,
-        label: 'Statistik',
-        onClick: () => navigate('/statistik'),
       }
     );
   }
@@ -70,28 +57,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (user?.role === 'admin') {
     menuItems.push(
       {
-        key: '/admin/verifikasi',
-        icon: <FileTextOutlined />,
-        label: 'Verifikasi Laporan',
-        onClick: () => navigate('/admin/verifikasi'),
-      },
-      {
-        key: '/admin/master-data',
-        icon: <SettingOutlined />,
-        label: 'Master Data',
-        onClick: () => navigate('/admin/master-data'),
-      },
-      {
-        key: '/admin/puskesmas',
-        icon: <TeamOutlined />,
-        label: 'Daftar Puskesmas',
-        onClick: () => navigate('/admin/puskesmas'),
-      },
-      {
-        key: '/admin/puskesmas-config',
-        icon: <AppstoreOutlined />,
-        label: 'Konfigurasi Sub Kegiatan',
-        onClick: () => navigate('/admin/puskesmas-config'),
+        key: '/dashboard',
+        icon: <DashboardOutlined />,
+        label: 'Dashboard',
+        onClick: () => navigate('/dashboard'),
       },
       {
         key: '/admin/laporan-sub-kegiatan',
@@ -106,16 +75,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClick: () => navigate('/admin/laporan-sumber-anggaran'),
       },
       {
-        key: '/admin/statistik',
-        icon: <BarChartOutlined />,
-        label: 'Statistik',
-        onClick: () => navigate('/admin/statistik'),
+        key: '/admin/puskesmas',
+        icon: <TeamOutlined />,
+        label: 'Daftar Puskesmas',
+        onClick: () => navigate('/admin/puskesmas'),
       },
       {
-        key: '/admin/settings',
+        key: '/admin/puskesmas-config',
+        icon: <AppstoreOutlined />,
+        label: 'Konfigurasi Sub Kegiatan',
+        onClick: () => navigate('/admin/puskesmas-config'),
+      },
+      {
+        key: '/admin/master-data',
         icon: <SettingOutlined />,
-        label: 'Pengaturan',
-        onClick: () => navigate('/admin/settings'),
+        label: 'Master Data',
+        onClick: () => navigate('/admin/master-data'),
       }
     );
   }
@@ -176,12 +151,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[
-            // Handle nested admin routes
-            location.pathname.startsWith('/admin/laporan/') 
-              ? '/admin/verifikasi' 
-              : location.pathname
-          ]}
+          selectedKeys={[location.pathname]}
           items={menuItems}
         />
       </Sider>

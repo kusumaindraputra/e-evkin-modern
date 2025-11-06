@@ -4,8 +4,6 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LaporanPage } from './pages/LaporanPage';
 import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
-import AdminVerifikasiPage from './pages/AdminVerifikasiPage';
-import { AdminLaporanDetailPage } from './pages/AdminLaporanDetailPage';
 import { AdminMasterDataPage } from './pages/AdminMasterDataPage';
 import { AdminPuskesmasPage } from './pages/AdminPuskesmasPage';
 import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage';
@@ -25,7 +23,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const PuskesmasRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== 'puskesmas') return <Navigate to="/dashboard" replace />;
+  if (user?.role !== 'puskesmas') return <Navigate to="/laporan" replace />;
   return <>{children}</>;
 };
 
@@ -33,8 +31,15 @@ const PuskesmasRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  if (user?.role !== 'admin') return <Navigate to="/laporan" replace />;
   return <>{children}</>;
+};
+
+// Root redirect component
+const RootRedirect = () => {
+  const { user } = useAuthStore();
+  const redirectTo = user?.role === 'admin' ? '/dashboard' : '/laporan';
+  return <Navigate to={redirectTo} replace />;
 };
 
 function App() {
@@ -49,18 +54,18 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
+              <RootRedirect />
             </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <DashboardPage />
               </Layout>
-            </ProtectedRoute>
+            </AdminRoute>
           }
         />
         <Route
@@ -95,16 +100,6 @@ function App() {
         />
 
         {/* Admin routes */}
-        <Route
-          path="/admin/verifikasi"
-          element={
-            <AdminRoute>
-              <Layout>
-                <AdminVerifikasiPage />
-              </Layout>
-            </AdminRoute>
-          }
-        />
         <Route
           path="/admin/master-data"
           element={
@@ -151,16 +146,6 @@ function App() {
             <AdminRoute>
               <Layout>
                 <AdminLaporanSumberAnggaranPage />
-              </Layout>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/laporan/:userId/:bulan/:tahun"
-          element={
-            <AdminRoute>
-              <Layout>
-                <AdminLaporanDetailPage />
               </Layout>
             </AdminRoute>
           }

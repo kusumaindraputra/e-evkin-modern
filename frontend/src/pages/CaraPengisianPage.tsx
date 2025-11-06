@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Steps, Divider, Alert, Space, List } from 'antd';
+import { Card, Typography, Divider, Alert, Space, List } from 'antd';
 import {
   FileTextOutlined,
   EditOutlined,
@@ -26,42 +26,77 @@ export const CaraPengisianPage: React.FC = () => {
       />
 
       <Card title="Langkah-Langkah Pengisian Laporan" style={{ marginBottom: 24 }}>
-        <Steps
-          direction="vertical"
-          current={-1}
-          items={[
-            {
-              title: 'Login ke Sistem',
-              description: 'Masuk menggunakan username dan password yang telah diberikan oleh Dinas Kesehatan.',
-              icon: <FileTextOutlined />,
-            },
-            {
-              title: 'Akses Menu Laporan Kinerja',
-              description: 'Klik menu "Laporan Kinerja" pada sidebar untuk membuka halaman input laporan.',
-              icon: <FileTextOutlined />,
-            },
-            {
-              title: 'Pilih Bulan dan Tahun',
-              description: 'Pilih bulan dan tahun periode laporan yang akan diisi menggunakan dropdown filter di bagian atas.',
-              icon: <EditOutlined />,
-            },
-            {
-              title: 'Isi Data di Tabel',
-              description: 'Sistem akan menampilkan tabel berisi semua sub kegiatan yang telah dikonfigurasi. Isi data langsung pada kolom-kolom yang tersedia (Sumber Anggaran, Satuan, Target K, Angkas, Target Rp, Realisasi K, Realisasi Rp, Permasalahan, Upaya).',
-              icon: <EditOutlined />,
-            },
-            {
-              title: 'Simpan Data',
-              description: 'Klik tombol "Simpan" untuk menyimpan semua data. Status laporan akan menjadi "Tersimpan" dan masih bisa diedit.',
-              icon: <CheckCircleOutlined />,
-            },
-            {
-              title: 'Kirim Laporan',
-              description: 'Setelah semua data lengkap dan benar, klik tombol "Kirim Semua" untuk mengirim laporan ke Dinas Kesehatan. Status akan berubah menjadi "Terkirim" dan data tidak bisa diedit lagi.',
-              icon: <CheckCircleOutlined />,
-            },
-          ]}
-        />
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <Title level={5}>
+              <FileTextOutlined style={{ marginRight: 8 }} />
+              1. Login ke Sistem
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Masuk menggunakan username dan password yang telah diberikan oleh Dinas Kesehatan.
+            </Paragraph>
+          </div>
+
+          <Divider />
+
+          <div>
+            <Title level={5}>
+              <FileTextOutlined style={{ marginRight: 8 }} />
+              2. Akses Menu Laporan Kinerja
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Klik menu "Laporan Kinerja" pada sidebar untuk membuka halaman input laporan.
+            </Paragraph>
+          </div>
+
+          <Divider />
+
+          <div>
+            <Title level={5}>
+              <EditOutlined style={{ marginRight: 8 }} />
+              3. Pilih Bulan dan Tahun
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Pilih bulan dan tahun periode laporan yang akan diisi menggunakan dropdown filter di bagian atas.
+            </Paragraph>
+          </div>
+
+          <Divider />
+
+          <div>
+            <Title level={5}>
+              <EditOutlined style={{ marginRight: 8 }} />
+              4. Isi Data di Tabel
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Sistem akan menampilkan tabel berisi semua sub kegiatan yang telah dikonfigurasi. Isi data langsung pada kolom-kolom yang tersedia (Sumber Anggaran, Satuan, Target K, Angkas, Target Rp, Realisasi K, Realisasi Rp, Permasalahan, Upaya).
+            </Paragraph>
+          </div>
+
+          <Divider />
+
+          <div>
+            <Title level={5}>
+              <CheckCircleOutlined style={{ marginRight: 8 }} />
+              5. Simpan Data
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Klik tombol "Simpan" untuk menyimpan semua data. Status laporan akan menjadi "Tersimpan" dan masih bisa diedit.
+            </Paragraph>
+          </div>
+
+          <Divider />
+
+          <div>
+            <Title level={5}>
+              <CheckCircleOutlined style={{ marginRight: 8 }} />
+              6. Kirim Laporan
+            </Title>
+            <Paragraph style={{ marginLeft: 28 }}>
+              Setelah semua data lengkap dan benar, klik tombol "Kirim Semua" untuk mengirim laporan ke Dinas Kesehatan. Status akan berubah menjadi "Terkirim" dan data tidak bisa diedit lagi.
+            </Paragraph>
+          </div>
+        </Space>
       </Card>
 
       <Card title="Penjelasan Field Laporan" style={{ marginBottom: 24 }}>

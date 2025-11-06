@@ -98,7 +98,6 @@ EOF
         echo "   ✅ JWT_SECRET already set to secure random value"
     fi
     echo ""
-    exit 1
 fi
 
 # Install dependencies

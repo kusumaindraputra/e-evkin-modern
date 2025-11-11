@@ -81,6 +81,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClick: () => navigate('/admin/puskesmas'),
       },
       {
+        key: '/admin/kegiatan',
+        icon: <AppstoreOutlined />,
+        label: 'Kegiatan',
+        onClick: () => navigate('/admin/kegiatan'),
+      },
+      {
         key: '/admin/puskesmas-config',
         icon: <AppstoreOutlined />,
         label: 'Konfigurasi Sub Kegiatan',

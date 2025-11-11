@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LaporanPage } from './pages/LaporanPage';
 import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
 import { AdminMasterDataPage } from './pages/AdminMasterDataPage';
+import { AdminKegiatanPage } from './pages/AdminKegiatanPage';
 import { AdminPuskesmasPage } from './pages/AdminPuskesmasPage';
 import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage';
 import { AdminLaporanSumberAnggaranPage } from './pages/AdminLaporanSumberAnggaranPage';
@@ -106,6 +107,16 @@ function App() {
             <AdminRoute>
               <Layout>
                 <AdminMasterDataPage />
+              </Layout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/kegiatan"
+          element={
+            <AdminRoute>
+              <Layout>
+                <AdminKegiatanPage />
               </Layout>
             </AdminRoute>
           }

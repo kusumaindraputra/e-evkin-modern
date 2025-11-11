@@ -157,35 +157,58 @@ export const LaporanBulkInputPage: React.FC = () => {
         ? laporanRes.data
         : [];
 
-      // Map assignments to rows
+      // Map assignments to rows WITH sumber anggaran expansion
       const assignments: SubKegiatanAssignment[] = assignmentsRes.data.assignments || [];
-      const mappedRows: LaporanRow[] = assignments.map((assignment) => {
-        const existing = existingLaporan.find(
-          (l: any) => l.id_sub_kegiatan === assignment.subKegiatan.id_sub_kegiatan
+      const mappedRows: LaporanRow[] = [];
+      
+      // For each sub kegiatan, get assigned sumber anggaran
+      for (const assignment of assignments) {
+        const subKegiatanId = assignment.subKegiatan.id_sub_kegiatan;
+        
+        // Fetch sumber anggaran assignments for this sub kegiatan
+        const sumberAnggaranRes = await axios.get(
+          `http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
+          config
         );
-
-        return {
-          id_sub_kegiatan: assignment.subKegiatan.id_sub_kegiatan,
-          kode_sub: assignment.subKegiatan.kode_sub,
-          kegiatan: assignment.subKegiatan.kegiatan,
-          indikator_kinerja: assignment.subKegiatan.indikator_kinerja,
-          id_kegiatan: assignment.subKegiatan.kegiatanParent?.id_kegiatan || 0,
-          kegiatan_parent: assignment.subKegiatan.kegiatanParent?.kegiatan || '',
+        
+        const assignedSumberAnggaran = sumberAnggaranRes.data.data || [];
+        
+        // Create one row for each sumber anggaran
+        assignedSumberAnggaran.forEach((sa: any) => {
+          const idSumberAnggaran = sa.sumberAnggaran.id_sumber;
           
-          // Populate with existing data if available
-          laporan_id: existing?.id,
-          status: existing?.status,
-          id_sumber_anggaran: existing?.id_sumber_anggaran,
-          id_satuan: existing?.id_satuan,
-          target_k: existing?.target_k ? Number(existing.target_k) : undefined,
-          angkas: existing?.angkas ? Number(existing.angkas) : undefined,
-          target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
-          realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
-          realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
-          permasalahan: existing?.permasalahan || '',
-          upaya: existing?.upaya || '',
-        };
-      });
+          // Find existing laporan for this sub kegiatan + sumber anggaran combo
+          const existing = existingLaporan.find(
+            (l: any) => 
+              l.id_sub_kegiatan === subKegiatanId && 
+              l.id_sumber_anggaran === idSumberAnggaran
+          );
+
+          mappedRows.push({
+            id_sub_kegiatan: subKegiatanId,
+            kode_sub: assignment.subKegiatan.kode_sub,
+            kegiatan: assignment.subKegiatan.kegiatan,
+            indikator_kinerja: assignment.subKegiatan.indikator_kinerja,
+            id_kegiatan: assignment.subKegiatan.kegiatanParent?.id_kegiatan || 0,
+            kegiatan_parent: assignment.subKegiatan.kegiatanParent?.kegiatan || '',
+            
+            // Pre-fill sumber anggaran (readonly, dari config admin)
+            id_sumber_anggaran: idSumberAnggaran,
+            
+            // Populate with existing data if available
+            laporan_id: existing?.id,
+            status: existing?.status,
+            id_satuan: existing?.id_satuan,
+            target_k: existing?.target_k ? Number(existing.target_k) : undefined,
+            angkas: existing?.angkas ? Number(existing.angkas) : undefined,
+            target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
+            realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
+            realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
+            permasalahan: existing?.permasalahan || '',
+            upaya: existing?.upaya || '',
+          });
+        });
+      }
 
       setRows(mappedRows);
     } catch (error: any) {
@@ -196,10 +219,12 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   };
 
-  const handleFieldChange = (id_sub_kegiatan: number, field: string, value: any) => {
+  const handleFieldChange = (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: any) => {
     setRows((prevRows) =>
       prevRows.map((row) =>
-        row.id_sub_kegiatan === id_sub_kegiatan ? { ...row, [field]: value } : row
+        row.id_sub_kegiatan === id_sub_kegiatan && row.id_sumber_anggaran === id_sumber_anggaran
+          ? { ...row, [field]: value }
+          : row
       )
     );
   };
@@ -338,18 +363,16 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Sumber Anggaran',
       key: 'id_sumber_anggaran',
       width: 150,
-      render: (_: any, record: LaporanRow) => (
-        <Select
-          style={{ width: '100%' }}
-          value={record.id_sumber_anggaran}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'id_sumber_anggaran', value)
-          }
-          options={referenceData.sumberAnggaran}
-          placeholder="Pilih"
-          disabled={record.status === 'terkirim'}
-        />
-      ),
+      render: (_: any, record: LaporanRow) => {
+        const sumberAnggaran = referenceData.sumberAnggaran.find(
+          (sa) => sa.value === record.id_sumber_anggaran
+        );
+        return (
+          <Tag color="blue">
+            {sumberAnggaran?.label || 'N/A'}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Satuan',
@@ -360,7 +383,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.id_satuan}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'id_satuan', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'id_satuan', value)
           }
           options={referenceData.satuan}
           placeholder="Pilih"
@@ -377,7 +400,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.target_k}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'target_k', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'target_k', value)
           }
           min={0}
           step={1}
@@ -403,7 +426,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.angkas}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'angkas', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
           }
           min={0}
           step={1}
@@ -429,7 +452,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.target_rp}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'target_rp', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'target_rp', value)
           }
           min={0}
           step={1}
@@ -455,7 +478,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.realisasi_k}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'realisasi_k', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_k', value)
           }
           min={0}
           step={1}
@@ -481,7 +504,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           style={{ width: '100%' }}
           value={record.realisasi_rp}
           onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, 'realisasi_rp', value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
           }
           min={0}
           step={1}
@@ -506,7 +529,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         <TextArea
           value={record.permasalahan}
           onChange={(e) =>
-            handleFieldChange(record.id_sub_kegiatan, 'permasalahan', e.target.value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'permasalahan', e.target.value)
           }
           rows={2}
           disabled={record.status === 'terkirim'}
@@ -521,7 +544,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         <TextArea
           value={record.upaya}
           onChange={(e) =>
-            handleFieldChange(record.id_sub_kegiatan, 'upaya', e.target.value)
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'upaya', e.target.value)
           }
           rows={2}
           disabled={record.status === 'terkirim'}
@@ -660,7 +683,7 @@ export const LaporanBulkInputPage: React.FC = () => {
               columns={columns}
               dataSource={rows}
               loading={loading}
-              rowKey="id_sub_kegiatan"
+              rowKey={(record) => `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
               scroll={{ x: 2800 }}
               pagination={false}
               bordered

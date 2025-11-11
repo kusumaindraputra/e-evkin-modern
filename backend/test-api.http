@@ -1,0 +1,13 @@
+### Test get sumber anggaran for sub kegiatan 1
+GET http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/1
+Authorization: Bearer test_token_here
+
+### Test get all sumber anggaran assignments
+GET http://localhost:5000/api/sub-kegiatan-sumber-anggaran
+Authorization: Bearer test_token_here
+
+### Test reference sumber anggaran
+GET http://localhost:5000/api/reference/sumber-anggaran
+
+### Test reference sub kegiatan
+GET http://localhost:5000/api/reference/sub-kegiatan

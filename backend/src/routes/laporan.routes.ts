@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan } from '../models';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran } from '../models';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -134,6 +134,26 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       req.body.user_id = req.user.id;
     }
     
+    // VALIDATION: Check if sumber anggaran is valid for sub kegiatan
+    const { id_sub_kegiatan, id_sumber_anggaran } = req.body;
+    
+    if (id_sub_kegiatan && id_sumber_anggaran) {
+      const isValid = await SubKegiatanSumberAnggaran.findOne({
+        where: {
+          id_sub_kegiatan,
+          id_sumber_anggaran,
+          is_active: true,
+        },
+      });
+
+      if (!isValid) {
+        return res.status(400).json({
+          error: 'Invalid sumber anggaran',
+          message: 'Sumber anggaran tidak valid untuk sub kegiatan ini. Hubungi admin untuk mengatur sumber dana yang tersedia.',
+        });
+      }
+    }
+    
     // Set default status to 'tersimpan' if not provided
     if (!req.body.status) {
       req.body.status = 'tersimpan';
@@ -144,6 +164,67 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error creating laporan:', error);
     res.status(500).json({ error: 'Failed to create laporan', message: error.message });
+  }
+});
+
+// Bulk create laporan (for multiple sumber anggaran in one form submission)
+router.post('/bulk', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { laporanArray } = req.body;
+    
+    if (!Array.isArray(laporanArray) || laporanArray.length === 0) {
+      return res.status(400).json({ error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+    }
+
+    // SECURITY: Puskesmas hanya bisa create laporan untuk diri sendiri
+    const userId = req.user?.role === 'puskesmas' ? req.user.id : laporanArray[0].user_id;
+    
+    // VALIDATION: Validate each laporan and check sumber anggaran
+    for (const data of laporanArray) {
+      if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
+        return res.status(400).json({ 
+          error: 'Validation error',
+          message: 'Setiap laporan harus memiliki id_sub_kegiatan dan id_sumber_anggaran' 
+        });
+      }
+
+      const isValid = await SubKegiatanSumberAnggaran.findOne({
+        where: {
+          id_sub_kegiatan: data.id_sub_kegiatan,
+          id_sumber_anggaran: data.id_sumber_anggaran,
+          is_active: true,
+        },
+      });
+
+      if (!isValid) {
+        return res.status(400).json({
+          error: 'Invalid sumber anggaran',
+          message: `Sumber anggaran ${data.id_sumber_anggaran} tidak valid untuk sub kegiatan ini`,
+        });
+      }
+    }
+
+    // Prepare laporan data with user_id and default status
+    const laporanData = laporanArray.map((data: any) => ({
+      ...data,
+      user_id: userId,
+      status: data.status || 'tersimpan',
+    }));
+
+    // Create all laporan in a transaction
+    const createdLaporan = await Laporan.bulkCreate(laporanData, {
+      validate: true,
+      returning: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      count: createdLaporan.length,
+      data: createdLaporan,
+    });
+  } catch (error: any) {
+    console.error('Error bulk creating laporan:', error);
+    res.status(500).json({ error: 'Failed to bulk create laporan', message: error.message });
   }
 });
 
@@ -161,6 +242,29 @@ router.put('/:id', authenticate, async (req: Request, res: Response): Promise<vo
     if (req.user?.role === 'puskesmas' && laporan.user_id !== req.user.id) {
       res.status(403).json({ error: 'Forbidden', message: 'Anda tidak bisa mengubah laporan puskesmas lain' });
       return;
+    }
+
+    // VALIDATION: If updating sumber anggaran, check if valid for sub kegiatan
+    const { id_sub_kegiatan, id_sumber_anggaran } = req.body;
+    
+    if (id_sumber_anggaran && (id_sub_kegiatan || laporan.id_sub_kegiatan)) {
+      const subKegiatanId = id_sub_kegiatan || laporan.id_sub_kegiatan;
+      
+      const isValid = await SubKegiatanSumberAnggaran.findOne({
+        where: {
+          id_sub_kegiatan: subKegiatanId,
+          id_sumber_anggaran,
+          is_active: true,
+        },
+      });
+
+      if (!isValid) {
+        res.status(400).json({
+          error: 'Invalid sumber anggaran',
+          message: 'Sumber anggaran tidak valid untuk sub kegiatan ini.',
+        });
+        return;
+      }
     }
 
     await laporan.update(req.body);

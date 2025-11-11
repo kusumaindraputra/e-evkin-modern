@@ -36,6 +36,13 @@ interface MonthlyBudgetData {
   persentase: number;
 }
 
+interface Top10AbsorptionData {
+  sub_kegiatan: string;
+  target_rp: number;
+  realisasi_rp: number;
+  persentase: number;
+}
+
 interface DashboardStats {
   totalLaporan: number;
   tersimpan: number;
@@ -49,6 +56,7 @@ export const DashboardPage: React.FC = () => {
   const { user, token } = useAuthStore();
   const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
   const [monthlyBudgetData, setMonthlyBudgetData] = useState<MonthlyBudgetData[]>([]);
+  const [top10Data, setTop10Data] = useState<Top10AbsorptionData[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalLaporan: 0,
     tersimpan: 0,
@@ -59,6 +67,7 @@ export const DashboardPage: React.FC = () => {
   });
   const [loadingBudget, setLoadingBudget] = useState(false);
   const [loadingMonthly, setLoadingMonthly] = useState(false);
+  const [loadingTop10, setLoadingTop10] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [totalStats, setTotalStats] = useState({
     totalTarget: 0,

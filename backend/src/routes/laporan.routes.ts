@@ -323,25 +323,7 @@ router.post('/submit', authenticate, async (req: Request, res: Response): Promis
       return;
     }
 
-    // Check if already submitted
-    const existingSubmitted = await Laporan.findOne({
-      where: {
-        user_id,
-        bulan,
-        tahun,
-        status: 'terkirim'
-      }
-    });
-
-    if (existingSubmitted) {
-      res.status(400).json({
-        error: 'Already submitted',
-        message: `Laporan untuk ${bulan} ${tahun} sudah pernah dikirim sebelumnya`
-      });
-      return;
-    }
-
-    // Update all 'tersimpan' laporan to 'terkirim'
+    // Update all 'tersimpan' laporan to 'terkirim' (skip yang sudah terkirim)
     const [updatedCount] = await Laporan.update(
       { status: 'terkirim' },
       {
@@ -355,6 +337,24 @@ router.post('/submit', authenticate, async (req: Request, res: Response): Promis
     );
 
     if (updatedCount === 0) {
+      // Check if all are already submitted
+      const alreadySubmittedCount = await Laporan.count({
+        where: {
+          user_id,
+          bulan,
+          tahun,
+          status: 'terkirim'
+        }
+      });
+
+      if (alreadySubmittedCount > 0) {
+        res.status(400).json({
+          error: 'Already submitted',
+          message: `Semua laporan untuk ${bulan} ${tahun} sudah dikirim sebelumnya`
+        });
+        return;
+      }
+
       res.status(404).json({
         error: 'No laporan found',
         message: `Tidak ada laporan dengan status "tersimpan" untuk ${bulan} ${tahun}`

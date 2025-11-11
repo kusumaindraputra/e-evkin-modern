@@ -11,12 +11,15 @@ import axios from 'axios';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from 'recharts';
 
 const { Title, Text } = Typography;
@@ -37,7 +40,7 @@ interface MonthlyBudgetData {
 }
 
 interface Top10AbsorptionData {
-  sub_kegiatan: string;
+  puskesmas: string;
   target_rp: number;
   realisasi_rp: number;
   persentase: number;
@@ -88,6 +91,12 @@ export const DashboardPage: React.FC = () => {
     currentDate.toLocaleString('id-ID', { month: 'long' })
   );
 
+  // Filter for top 10
+  const [top10Year, setTop10Year] = useState(currentDate.getFullYear());
+  const [top10Month, setTop10Month] = useState(
+    currentDate.toLocaleString('id-ID', { month: 'long' })
+  );
+
   const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -100,6 +109,7 @@ export const DashboardPage: React.FC = () => {
       fetchBudgetData();
       fetchDashboardStats();
       fetchMonthlyBudget();
+      fetchTop10Absorption();
     }
   }, [user]);
 
@@ -108,6 +118,12 @@ export const DashboardPage: React.FC = () => {
       fetchMonthlyBudget();
     }
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchTop10Absorption();
+    }
+  }, [top10Year, top10Month]);
 
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -129,11 +145,25 @@ export const DashboardPage: React.FC = () => {
       );
 
       const data = response.data.data || [];
-      setBudgetData(data);
+      
+      // Debug: log data untuk melihat nilai sebenarnya
+      console.log('YTD Budget Data (raw):', data);
+      
+      // Ensure data types are numbers
+      const processedData = data.map((item: any) => ({
+        ...item,
+        target_rp: Number(item.target_rp) || 0,
+        realisasi_rp: Number(item.realisasi_rp) || 0,
+        persentase: Number(item.persentase) || 0
+      }));
+      
+      console.log('YTD Budget Data (processed):', processedData);
+      
+      setBudgetData(processedData);
 
       // Hitung total
-      const totalTarget = data.reduce((sum: number, item: BudgetData) => sum + Number(item.target_rp || 0), 0);
-      const totalRealisasi = data.reduce((sum: number, item: BudgetData) => sum + Number(item.realisasi_rp || 0), 0);
+      const totalTarget = processedData.reduce((sum: number, item: BudgetData) => sum + Number(item.target_rp || 0), 0);
+      const totalRealisasi = processedData.reduce((sum: number, item: BudgetData) => sum + Number(item.realisasi_rp || 0), 0);
       const persentase = totalTarget > 0 ? (totalRealisasi / totalTarget) * 100 : 0;
 
       setTotalStats({
@@ -183,6 +213,25 @@ export const DashboardPage: React.FC = () => {
       console.error('Error fetching monthly budget:', error);
     } finally {
       setLoadingMonthly(false);
+    }
+  };
+
+  const fetchTop10Absorption = async () => {
+    setLoadingTop10(true);
+    try {
+      // Fetch top 10 absorption data
+      const response = await axios.get(
+        `http://localhost:5000/api/admin/dashboard/top-10-absorption?tahun=${top10Year}&bulan=${top10Month}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setTop10Data(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching top 10 absorption:', error);
+    } finally {
+      setLoadingTop10(false);
     }
   };
 
@@ -334,11 +383,11 @@ export const DashboardPage: React.FC = () => {
           <Col xs={24}>
             <Card title="Grafik Realisasi Anggaran Year to Date" bordered={false}>
               {loadingBudget ? (
-                <div style={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Spin size="large" />
                 </div>
               ) : budgetData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={500}>
                   <LineChart data={budgetData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="bulan" />
@@ -356,8 +405,8 @@ export const DashboardPage: React.FC = () => {
                       name="Target (Rp)" 
                       stroke="#1890ff" 
                       strokeWidth={2}
-                      dot={{ fill: '#1890ff', r: 4 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ fill: '#1890ff', r: 5 }}
+                      activeDot={{ r: 8 }}
                     />
                     <Line 
                       type="monotone" 
@@ -365,14 +414,96 @@ export const DashboardPage: React.FC = () => {
                       name="Realisasi (Rp)" 
                       stroke="#52c41a" 
                       strokeWidth={2}
-                      dot={{ fill: '#52c41a', r: 4 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ fill: '#52c41a', r: 5 }}
+                      activeDot={{ r: 8 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Text type="secondary">Tidak ada data realisasi anggaran</Text>
+                </div>
+              )}
+            </Card>
+          </Col>
+        )}
+
+        {/* Top 10 Penyerapan Anggaran - Admin Only */}
+        {user?.role === 'admin' && (
+          <Col xs={24}>
+            <Card 
+              title="Top 10 Puskesmas - Penyerapan Anggaran Tertinggi"
+              bordered={false}
+              extra={
+                <Space>
+                  <Select
+                    value={top10Month}
+                    onChange={setTop10Month}
+                    style={{ width: 120 }}
+                    size="small"
+                  >
+                    {months.map(month => (
+                      <Select.Option key={month} value={month}>{month}</Select.Option>
+                    ))}
+                  </Select>
+                  <Select
+                    value={top10Year}
+                    onChange={setTop10Year}
+                    style={{ width: 90 }}
+                    size="small"
+                  >
+                    {years.map(year => (
+                      <Select.Option key={year} value={year}>{year}</Select.Option>
+                    ))}
+                  </Select>
+                </Space>
+              }
+            >
+              {loadingTop10 ? (
+                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Spin size="large" />
+                </div>
+              ) : top10Data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart 
+                    data={top10Data} 
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      type="number" 
+                      domain={[0, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="puskesmas" 
+                      width={200}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'Penyerapan') return `${value.toFixed(2)}%`;
+                        return value;
+                      }}
+                      labelStyle={{ color: '#000', fontSize: 12 }}
+                      contentStyle={{ fontSize: 12 }}
+                    />
+                    <Legend />
+                    <Bar dataKey="persentase" name="Penyerapan" radius={[0, 8, 8, 0]}>
+                      {top10Data.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.persentase >= 90 ? '#52c41a' : entry.persentase >= 70 ? '#faad14' : '#ff4d4f'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text type="secondary">Tidak ada data penyerapan anggaran untuk periode ini</Text>
                 </div>
               )}
             </Card>

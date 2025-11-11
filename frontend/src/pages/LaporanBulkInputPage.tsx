@@ -575,9 +575,9 @@ export const LaporanBulkInputPage: React.FC = () => {
     },
   ];
 
-  // Check if all saved rows have "tersimpan" status
-  const allRowsAreDraft = rows.length > 0 && rows.every(
-    (row) => row.laporan_id && row.status === 'tersimpan'
+  // Check if there are no unsaved records (allow mix of tersimpan and terkirim)
+  const canSendReport = rows.length > 0 && rows.every(
+    (row) => row.laporan_id && (row.status === 'tersimpan' || row.status === 'terkirim')
   );
   
   // Check if there are unsaved changes (no laporan_id or missing required fields)
@@ -650,12 +650,12 @@ export const LaporanBulkInputPage: React.FC = () => {
                 onConfirm={handleSubmit}
                 okText="Ya, Kirim"
                 cancelText="Batal"
-                disabled={!allRowsAreDraft || hasUnsavedChanges}
+                disabled={!canSendReport || hasUnsavedChanges}
               >
                 <Button
                   icon={<SendOutlined />}
                   loading={loading}
-                  disabled={rows.length === 0 || !allRowsAreDraft || hasUnsavedChanges}
+                  disabled={rows.length === 0 || !canSendReport || hasUnsavedChanges}
                 >
                   Kirim Laporan {filterBulan} {filterTahun}
                 </Button>
@@ -668,10 +668,10 @@ export const LaporanBulkInputPage: React.FC = () => {
                 </Text>
               </div>
             )}
-            {!allRowsAreDraft && !hasUnsavedChanges && rows.length > 0 && (
+            {!canSendReport && !hasUnsavedChanges && rows.length > 0 && (
               <div style={{ marginTop: 8 }}>
                 <Text type="warning">
-                  * Semua laporan harus berstatus "Tersimpan" untuk dapat dikirim
+                  * Semua laporan harus berstatus "Tersimpan" atau "Terkirim" untuk dapat dikirim ulang
                 </Text>
               </div>
             )}

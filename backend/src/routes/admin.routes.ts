@@ -391,6 +391,81 @@ router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: 
   }
 });
 
+// Get top 10 budget absorption for dashboard
+router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Access denied. Admin only.' });
+      return;
+    }
+
+    const { tahun, bulan } = req.query;
+    const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
+    const currentMonth = bulan as string;
+
+    if (!currentMonth) {
+      res.status(400).json({ message: 'Bulan parameter is required' });
+      return;
+    }
+
+    // Query untuk mendapatkan top 10 puskesmas dengan penyerapan tertinggi
+    const query = `
+      SELECT 
+        u.username as puskesmas_nama,
+        CAST(SUM(l.target_rp) AS DECIMAL) as target_rp,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) as realisasi_rp,
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END as persentase
+      FROM laporan l
+      INNER JOIN users u ON l.user_id = u.id
+      WHERE l.tahun = :tahun 
+        AND l.bulan = :bulan
+        AND l.status = 'terkirim'
+        AND u.role = 'puskesmas'
+      GROUP BY u.username
+      ORDER BY 
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END DESC,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) DESC
+      LIMIT 10
+    `;
+
+    const top10Data = await Laporan.sequelize!.query(query, {
+      replacements: { tahun: currentYear, bulan: currentMonth },
+      type: QueryTypes.SELECT
+    }) as any[];
+
+    // Process data
+    const processedData = top10Data.map((item: any) => {
+      const targetRp = parseFloat(item.target_rp) || 0;
+      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
+      const persentase = parseFloat(item.persentase) || 0;
+
+      return {
+        puskesmas: item.puskesmas_nama,
+        target_rp: targetRp,
+        realisasi_rp: realisasiRp,
+        persentase: Math.round(persentase * 100) / 100
+      };
+    });
+
+    res.status(200).json({
+      message: 'Top 10 absorption data retrieved successfully',
+      data: processedData,
+      tahun: currentYear,
+      bulan: currentMonth
+    });
+  } catch (error: any) {
+    console.error('Top 10 absorption error:', error);
+    res.status(500).json({ message: 'Gagal mengambil data top 10 penyerapan', error: error.message });
+  }
+});
+
 // Get budget realization year to date for dashboard
 router.get('/dashboard/budget-ytd', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {

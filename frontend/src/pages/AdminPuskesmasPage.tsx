@@ -15,6 +15,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 const { Title } = Typography;
 
@@ -51,7 +52,7 @@ export const AdminPuskesmasPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/users/puskesmas', {
+      const response = await axios.get(`${API_BASE_URL}/users/puskesmas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
@@ -82,7 +83,7 @@ export const AdminPuskesmasPage: React.FC = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/users/puskesmas/${id}`, {
+      await axios.delete(`${API_BASE_URL}/users/puskesmas/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Puskesmas berhasil dihapus');
@@ -106,14 +107,14 @@ export const AdminPuskesmasPage: React.FC = () => {
       if (editingUser) {
         // Update
         await axios.put(
-          `http://localhost:5000/api/users/puskesmas/${editingUser.id}`,
+          `${API_BASE_URL}/users/puskesmas/${editingUser.id}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Puskesmas berhasil diupdate');
       } else {
         // Create
-        await axios.post('http://localhost:5000/api/users/puskesmas', values, {
+        await axios.post(`${API_BASE_URL}/users/puskesmas`, values, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Puskesmas berhasil ditambahkan');

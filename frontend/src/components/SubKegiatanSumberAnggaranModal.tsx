@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Transfer, message, Spin } from 'antd';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 interface SumberAnggaran {
   value: number;  // API returns 'value' not 'id_sumber'
@@ -41,14 +42,14 @@ export const SubKegiatanSumberAnggaranModal: React.FC<SubKegiatanSumberAnggaranM
     setLoading(true);
     try {
       // Load all sumber anggaran
-      const allResponse = await axios.get('http://localhost:5000/api/reference/sumber-anggaran', {
+      const allResponse = await axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAllSumberAnggaran(allResponse.data);
 
       // Load assigned sumber anggaran for this sub kegiatan
       const assignedResponse = await axios.get(
-        `http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
+        `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -73,7 +74,7 @@ export const SubKegiatanSumberAnggaranModal: React.FC<SubKegiatanSumberAnggaranM
     setSaving(true);
     try {
       await axios.post(
-        'http://localhost:5000/api/sub-kegiatan-sumber-anggaran/bulk',
+        `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/bulk`,
         {
           id_sub_kegiatan: subKegiatanId,
           sumber_anggaran_ids: selectedKeys,

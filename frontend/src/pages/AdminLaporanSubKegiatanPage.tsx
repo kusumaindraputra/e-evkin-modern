@@ -16,6 +16,7 @@ import {
 import { FileTextOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -101,7 +102,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       if (selectedYear) params.tahun = selectedYear;
       if (selectedMonth) params.bulan = selectedMonth;
 
-      const response = await axios.get('http://localhost:5000/api/report/by-sub-kegiatan', {
+      const response = await axios.get(`${API_BASE_URL}/report/by-sub-kegiatan`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -120,7 +121,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     setDetailLoading(true);
     setDetailModalVisible(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/report/by-sub-kegiatan/detail', {
+      const response = await axios.get(`${API_BASE_URL}/report/by-sub-kegiatan/detail`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           bulan: record.bulan,

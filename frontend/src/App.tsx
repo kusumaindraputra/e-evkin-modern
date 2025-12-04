@@ -45,7 +45,7 @@ const RootRedirect = () => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/e-evkin">
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />

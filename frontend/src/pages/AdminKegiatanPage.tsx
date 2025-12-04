@@ -13,10 +13,10 @@ import {
   Popconfirm,
   Space,
   Typography,
-  Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
 import { SubKegiatanSumberAnggaranModal } from '../components/SubKegiatanSumberAnggaranModal';
 
@@ -77,7 +77,7 @@ export const AdminKegiatanPage: React.FC = () => {
 
     setLoadingKegiatan(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/kegiatan/kegiatan', {
+      const response = await axios.get(`${API_BASE_URL}/kegiatan/kegiatan`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setKegiatanList(response.data);
@@ -97,7 +97,7 @@ export const AdminKegiatanPage: React.FC = () => {
 
     setLoadingSub(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/kegiatan/sub-kegiatan', {
+      const response = await axios.get(`${API_BASE_URL}/kegiatan/sub-kegiatan`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSubKegiatanList(response.data);
@@ -126,7 +126,7 @@ export const AdminKegiatanPage: React.FC = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/kegiatan/kegiatan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/kegiatan/kegiatan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Kegiatan berhasil dihapus');
@@ -146,14 +146,14 @@ export const AdminKegiatanPage: React.FC = () => {
       if (editingKegiatan) {
         // Update
         await axios.put(
-          `http://localhost:5000/api/kegiatan/kegiatan/${editingKegiatan.id_kegiatan}`,
+          `${API_BASE_URL}/kegiatan/kegiatan/${editingKegiatan.id_kegiatan}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Kegiatan berhasil diupdate');
       } else {
         // Create
-        await axios.post('http://localhost:5000/api/kegiatan/kegiatan', values, {
+        await axios.post(`${API_BASE_URL}/kegiatan/kegiatan`, values, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Kegiatan berhasil ditambahkan');
@@ -185,7 +185,7 @@ export const AdminKegiatanPage: React.FC = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/kegiatan/sub-kegiatan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/kegiatan/sub-kegiatan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Sub kegiatan berhasil dihapus');
@@ -204,14 +204,14 @@ export const AdminKegiatanPage: React.FC = () => {
       if (editingSub) {
         // Update
         await axios.put(
-          `http://localhost:5000/api/kegiatan/sub-kegiatan/${editingSub.id_sub_kegiatan}`,
+          `${API_BASE_URL}/kegiatan/sub-kegiatan/${editingSub.id_sub_kegiatan}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Sub kegiatan berhasil diupdate');
       } else {
         // Create
-        await axios.post('http://localhost:5000/api/kegiatan/sub-kegiatan', values, {
+        await axios.post(`${API_BASE_URL}/kegiatan/sub-kegiatan`, values, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Sub kegiatan berhasil ditambahkan');

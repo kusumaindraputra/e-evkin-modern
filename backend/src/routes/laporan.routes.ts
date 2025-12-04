@@ -160,10 +160,10 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     }
     
     const laporan = await Laporan.create(req.body);
-    res.status(201).json(laporan);
+    return res.status(201).json(laporan);
   } catch (error: any) {
     console.error('Error creating laporan:', error);
-    res.status(500).json({ error: 'Failed to create laporan', message: error.message });
+    return res.status(500).json({ error: 'Failed to create laporan', message: error.message });
   }
 });
 
@@ -217,14 +217,14 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
       returning: true,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       count: createdLaporan.length,
       data: createdLaporan,
     });
   } catch (error: any) {
     console.error('Error bulk creating laporan:', error);
-    res.status(500).json({ error: 'Failed to bulk create laporan', message: error.message });
+    return res.status(500).json({ error: 'Failed to bulk create laporan', message: error.message });
   }
 });
 

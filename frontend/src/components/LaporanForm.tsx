@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Form, Select, InputNumber, Input, Button, Space, Typography, Card, Row, Col, message, Alert } from 'antd';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const { Text } = Typography;
 const { OptGroup, Option } = Select;
@@ -63,13 +64,13 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         }
 
         const [sumberAnggaranRes, satuanRes, kegiatanRes, subKegiatanRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/reference/sumber-anggaran', config),
-          axios.get('http://localhost:5000/api/reference/satuan', config),
-          axios.get('http://localhost:5000/api/reference/kegiatan', config),
+          axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, config),
+          axios.get(`${API_BASE_URL}/reference/satuan`, config),
+          axios.get(`${API_BASE_URL}/reference/kegiatan`, config),
           // Fetch only assigned sub kegiatan for puskesmas
           userId 
-            ? axios.get(`http://localhost:5000/api/puskesmas-config/puskesmas/${userId}/sub-kegiatan`, config)
-            : axios.get('http://localhost:5000/api/reference/sub-kegiatan', config),
+            ? axios.get(`${API_BASE_URL}/puskesmas-config/puskesmas/${userId}/sub-kegiatan`, config)
+            : axios.get(`${API_BASE_URL}/reference/sub-kegiatan`, config),
         ]);
 
         // Transform assigned sub kegiatan data to match reference format
@@ -102,7 +103,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
             // Load sumber anggaran for this sub kegiatan
             try {
               const sumberDanaRes = await axios.get(
-                `http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${initialValues.id_sub_kegiatan}`,
+                `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${initialValues.id_sub_kegiatan}`,
                 config
               );
               
@@ -142,7 +143,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
-          `http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${value}`,
+          `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${value}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -204,7 +205,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
 
       // Call bulk API
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/laporan/bulk', 
+      await axios.post(`${API_BASE_URL}/laporan/bulk`, 
         { laporanArray },
         { headers: { Authorization: `Bearer ${token}` } }
       );

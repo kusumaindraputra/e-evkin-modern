@@ -18,6 +18,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -116,7 +117,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/masterdata/satuan', {
+      const response = await axios.get(`${API_BASE_URL}/masterdata/satuan`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSatuanList(response.data);
@@ -145,14 +146,14 @@ export const AdminMasterDataPage: React.FC = () => {
     try {
       if (satuanModalMode === 'create') {
         await axios.post(
-          'http://localhost:5000/api/masterdata/satuan',
+          `${API_BASE_URL}/masterdata/satuan`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Satuan berhasil ditambahkan');
       } else {
         await axios.put(
-          `http://localhost:5000/api/masterdata/satuan/${editingSatuan?.id_satuan}`,
+          `${API_BASE_URL}/masterdata/satuan/${editingSatuan?.id_satuan}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -167,7 +168,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
   const handleSatuanDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:5000/api/masterdata/satuan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/masterdata/satuan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Satuan berhasil dihapus');
@@ -187,7 +188,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/masterdata/sumber-anggaran', {
+      const response = await axios.get(`${API_BASE_URL}/masterdata/sumber-anggaran`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAnggaranList(response.data);
@@ -216,14 +217,14 @@ export const AdminMasterDataPage: React.FC = () => {
     try {
       if (anggaranModalMode === 'create') {
         await axios.post(
-          'http://localhost:5000/api/masterdata/sumber-anggaran',
+          `${API_BASE_URL}/masterdata/sumber-anggaran`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Sumber anggaran berhasil ditambahkan');
       } else {
         await axios.put(
-          `http://localhost:5000/api/masterdata/sumber-anggaran/${editingAnggaran?.id_sumber}`,
+          `${API_BASE_URL}/masterdata/sumber-anggaran/${editingAnggaran?.id_sumber}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -238,7 +239,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
   const handleAnggaranDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:5000/api/masterdata/sumber-anggaran/${id}`, {
+      await axios.delete(`${API_BASE_URL}/masterdata/sumber-anggaran/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Sumber anggaran berhasil dihapus');
@@ -258,7 +259,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/masterdata/kegiatan', {
+      const response = await axios.get(`${API_BASE_URL}/masterdata/kegiatan`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setKegiatanList(response.data);
@@ -289,13 +290,13 @@ export const AdminMasterDataPage: React.FC = () => {
 
       if (editingKegiatan) {
         await axios.put(
-          `http://localhost:5000/api/masterdata/kegiatan/${editingKegiatan.id_kegiatan}`,
+          `${API_BASE_URL}/masterdata/kegiatan/${editingKegiatan.id_kegiatan}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Kegiatan berhasil diperbarui');
       } else {
-        await axios.post('http://localhost:5000/api/masterdata/kegiatan', values, {
+        await axios.post(`${API_BASE_URL}/masterdata/kegiatan`, values, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Kegiatan berhasil ditambahkan');
@@ -314,7 +315,7 @@ export const AdminMasterDataPage: React.FC = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/masterdata/kegiatan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/masterdata/kegiatan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Kegiatan berhasil dihapus');
@@ -336,7 +337,7 @@ export const AdminMasterDataPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/masterdata/sub-kegiatan', {
+      const response = await axios.get(`${API_BASE_URL}/masterdata/sub-kegiatan`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSubKegiatanList(response.data);
@@ -367,13 +368,13 @@ export const AdminMasterDataPage: React.FC = () => {
 
       if (editingSub) {
         await axios.put(
-          `http://localhost:5000/api/masterdata/sub-kegiatan/${editingSub.id_sub_kegiatan}`,
+          `${API_BASE_URL}/masterdata/sub-kegiatan/${editingSub.id_sub_kegiatan}`,
           values,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         message.success('Sub kegiatan berhasil diperbarui');
       } else {
-        await axios.post('http://localhost:5000/api/masterdata/sub-kegiatan', values, {
+        await axios.post(`${API_BASE_URL}/masterdata/sub-kegiatan`, values, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Sub kegiatan berhasil ditambahkan');
@@ -392,7 +393,7 @@ export const AdminMasterDataPage: React.FC = () => {
     if (!token) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/masterdata/sub-kegiatan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/masterdata/sub-kegiatan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Sub kegiatan berhasil dihapus');

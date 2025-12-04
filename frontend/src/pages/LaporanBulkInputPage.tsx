@@ -21,6 +21,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
 
 const { Title, Text } = Typography;
@@ -118,8 +119,8 @@ export const LaporanBulkInputPage: React.FC = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [sumberAnggaranRes, satuanRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/reference/sumber-anggaran', config),
-        axios.get('http://localhost:5000/api/reference/satuan', config),
+        axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, config),
+        axios.get(`${API_BASE_URL}/reference/satuan`, config),
       ]);
 
       setReferenceData({
@@ -141,12 +142,12 @@ export const LaporanBulkInputPage: React.FC = () => {
 
       // Load assigned sub kegiatan
       const assignmentsRes = await axios.get(
-        `http://localhost:5000/api/puskesmas-config/puskesmas/${user.id}/sub-kegiatan`,
+        `${API_BASE_URL}/puskesmas-config/puskesmas/${user.id}/sub-kegiatan`,
         config
       );
 
       // Load existing laporan for this month
-      const laporanRes = await axios.get('http://localhost:5000/api/laporan', {
+      const laporanRes = await axios.get(`${API_BASE_URL}/laporan`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { bulan: filterBulan, tahun: filterTahun, limit: 1000 },
       });
@@ -167,7 +168,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         
         // Fetch sumber anggaran assignments for this sub kegiatan
         const sumberAnggaranRes = await axios.get(
-          `http://localhost:5000/api/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
+          `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
           config
         );
         
@@ -279,13 +280,13 @@ export const LaporanBulkInputPage: React.FC = () => {
           if (row.laporan_id) {
             // Update existing
             return axios.put(
-              `http://localhost:5000/api/laporan/${row.laporan_id}`,
+              `${API_BASE_URL}/laporan/${row.laporan_id}`,
               payload,
               config
             );
           } else {
             // Create new
-            return axios.post('http://localhost:5000/api/laporan', payload, config);
+            return axios.post(`${API_BASE_URL}/laporan`, payload, config);
           }
         });
 
@@ -310,7 +311,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.post(
-        'http://localhost:5000/api/laporan/submit',
+        `${API_BASE_URL}/laporan/submit`,
         { bulan: filterBulan, tahun: filterTahun },
         config
       );

@@ -13,6 +13,7 @@ import {
 import { SettingOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 const { Title, Text } = Typography;
 
@@ -60,7 +61,7 @@ export const AdminPuskesmasConfigPage: React.FC = () => {
   const { token } = useAuthStore();
 
   const apiClient = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: API_BASE_URL,
     headers: { Authorization: `Bearer ${token}` },
   });
 

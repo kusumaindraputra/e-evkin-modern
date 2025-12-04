@@ -5,5 +5,6 @@ import Satuan from './Satuan';
 import Kegiatan from './Kegiatan';
 import SubKegiatan from './SubKegiatan';
 import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
-export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan };
+import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
+export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan, SubKegiatanSumberAnggaran, };
 //# sourceMappingURL=index.d.ts.map

@@ -129,16 +129,86 @@ router.post('/', auth_1.authenticate, async (req, res) => {
         if (req.user?.role === 'puskesmas') {
             req.body.user_id = req.user.id;
         }
+        // VALIDATION: Check if sumber anggaran is valid for sub kegiatan
+        const { id_sub_kegiatan, id_sumber_anggaran } = req.body;
+        if (id_sub_kegiatan && id_sumber_anggaran) {
+            const isValid = await models_1.SubKegiatanSumberAnggaran.findOne({
+                where: {
+                    id_sub_kegiatan,
+                    id_sumber_anggaran,
+                    is_active: true,
+                },
+            });
+            if (!isValid) {
+                return res.status(400).json({
+                    error: 'Invalid sumber anggaran',
+                    message: 'Sumber anggaran tidak valid untuk sub kegiatan ini. Hubungi admin untuk mengatur sumber dana yang tersedia.',
+                });
+            }
+        }
         // Set default status to 'tersimpan' if not provided
         if (!req.body.status) {
             req.body.status = 'tersimpan';
         }
         const laporan = await models_1.Laporan.create(req.body);
-        res.status(201).json(laporan);
+        return res.status(201).json(laporan);
     }
     catch (error) {
         console.error('Error creating laporan:', error);
-        res.status(500).json({ error: 'Failed to create laporan', message: error.message });
+        return res.status(500).json({ error: 'Failed to create laporan', message: error.message });
+    }
+});
+// Bulk create laporan (for multiple sumber anggaran in one form submission)
+router.post('/bulk', auth_1.authenticate, async (req, res) => {
+    try {
+        const { laporanArray } = req.body;
+        if (!Array.isArray(laporanArray) || laporanArray.length === 0) {
+            return res.status(400).json({ error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+        }
+        // SECURITY: Puskesmas hanya bisa create laporan untuk diri sendiri
+        const userId = req.user?.role === 'puskesmas' ? req.user.id : laporanArray[0].user_id;
+        // VALIDATION: Validate each laporan and check sumber anggaran
+        for (const data of laporanArray) {
+            if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
+                return res.status(400).json({
+                    error: 'Validation error',
+                    message: 'Setiap laporan harus memiliki id_sub_kegiatan dan id_sumber_anggaran'
+                });
+            }
+            const isValid = await models_1.SubKegiatanSumberAnggaran.findOne({
+                where: {
+                    id_sub_kegiatan: data.id_sub_kegiatan,
+                    id_sumber_anggaran: data.id_sumber_anggaran,
+                    is_active: true,
+                },
+            });
+            if (!isValid) {
+                return res.status(400).json({
+                    error: 'Invalid sumber anggaran',
+                    message: `Sumber anggaran ${data.id_sumber_anggaran} tidak valid untuk sub kegiatan ini`,
+                });
+            }
+        }
+        // Prepare laporan data with user_id and default status
+        const laporanData = laporanArray.map((data) => ({
+            ...data,
+            user_id: userId,
+            status: data.status || 'tersimpan',
+        }));
+        // Create all laporan in a transaction
+        const createdLaporan = await models_1.Laporan.bulkCreate(laporanData, {
+            validate: true,
+            returning: true,
+        });
+        return res.status(201).json({
+            success: true,
+            count: createdLaporan.length,
+            data: createdLaporan,
+        });
+    }
+    catch (error) {
+        console.error('Error bulk creating laporan:', error);
+        return res.status(500).json({ error: 'Failed to bulk create laporan', message: error.message });
     }
 });
 // Update laporan (puskesmas hanya bisa update laporan sendiri)
@@ -153,6 +223,25 @@ router.put('/:id', auth_1.authenticate, async (req, res) => {
         if (req.user?.role === 'puskesmas' && laporan.user_id !== req.user.id) {
             res.status(403).json({ error: 'Forbidden', message: 'Anda tidak bisa mengubah laporan puskesmas lain' });
             return;
+        }
+        // VALIDATION: If updating sumber anggaran, check if valid for sub kegiatan
+        const { id_sub_kegiatan, id_sumber_anggaran } = req.body;
+        if (id_sumber_anggaran && (id_sub_kegiatan || laporan.id_sub_kegiatan)) {
+            const subKegiatanId = id_sub_kegiatan || laporan.id_sub_kegiatan;
+            const isValid = await models_1.SubKegiatanSumberAnggaran.findOne({
+                where: {
+                    id_sub_kegiatan: subKegiatanId,
+                    id_sumber_anggaran,
+                    is_active: true,
+                },
+            });
+            if (!isValid) {
+                res.status(400).json({
+                    error: 'Invalid sumber anggaran',
+                    message: 'Sumber anggaran tidak valid untuk sub kegiatan ini.',
+                });
+                return;
+            }
         }
         await laporan.update(req.body);
         res.json(laporan);
@@ -203,23 +292,7 @@ router.post('/submit', auth_1.authenticate, async (req, res) => {
             });
             return;
         }
-        // Check if already submitted
-        const existingSubmitted = await models_1.Laporan.findOne({
-            where: {
-                user_id,
-                bulan,
-                tahun,
-                status: 'terkirim'
-            }
-        });
-        if (existingSubmitted) {
-            res.status(400).json({
-                error: 'Already submitted',
-                message: `Laporan untuk ${bulan} ${tahun} sudah pernah dikirim sebelumnya`
-            });
-            return;
-        }
-        // Update all 'tersimpan' laporan to 'terkirim'
+        // Update all 'tersimpan' laporan to 'terkirim' (skip yang sudah terkirim)
         const [updatedCount] = await models_1.Laporan.update({ status: 'terkirim' }, {
             where: {
                 user_id,
@@ -229,6 +302,22 @@ router.post('/submit', auth_1.authenticate, async (req, res) => {
             }
         });
         if (updatedCount === 0) {
+            // Check if all are already submitted
+            const alreadySubmittedCount = await models_1.Laporan.count({
+                where: {
+                    user_id,
+                    bulan,
+                    tahun,
+                    status: 'terkirim'
+                }
+            });
+            if (alreadySubmittedCount > 0) {
+                res.status(400).json({
+                    error: 'Already submitted',
+                    message: `Semua laporan untuk ${bulan} ${tahun} sudah dikirim sebelumnya`
+                });
+                return;
+            }
             res.status(404).json({
                 error: 'No laporan found',
                 message: `Tidak ada laporan dengan status "tersimpan" untuk ${bulan} ${tahun}`

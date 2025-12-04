@@ -26,6 +26,7 @@ import axios from 'axios';
 import LaporanForm from '../components/LaporanForm';
 import LaporanDetail from '../components/LaporanDetail';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 const { Title } = Typography;
 
@@ -134,7 +135,7 @@ export const LaporanPage: React.FC = () => {
 
       console.log('Loading laporan with params:', params);
 
-      const response = await axios.get('http://localhost:5000/api/laporan', {
+      const response = await axios.get(`${API_BASE_URL}/laporan`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -188,7 +189,7 @@ export const LaporanPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:5000/api/laporan/${id}`, {
+      await axios.delete(`${API_BASE_URL}/laporan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       message.success('Laporan berhasil dihapus');
@@ -214,12 +215,12 @@ export const LaporanPage: React.FC = () => {
       console.log('Submitting laporan:', payload);
 
       if (modalMode === 'create') {
-        await axios.post('http://localhost:5000/api/laporan', payload, {
+        await axios.post(`${API_BASE_URL}/laporan`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Laporan berhasil dibuat');
       } else {
-        await axios.put(`http://localhost:5000/api/laporan/${selectedLaporan.id}`, payload, {
+        await axios.put(`${API_BASE_URL}/laporan/${selectedLaporan.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         message.success('Laporan berhasil diupdate');
@@ -243,7 +244,7 @@ export const LaporanPage: React.FC = () => {
     setSubmitLoading(true);
     try {
       await axios.post(
-        'http://localhost:5000/api/laporan/submit',
+        `${API_BASE_URL}/laporan/submit`,
         {
           bulan: filterBulan,
           tahun: filterTahun,
@@ -268,7 +269,7 @@ export const LaporanPage: React.FC = () => {
       params.append('tahun', tahun.toString());
 
       const response = await axios.get(
-        `http://localhost:5000/api/export/laporan?${params.toString()}`,
+        `${API_BASE_URL}/export/laporan?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob',

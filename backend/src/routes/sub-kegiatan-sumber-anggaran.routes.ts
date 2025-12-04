@@ -166,14 +166,14 @@ router.post('/', authenticate, authorizeAdmin, async (req: Request, res: Respons
       ],
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'sumber anggaran berhasil ditambahkan ke sub kegiatan',
       data: result,
     });
   } catch (error: any) {
     console.error('Error creating sub kegiatan sumber anggaran:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal menambahkan sumber anggaran',
       error: error.message,
@@ -222,14 +222,14 @@ router.post('/bulk', authenticate, authorizeAdmin, async (req: Request, res: Res
       )
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: `Berhasil mengatur ${mappings.length} sumber anggaran untuk sub kegiatan`,
       data: mappings,
     });
   } catch (error: any) {
     console.error('Error bulk assigning sumber anggaran:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal mengatur sumber anggaran',
       error: error.message,
@@ -260,14 +260,14 @@ router.put('/:id', authenticate, authorizeAdmin, async (req: Request, res: Respo
       await mapping.save();
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Mapping berhasil diperbarui',
       data: mapping,
     });
   } catch (error: any) {
     console.error('Error updating mapping:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal memperbarui mapping',
       error: error.message,
@@ -294,13 +294,13 @@ router.delete('/:id', authenticate, authorizeAdmin, async (req: Request, res: Re
 
     await mapping.destroy();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Mapping berhasil dihapus',
     });
   } catch (error: any) {
     console.error('Error deleting mapping:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal menghapus mapping',
       error: error.message,

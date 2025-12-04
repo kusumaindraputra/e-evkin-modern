@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import {
   LineChart,
   Line,
@@ -138,7 +139,7 @@ export const DashboardPage: React.FC = () => {
       
       // Fetch data realisasi anggaran per bulan
       const response = await axios.get(
-        `http://localhost:5000/api/admin/dashboard/budget-ytd?tahun=${currentYear}`,
+        `${API_BASE_URL}/admin/dashboard/budget-ytd?tahun=${currentYear}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -183,7 +184,7 @@ export const DashboardPage: React.FC = () => {
     try {
       // Fetch dashboard statistics with month and year filter
       const response = await axios.get(
-        `http://localhost:5000/api/admin/dashboard/stats?tahun=${statsYear}&bulan=${statsMonth}`,
+        `${API_BASE_URL}/admin/dashboard/stats?tahun=${statsYear}&bulan=${statsMonth}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -202,7 +203,7 @@ export const DashboardPage: React.FC = () => {
     try {
       // Fetch monthly budget data
       const response = await axios.get(
-        `http://localhost:5000/api/admin/dashboard/budget-monthly?tahun=${selectedYear}&bulan=${selectedMonth}`,
+        `${API_BASE_URL}/admin/dashboard/budget-monthly?tahun=${selectedYear}&bulan=${selectedMonth}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -221,7 +222,7 @@ export const DashboardPage: React.FC = () => {
     try {
       // Fetch top 10 absorption data
       const response = await axios.get(
-        `http://localhost:5000/api/admin/dashboard/top-10-absorption?tahun=${top10Year}&bulan=${top10Month}`,
+        `${API_BASE_URL}/admin/dashboard/top-10-absorption?tahun=${top10Year}&bulan=${top10Month}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

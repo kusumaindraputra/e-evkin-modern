@@ -4,6 +4,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 
 const { Title, Text } = Typography;
 
@@ -21,7 +22,7 @@ export const LoginPage: React.FC = () => {
   const onFinish = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         username: values.username,
         password: values.password,
       });

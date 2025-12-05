@@ -6,8 +6,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Build outputs
-dist/
-build/
+# Note: dist/ and build/ are committed because we build locally and deploy to server
+# dist/
+# build/
 *.tsbuildinfo
 
 # Environment variables

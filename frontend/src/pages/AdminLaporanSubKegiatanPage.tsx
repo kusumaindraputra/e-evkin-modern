@@ -13,10 +13,11 @@ import {
   Tag,
   message,
 } from 'antd';
-import { FileTextOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { FileTextOutlined, EyeOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { exportToExcel, formatRupiahForExcel, formatPercentageForExcel } from '../utils/excelExport';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -136,6 +137,71 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     } finally {
       setDetailLoading(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    if (reports.length === 0) {
+      message.warning('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const exportColumns = [
+      { header: 'Kode Sub Kegiatan', key: 'sub_kegiatan.kode_sub', width: 18 },
+      { header: 'Sub Kegiatan', key: 'sub_kegiatan.kegiatan', width: 35 },
+      {
+        header: 'Kegiatan Parent',
+        key: 'sub_kegiatan.kegiatanParent.kegiatan',
+        width: 30,
+      },
+      {
+        header: 'Bulan/Tahun',
+        key: 'periode',
+        width: 15,
+        format: (row: AggregatedReport) => `${row.bulan}/${row.tahun}`,
+      },
+      { header: 'Jumlah Laporan', key: 'jumlah_laporan', width: 15 },
+      { header: 'Target K', key: 'total_target_k', width: 15 },
+      { header: 'Realisasi K', key: 'total_realisasi_k', width: 15 },
+      {
+        header: '% K',
+        key: 'persentase_k',
+        width: 12,
+        format: (value: number) => formatPercentageForExcel(value),
+      },
+      {
+        header: 'Target Rp',
+        key: 'total_target_rp',
+        width: 18,
+        format: (value: number) => formatRupiahForExcel(value),
+      },
+      {
+        header: 'Realisasi Rp',
+        key: 'total_realisasi_rp',
+        width: 18,
+        format: (value: number) => formatRupiahForExcel(value),
+      },
+      {
+        header: '% Rp',
+        key: 'persentase_rp',
+        width: 12,
+        format: (value: number) => formatPercentageForExcel(value),
+      },
+    ];
+
+    // Transform data for export
+    const exportData = reports.map((report) => ({
+      ...report,
+      periode: `${report.bulan}/${report.tahun}`,
+    }));
+
+    exportToExcel({
+      fileName: 'laporan-sub-kegiatan',
+      sheetName: 'Laporan Sub Kegiatan',
+      columns: exportColumns,
+      data: exportData,
+    });
+
+    message.success('Data berhasil diunduh');
   };
 
   const formatRupiah = (value: number) => {
@@ -403,6 +469,14 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
           </Select>
           <Button icon={<ReloadOutlined />} onClick={loadReports}>
             Refresh
+          </Button>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportExcel}
+            disabled={reports.length === 0}
+          >
+            Download Excel
           </Button>
         </Space>
       </Card>

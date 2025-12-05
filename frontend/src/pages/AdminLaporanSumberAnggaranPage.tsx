@@ -13,10 +13,11 @@ import {
   Tag,
   message,
 } from 'antd';
-import { DollarOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DollarOutlined, EyeOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { exportToExcel, formatRupiahForExcel, formatPercentageForExcel } from '../utils/excelExport';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -144,6 +145,37 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
     if (persentase >= 70) return 'blue';
     if (persentase >= 50) return 'orange';
     return 'red';
+  };
+
+  const handleExportExcel = () => {
+    if (reports.length === 0) {
+      message.warning('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const exportColumns = [
+      { header: 'Sumber Anggaran', key: 'sumber_anggaran.sumber', width: 30 },
+      { header: 'Bulan/Tahun', key: 'periode', width: 15, format: (value: any) => value },
+      { header: 'Jumlah Laporan', key: 'jumlah_laporan', width: 15 },
+      { header: 'Total Angkas', key: 'total_angkas', width: 18, format: (value: number) => formatRupiahForExcel(value) },
+      { header: 'Target K', key: 'total_target_k', width: 15 },
+      { header: 'Realisasi K', key: 'total_realisasi_k', width: 15 },
+      { header: '% K', key: 'persentase_k', width: 12, format: (value: number) => formatPercentageForExcel(value) },
+      { header: 'Target Rp', key: 'total_target_rp', width: 18, format: (value: number) => formatRupiahForExcel(value) },
+      { header: 'Realisasi Rp', key: 'total_realisasi_rp', width: 18, format: (value: number) => formatRupiahForExcel(value) },
+      { header: '% Rp', key: 'persentase_rp', width: 12, format: (value: number) => formatPercentageForExcel(value) },
+    ];
+
+    const exportData = reports.map((r) => ({ ...r, periode: `${r.bulan}/${r.tahun}` }));
+
+    exportToExcel({
+      fileName: 'laporan-sumber-anggaran',
+      sheetName: 'Laporan Sumber Anggaran',
+      columns: exportColumns,
+      data: exportData,
+    });
+
+    message.success('Data berhasil diunduh');
   };
 
   const columns = [
@@ -400,6 +432,14 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
           </Select>
           <Button icon={<ReloadOutlined />} onClick={loadReports}>
             Refresh
+          </Button>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportExcel}
+            disabled={reports.length === 0}
+          >
+            Download Excel
           </Button>
         </Space>
       </Card>

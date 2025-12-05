@@ -7,7 +7,7 @@ export interface ExcelExportData {
     header: string;
     key: string;
     width?: number;
-    format?: (value: any) => string;
+    format?: (value: any, row?: Record<string, any>) => string;
   }>;
   data: Record<string, any>[];
 }
@@ -31,12 +31,34 @@ export const exportToExcel = (exportData: ExcelExportData) => {
         value = keys.reduce((obj, k) => obj?.[k], row);
       }
 
-      // Apply custom format if provided
-      if (col.format && value !== null && value !== undefined) {
-        value = col.format(value);
+      // Apply custom format if provided (pass both value and the whole row)
+      if (col.format) {
+        try {
+          // Try common call signatures in order to be tolerant:
+          // 1) format(value, row)
+          // 2) format(row)
+          // 3) format(value)
+          let formatted = col.format(value, row);
+          const isInvalid = (v: any) => v === undefined || v === null || (typeof v === 'string' && v.includes('undefined'));
+          if (isInvalid(formatted)) {
+            formatted = col.format(row as any);
+          }
+          if (isInvalid(formatted)) {
+            formatted = col.format(value);
+          }
+
+          // Only overwrite when format returns a defined, non-undefined-string value
+          if (!isInvalid(formatted)) {
+            value = formatted;
+          }
+        } catch (e) {
+          // If user format throws, fall back to raw value
+          // eslint-disable-next-line no-console
+          console.error('Error formatting column', col.header, e);
+        }
       }
 
-      transformedRow[col.header] = value || '';
+      transformedRow[col.header] = value ?? '';
     });
     return transformedRow;
   });

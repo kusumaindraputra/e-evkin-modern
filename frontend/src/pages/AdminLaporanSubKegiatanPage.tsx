@@ -157,7 +157,8 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
         header: 'Bulan/Tahun',
         key: 'periode',
         width: 15,
-        format: (row: AggregatedReport) => `${row.bulan}/${row.tahun}`,
+        // periode is precomputed on exportData; use the value directly
+        format: (value: any) => value,
       },
       { header: 'Jumlah Laporan', key: 'jumlah_laporan', width: 15 },
       { header: 'Target K', key: 'total_target_k', width: 15 },

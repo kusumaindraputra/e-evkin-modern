@@ -195,6 +195,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
           realisasi_k: data.realisasi_k,
           target_rp: data.target_rp,
           realisasi_rp: data.realisasi_rp,
+          realisasi_fisik: data.realisasi_fisik || 0,
           angkas: data.angkas,
           bulan,
           tahun,
@@ -389,6 +390,24 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                     min={0}
                     max={100}
                     placeholder="0"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  label="Realisasi Fisik (%)"
+                  name={['sumberAnggaranData', sa.value, 'realisasi_fisik']}
+                  rules={[{ required: true, message: 'Isi realisasi fisik!' }]}
+                >
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    min={0}
+                    max={100}
+                    placeholder="0"
+                    step={0.01}
                   />
                 </Form.Item>
               </Col>

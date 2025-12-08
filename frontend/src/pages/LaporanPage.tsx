@@ -42,6 +42,7 @@ interface LaporanData {
   target_rp: number;
   realisasi_k: number;
   realisasi_rp: number;
+  realisasi_fisik: number;
   permasalahan: string;
   upaya: string;
   bulan: string;
@@ -437,6 +438,14 @@ export const LaporanPage: React.FC = () => {
       width: 150,
       align: 'center',
       render: (val) => formatNumber(val),
+    },
+    {
+      title: 'Realisasi Fisik (%)',
+      dataIndex: 'realisasi_fisik',
+      key: 'realisasi_fisik',
+      width: 120,
+      align: 'center',
+      render: (val) => formatPercentage(val),
     },
     {
       title: 'Capaian K (%)',

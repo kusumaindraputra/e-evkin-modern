@@ -61,6 +61,7 @@ interface DetailLaporan {
   realisasi_k: number;
   target_rp: number;
   realisasi_rp: number;
+  realisasi_fisik: number;
   angkas: number;
   status: string;
   permasalahan: string;
@@ -328,6 +329,17 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+    },
+    {
+      title: 'Realisasi Fisik (%)',
+      dataIndex: 'realisasi_fisik',
+      key: 'realisasi_fisik',
+      width: 120,
+      align: 'right' as const,
+      render: (value: number) => {
+        const num = Number(value);
+        return isNaN(num) ? '0.00%' : `${num.toFixed(2)}%`;
+      },
     },
     {
       title: 'Status',

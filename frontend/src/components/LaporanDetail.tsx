@@ -14,6 +14,7 @@ interface LaporanDetailProps {
     target_rp: number;
     realisasi_k: number;
     realisasi_rp: number;
+    realisasi_fisik: number;
     permasalahan: string;
     upaya: string;
     subKegiatan?: {
@@ -159,6 +160,33 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
                 strokeColor={getProgressColor(capaianKinerja)}
                 showInfo={false}
               />
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Realisasi Fisik */}
+      <Card title="Realisasi Fisik" style={{ marginBottom: 16 }}>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#fef5e7' }}>
+              <Text type="secondary">Realisasi Fisik</Text>
+              <Title level={2} style={{ margin: '8px 0', color: getProgressColor(laporan.realisasi_fisik) }}>
+                {laporan.realisasi_fisik}%
+              </Title>
+              <Progress 
+                percent={laporan.realisasi_fisik} 
+                strokeColor={getProgressColor(laporan.realisasi_fisik)}
+                showInfo={false}
+              />
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card size="small" style={{ padding: '12px', backgroundColor: '#f5f5f5' }}>
+              <Text type="secondary">Keterangan</Text>
+              <div style={{ marginTop: '8px', fontSize: '13px', lineHeight: '1.6' }}>
+                <p>Realisasi Fisik menunjukkan persentase kemajuan fisik pekerjaan atau pencapaian target program.</p>
+              </div>
             </Card>
           </Col>
         </Row>

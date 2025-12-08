@@ -11,6 +11,7 @@ interface LaporanAttributes {
     target_rp: number;
     realisasi_k: number;
     realisasi_rp: number;
+    realisasi_fisik: number;
     permasalahan: string;
     upaya: string;
     bulan: string;
@@ -22,7 +23,7 @@ interface LaporanAttributes {
     created_at?: Date;
     updated_at?: Date;
 }
-interface LaporanCreationAttributes extends Optional<LaporanAttributes, 'id' | 'status' | 'created_at' | 'updated_at'> {
+interface LaporanCreationAttributes extends Optional<LaporanAttributes, 'id' | 'status' | 'realisasi_fisik' | 'created_at' | 'updated_at'> {
 }
 declare class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes> implements LaporanAttributes {
     id: string;
@@ -36,6 +37,7 @@ declare class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes
     target_rp: number;
     realisasi_k: number;
     realisasi_rp: number;
+    realisasi_fisik: number;
     permasalahan: string;
     upaya: string;
     bulan: string;

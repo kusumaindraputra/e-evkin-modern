@@ -58,6 +58,7 @@ interface LaporanRow {
   target_rp?: number;
   realisasi_k?: number;
   realisasi_rp?: number;
+  realisasi_fisik?: number;
   permasalahan?: string;
   upaya?: string;
   
@@ -205,6 +206,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
             realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
             realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
+            realisasi_fisik: existing?.realisasi_fisik ? Number(existing.realisasi_fisik) : undefined,
             permasalahan: existing?.permasalahan || '',
             upaya: existing?.upaya || '',
           });
@@ -271,6 +273,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             target_rp: row.target_rp || 0,
             realisasi_k: row.realisasi_k || 0,
             realisasi_rp: row.realisasi_rp || 0,
+            realisasi_fisik: row.realisasi_fisik || 0,
             permasalahan: row.permasalahan || '',
             upaya: row.upaya || '',
             bulan: filterBulan,
@@ -518,6 +521,26 @@ export const LaporanBulkInputPage: React.FC = () => {
             const parsed = value?.replace(/\./g, '');
             return parsed ? Number(parsed) : 0;
           }}
+          disabled={record.status === 'terkirim'}
+        />
+      ),
+    },
+    {
+      title: 'Realisasi Fisik (%)',
+      key: 'realisasi_fisik',
+      width: 120,
+      render: (_: any, record: LaporanRow) => (
+        <InputNumber
+          style={{ width: '100%' }}
+          value={record.realisasi_fisik}
+          onChange={(value) =>
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_fisik', value)
+          }
+          min={0}
+          max={100}
+          step={0.01}
+          controls={false}
+          formatter={(value) => `${value}`}
           disabled={record.status === 'terkirim'}
         />
       ),

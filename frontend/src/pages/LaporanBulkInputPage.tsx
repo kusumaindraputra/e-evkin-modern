@@ -341,18 +341,21 @@ export const LaporanBulkInputPage: React.FC = () => {
       key: 'kode_sub',
       width: 100,
       fixed: 'left',
+      sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
     },
     {
       title: 'Kegiatan',
       dataIndex: 'kegiatan_parent',
       key: 'kegiatan_parent',
       width: 200,
+      sorter: (a, b) => a.kegiatan_parent.localeCompare(b.kegiatan_parent),
     },
     {
       title: 'Sub Kegiatan',
       dataIndex: 'kegiatan',
       key: 'kegiatan',
       width: 250,
+      sorter: (a, b) => a.kegiatan.localeCompare(b.kegiatan),
     },
     {
       title: 'Indikator Kinerja',
@@ -362,6 +365,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       render: (text: string) => (
         <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
       ),
+      sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
     },
     {
       title: 'Sumber Anggaran',
@@ -377,6 +381,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Tag>
         );
       },
+      sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
     },
     {
       title: 'Satuan',
@@ -399,6 +404,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target (K)',
       key: 'target_k',
       width: 120,
+      sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -425,6 +431,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target Angkas (Rp)',
       key: 'angkas',
       width: 150,
+      sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -451,6 +458,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target Pagu (Rp)',
       key: 'target_rp',
       width: 150,
+      sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -477,6 +485,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Realisasi (K)',
       key: 'realisasi_k',
       width: 120,
+      sorter: (a, b) => (a.realisasi_k || 0) - (b.realisasi_k || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -503,6 +512,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Realisasi (Rp)',
       key: 'realisasi_rp',
       width: 150,
+      sorter: (a, b) => (a.realisasi_rp || 0) - (b.realisasi_rp || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -529,6 +539,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Realisasi Fisik (%)',
       key: 'realisasi_fisik',
       width: 120,
+      sorter: (a, b) => (a.realisasi_fisik || 0) - (b.realisasi_fisik || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -580,6 +591,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       key: 'status',
       width: 120,
       fixed: 'right',
+      sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
       render: (_: any, record: LaporanRow) => {
         if (!record.status) return <Tag>Belum Disimpan</Tag>;
         const color =

@@ -187,12 +187,18 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 200,
       fixed: 'left' as const,
       render: (text: string) => <strong>{text}</strong>,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => (a.sumber_anggaran?.sumber || '').localeCompare(b.sumber_anggaran?.sumber || ''),
     },
     {
       title: 'Bulan/Tahun',
       key: 'periode',
       width: 120,
       render: (_: any, record: AggregatedReport) => `${record.bulan}/${record.tahun}`,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => {
+        const aMonth = `${a.bulan}/${a.tahun}`;
+        const bMonth = `${b.bulan}/${b.tahun}`;
+        return aMonth.localeCompare(bMonth);
+      },
     },
     {
       title: 'Jumlah Laporan',
@@ -201,6 +207,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'center' as const,
       render: (value: number) => <Tag color="blue">{value}</Tag>,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.jumlah_laporan - b.jumlah_laporan,
     },
     {
       title: 'Total Angkas',
@@ -209,6 +216,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_angkas - b.total_angkas,
     },
     {
       title: 'Target K',
@@ -217,6 +225,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => value.toLocaleString('id-ID'),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_k - b.total_target_k,
     },
     {
       title: 'Realisasi K',
@@ -225,6 +234,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => value.toLocaleString('id-ID'),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_k - b.total_realisasi_k,
     },
     {
       title: '% K',
@@ -235,6 +245,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       render: (value: number) => (
         <Tag color={getPersentaseColor(value)}>{value.toFixed(2)}%</Tag>
       ),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.persentase_k - b.persentase_k,
     },
     {
       title: 'Target Rp',
@@ -243,6 +254,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_rp - b.total_target_rp,
     },
     {
       title: 'Realisasi Rp',
@@ -251,6 +263,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_rp - b.total_realisasi_rp,
     },
     {
       title: '% Rp',
@@ -261,6 +274,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       render: (value: number) => (
         <Tag color={getPersentaseColor(value)}>{value.toFixed(2)}%</Tag>
       ),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.persentase_rp - b.persentase_rp,
     },
     {
       title: 'Aksi',
@@ -285,12 +299,14 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       dataIndex: ['user', 'nama_puskesmas'],
       key: 'puskesmas',
       width: 200,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => (a.user?.nama_puskesmas || '').localeCompare(b.user?.nama_puskesmas || ''),
     },
     {
       title: 'Sub Kegiatan',
       dataIndex: ['subKegiatan', 'kegiatan'],
       key: 'sub_kegiatan',
       width: 250,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => (a.subKegiatan?.kegiatan || '').localeCompare(b.subKegiatan?.kegiatan || ''),
     },
     {
       title: 'Angkas',
@@ -299,6 +315,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.angkas - b.angkas,
     },
     {
       title: 'Target K',
@@ -306,6 +323,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       key: 'target_k',
       width: 100,
       align: 'right' as const,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_k - b.target_k,
     },
     {
       title: 'Realisasi K',
@@ -313,6 +331,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       key: 'realisasi_k',
       width: 100,
       align: 'right' as const,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_k - b.realisasi_k,
     },
     {
       title: 'Target Rp',
@@ -321,6 +340,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_rp - b.target_rp,
     },
     {
       title: 'Realisasi Rp',
@@ -329,6 +349,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_rp - b.realisasi_rp,
     },
     {
       title: 'Realisasi Fisik (%)',
@@ -340,6 +361,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
         const num = Number(value);
         return isNaN(num) ? '0.00%' : `${num.toFixed(2)}%`;
       },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_fisik - b.realisasi_fisik,
     },
     {
       title: 'Status',
@@ -355,6 +377,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
         };
         return <Tag color={colors[status] || 'default'}>{status}</Tag>;
       },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.status.localeCompare(b.status),
     },
   ];
 

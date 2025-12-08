@@ -352,6 +352,7 @@ export const LaporanPage: React.FC = () => {
       key: 'bulan',
       width: 100,
       align: 'center',
+      sorter: (a, b) => a.bulan.localeCompare(b.bulan),
     },
     {
       title: 'Kode',
@@ -359,6 +360,7 @@ export const LaporanPage: React.FC = () => {
       width: 120,
       align: 'center',
       render: (_, record) => record.subKegiatan?.kode_sub || '-',
+      sorter: (a, b) => (a.subKegiatan?.kode_sub || '').localeCompare(b.subKegiatan?.kode_sub || ''),
     },
     {
       title: 'Kegiatan',
@@ -366,6 +368,7 @@ export const LaporanPage: React.FC = () => {
       width: 200,
       align: 'center',
       render: (_, record) => record.subKegiatan?.kegiatanParent?.kegiatan || '-',
+      sorter: (a, b) => (a.subKegiatan?.kegiatanParent?.kegiatan || '').localeCompare(b.subKegiatan?.kegiatanParent?.kegiatan || ''),
     },
     {
       title: 'Sub Kegiatan',
@@ -373,6 +376,7 @@ export const LaporanPage: React.FC = () => {
       width: 250,
       align: 'center',
       render: (_, record) => record.subKegiatan?.kegiatan || '-',
+      sorter: (a, b) => (a.subKegiatan?.kegiatan || '').localeCompare(b.subKegiatan?.kegiatan || ''),
     },
     {
       title: 'Sumber Anggaran',
@@ -380,6 +384,7 @@ export const LaporanPage: React.FC = () => {
       width: 150,
       align: 'center',
       render: (_, record) => record.sumberAnggaran?.sumber || '-',
+      sorter: (a, b) => (a.sumberAnggaran?.sumber || '').localeCompare(b.sumberAnggaran?.sumber || ''),
     },
     {
       title: 'Indikator Kinerja',
@@ -391,6 +396,7 @@ export const LaporanPage: React.FC = () => {
           {record.subKegiatan?.indikator_kinerja || '-'}
         </div>
       ),
+      sorter: (a, b) => (a.subKegiatan?.indikator_kinerja || '').localeCompare(b.subKegiatan?.indikator_kinerja || ''),
     },
     {
       title: 'Satuan',
@@ -398,6 +404,7 @@ export const LaporanPage: React.FC = () => {
       width: 100,
       align: 'center',
       render: (_, record) => record.satuan?.satuannya || '-',
+      sorter: (a, b) => (a.satuan?.satuannya || '').localeCompare(b.satuan?.satuannya || ''),
     },
     {
       title: 'Target (K)',
@@ -406,6 +413,7 @@ export const LaporanPage: React.FC = () => {
       width: 100,
       align: 'center',
       render: (val) => formatNumber(val),
+      sorter: (a, b) => a.target_k - b.target_k,
     },
     {
       title: 'Target Angkas (Rp)',
@@ -414,6 +422,7 @@ export const LaporanPage: React.FC = () => {
       width: 150,
       align: 'center',
       render: (val) => formatNumber(val),
+      sorter: (a, b) => a.angkas - b.angkas,
     },
     {
       title: 'Target Pagu (Rp)',
@@ -422,6 +431,7 @@ export const LaporanPage: React.FC = () => {
       width: 150,
       align: 'center',
       render: (val) => formatNumber(val),
+      sorter: (a, b) => a.target_rp - b.target_rp,
     },
     {
       title: 'Realisasi (K)',
@@ -430,6 +440,7 @@ export const LaporanPage: React.FC = () => {
       width: 100,
       align: 'center',
       render: (val) => formatNumber(val),
+      sorter: (a, b) => a.realisasi_k - b.realisasi_k,
     },
     {
       title: 'Realisasi (Rp)',
@@ -438,6 +449,7 @@ export const LaporanPage: React.FC = () => {
       width: 150,
       align: 'center',
       render: (val) => formatNumber(val),
+      sorter: (a, b) => a.realisasi_rp - b.realisasi_rp,
     },
     {
       title: 'Realisasi Fisik (%)',
@@ -446,6 +458,7 @@ export const LaporanPage: React.FC = () => {
       width: 120,
       align: 'center',
       render: (val) => formatPercentage(val),
+      sorter: (a, b) => a.realisasi_fisik - b.realisasi_fisik,
     },
     {
       title: 'Capaian K (%)',
@@ -456,6 +469,11 @@ export const LaporanPage: React.FC = () => {
         if (record.target_k === 0) return '0,00';
         const capaian = (record.realisasi_k / record.target_k) * 100;
         return formatPercentage(capaian);
+      },
+      sorter: (a, b) => {
+        const aCapaian = a.target_k === 0 ? 0 : (a.realisasi_k / a.target_k) * 100;
+        const bCapaian = b.target_k === 0 ? 0 : (b.realisasi_k / b.target_k) * 100;
+        return aCapaian - bCapaian;
       },
     },
     {
@@ -468,6 +486,11 @@ export const LaporanPage: React.FC = () => {
         const capaian = (record.realisasi_rp / record.angkas) * 100;
         return formatPercentage(capaian);
       },
+      sorter: (a, b) => {
+        const aCapaian = a.angkas === 0 ? 0 : (a.realisasi_rp / a.angkas) * 100;
+        const bCapaian = b.angkas === 0 ? 0 : (b.realisasi_rp / b.angkas) * 100;
+        return aCapaian - bCapaian;
+      },
     },
     {
       title: 'Capaian Pagu (%)',
@@ -479,6 +502,11 @@ export const LaporanPage: React.FC = () => {
         const capaian = (record.realisasi_rp / record.target_rp) * 100;
         return formatPercentage(capaian);
       },
+      sorter: (a, b) => {
+        const aCapaian = a.target_rp === 0 ? 0 : (a.realisasi_rp / a.target_rp) * 100;
+        const bCapaian = b.target_rp === 0 ? 0 : (b.realisasi_rp / b.target_rp) * 100;
+        return aCapaian - bCapaian;
+      },
     },
     {
       title: 'Status',
@@ -489,6 +517,7 @@ export const LaporanPage: React.FC = () => {
       render: (status: string) => (
         <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
       ),
+      sorter: (a, b) => a.status.localeCompare(b.status),
     },
     {
       title: 'Aksi',

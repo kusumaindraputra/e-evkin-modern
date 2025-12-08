@@ -75,6 +75,7 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [detailData, setDetailData] = useState<DetailLaporan[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailPuskesmasFilter, setDetailPuskesmasFilter] = useState<string>('');
 
   // Filters
   const currentYear = new Date().getFullYear();
@@ -146,6 +147,27 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
     if (persentase >= 70) return 'blue';
     if (persentase >= 50) return 'orange';
     return 'red';
+  };
+
+  const getUniquePuskesmas = () => {
+    const puskesmasList = Array.from(
+      new Map(
+        detailData.map((item) => [
+          item.user?.nama_puskesmas,
+          { nama_puskesmas: item.user?.nama_puskesmas },
+        ])
+      ).values()
+    );
+    return puskesmasList.sort((a, b) =>
+      (a.nama_puskesmas || '').localeCompare(b.nama_puskesmas || '')
+    );
+  };
+
+  const getFilteredDetailData = () => {
+    if (!detailPuskesmasFilter) return detailData;
+    return detailData.filter(
+      (item) => item.user?.nama_puskesmas === detailPuskesmasFilter
+    );
   };
 
   const handleExportExcel = () => {
@@ -528,13 +550,31 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       <Modal
         title="Detail Laporan Per Puskesmas"
         open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
+        onCancel={() => {
+          setDetailModalVisible(false);
+          setDetailPuskesmasFilter('');
+        }}
         footer={null}
         width={1200}
       >
+        <Space style={{ marginBottom: 16 }}>
+          <Select
+            placeholder="Filter Puskesmas"
+            style={{ width: 250 }}
+            value={detailPuskesmasFilter}
+            onChange={setDetailPuskesmasFilter}
+            allowClear
+          >
+            {getUniquePuskesmas().map((puskesmas) => (
+              <Option key={puskesmas.nama_puskesmas} value={puskesmas.nama_puskesmas || ''}>
+                {puskesmas.nama_puskesmas}
+              </Option>
+            ))}
+          </Select>
+        </Space>
         <Table
           columns={detailColumns}
-          dataSource={detailData}
+          dataSource={getFilteredDetailData()}
           rowKey="id"
           loading={detailLoading}
           pagination={{ pageSize: 10 }}

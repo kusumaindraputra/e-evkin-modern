@@ -608,7 +608,8 @@ export const LaporanPage: React.FC = () => {
           loading={loading}
           rowKey="id"
           rowClassName={(_, index) => index % 2 === 0 ? 'table-row-light' : 'table-row-dark'}
-          scroll={{ x: 3000 }}
+          scroll={{ x: 3000, y: 500 }}
+          sticky
           pagination={{
             current: pagination.current,
             pageSize: pagination.pageSize,

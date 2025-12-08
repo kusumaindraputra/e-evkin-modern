@@ -708,7 +708,8 @@ export const LaporanBulkInputPage: React.FC = () => {
               dataSource={rows}
               loading={loading}
               rowKey={(record) => `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
-              scroll={{ x: 2800 }}
+              sticky
+              scroll={{ x: 2800, y: 500 }}
               pagination={false}
               bordered
             />

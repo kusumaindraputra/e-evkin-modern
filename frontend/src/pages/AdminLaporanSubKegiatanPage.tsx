@@ -502,7 +502,8 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
           rowKey={(record) => `${record.id_sub_kegiatan}-${record.bulan}-${record.tahun}`}
           loading={loading}
           pagination={{ pageSize: 20, showTotal: (total) => `Total ${total} records` }}
-          scroll={{ x: 2000 }}
+          sticky
+          scroll={{ x: 2000, y: 500 }}
         />
       </Card>
 
@@ -520,7 +521,8 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
           rowKey="id"
           loading={detailLoading}
           pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000 }}
+          sticky
+          scroll={{ x: 1000, y: 400 }}
         />
       </Modal>
     </div>

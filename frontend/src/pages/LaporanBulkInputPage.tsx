@@ -82,7 +82,7 @@ export const LaporanBulkInputPage: React.FC = () => {
   });
   
   // Filters
-  const [filterBulan, setFilterBulan] = useState<string>('');
+  const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
 
   const bulanOptions = [
@@ -640,7 +640,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Col>
           <Col xs={24} sm={8} md={6}>
             <Select
-              placeholder="Pilih bulan"
+              placeholder="Pilih Bulan"
               style={{ width: '100%' }}
               value={filterBulan}
               onChange={setFilterBulan}

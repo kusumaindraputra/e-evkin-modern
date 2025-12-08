@@ -87,7 +87,7 @@ export const LaporanPage: React.FC = () => {
   });
   
   // Filters
-  const [filterBulan, setFilterBulan] = useState<string>('');
+  const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number | undefined>(undefined);
   const [filterStatus, setFilterStatus] = useState<string>('');
 
@@ -600,7 +600,7 @@ export const LaporanPage: React.FC = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={8} md={6}>
             <Select
-              placeholder="Pilih bulan"
+              placeholder="Pilih Bulan"
               style={{ width: '100%' }}
               value={filterBulan}
               onChange={setFilterBulan}

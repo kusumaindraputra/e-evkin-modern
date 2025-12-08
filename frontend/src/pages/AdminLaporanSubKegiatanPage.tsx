@@ -82,12 +82,12 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [detailData, setDetailData] = useState<DetailLaporan[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [detailPuskesmasFilter, setDetailPuskesmasFilter] = useState<string>('');
+  const [detailPuskesmasFilter, setDetailPuskesmasFilter] = useState<string | undefined>(undefined);
 
   // Filters
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadReports();
@@ -542,7 +542,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
             ))}
           </Select>
           <Select
-            placeholder="Pilih Bulan"
+            placeholder="Semua Bulan"
             style={{ width: 150 }}
             value={selectedMonth}
             onChange={setSelectedMonth}
@@ -590,14 +590,14 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => {
           setDetailModalVisible(false);
-          setDetailPuskesmasFilter('');
+          setDetailPuskesmasFilter(undefined);
         }}
         footer={null}
         width={1200}
       >
         <Space style={{ marginBottom: 16 }}>
           <Select
-            placeholder="Filter Puskesmas"
+            placeholder="Semua Puskesmas"
             style={{ width: 250 }}
             value={detailPuskesmasFilter}
             onChange={setDetailPuskesmasFilter}

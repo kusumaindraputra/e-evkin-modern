@@ -334,6 +334,22 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_k - b.realisasi_k,
     },
     {
+      title: '% K',
+      key: 'persen_k',
+      width: 100,
+      align: 'right' as const,
+      render: (_: any, record: DetailLaporan) => {
+        if (record.target_k === 0) return '0.00%';
+        const capaian = (record.realisasi_k / record.target_k) * 100;
+        return `${capaian.toFixed(2)}%`;
+      },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => {
+        const aCapaian = a.target_k === 0 ? 0 : (a.realisasi_k / a.target_k) * 100;
+        const bCapaian = b.target_k === 0 ? 0 : (b.realisasi_k / b.target_k) * 100;
+        return aCapaian - bCapaian;
+      },
+    },
+    {
       title: 'Target Rp',
       dataIndex: 'target_rp',
       key: 'target_rp',
@@ -350,6 +366,22 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_rp - b.realisasi_rp,
+    },
+    {
+      title: '% Rp',
+      key: 'persen_rp',
+      width: 100,
+      align: 'right' as const,
+      render: (_: any, record: DetailLaporan) => {
+        if (record.target_rp === 0) return '0.00%';
+        const capaian = (record.realisasi_rp / record.target_rp) * 100;
+        return `${capaian.toFixed(2)}%`;
+      },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => {
+        const aCapaian = a.target_rp === 0 ? 0 : (a.realisasi_rp / a.target_rp) * 100;
+        const bCapaian = b.target_rp === 0 ? 0 : (b.realisasi_rp / b.target_rp) * 100;
+        return aCapaian - bCapaian;
+      },
     },
     {
       title: 'Realisasi Fisik (%)',

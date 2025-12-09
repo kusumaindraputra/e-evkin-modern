@@ -145,22 +145,45 @@ e-evkin-modern/
 - ✅ **Master Data** - Kelola Satuan, Sumber Anggaran, Kegiatan, Sub Kegiatan
 - ✅ **Daftar Puskesmas** - Kelola user puskesmas
 - ✅ **Konfigurasi Sub Kegiatan** - Assign sub kegiatan ke puskesmas
-- ✅ **Laporan Per Sub Kegiatan** - Export Excel laporan agregat
-- ✅ **Laporan Per Sumber Anggaran** - Export Excel per sumber dana
+- ✅ **Laporan Per Sub Kegiatan** - Agregat laporan by sub kegiatan
+  - 📊 Detail drill-down dengan filter puskesmas
+  - 💾 Download Excel data sesuai filter aktif
+- ✅ **Laporan Per Sumber Anggaran** - Agregat laporan by sumber dana
+  - 📊 Detail drill-down dengan filter puskesmas
+  - 💾 Download Excel data sesuai filter aktif
 
 ### Untuk Puskesmas
 - ✅ **Laporan Kinerja** - Input laporan dengan tabel bulk input
+  - 📝 Kolom Realisasi Fisik (%) dengan validasi max 100%
+  - 📊 Sorting pada semua kolom
+  - 🎯 Filter by bulan dan tahun
+  - 💾 Download Excel laporan
 - ✅ **Cara Pengisian** - Panduan lengkap pengisian laporan
 - ✅ **Status Laporan** - Tersimpan (draft) dan Terkirim (submitted)
 
-### Keamanan
-- ✅ JWT Authentication dengan refresh token
-- ✅ Role-based access control (Admin, Puskesmas)
-- ✅ Rate limiting (100 requests/15 minutes)
-- ✅ CORS protection
-- ✅ Helmet security headers
-- ✅ Password hashing dengan bcrypt
-- ✅ Input validation
+### UI/UX Improvements
+- ✅ **Sticky Table Headers** - Header tetap terlihat saat scroll
+- ✅ **Column Sorting** - Sort semua kolom tabel (ascending/descending)
+- ✅ **Responsive Filters** - Filter bulan, tahun, dan puskesmas
+- ✅ **Smart Placeholders** - "Semua Bulan", "Semua Puskesmas" placeholders
+- ✅ **Percentage Columns** - % K dan % Rp untuk analisis capaian
+
+## ✨ Recent Updates (v2.1.0)
+
+### Features Added
+- **Realisasi Fisik Field** - Kolom input persentase fisik (0-100%) di laporan puskesmas
+- **Excel Export Detail** - Download data detail laporan sesuai filter yang aktif
+- **Smart Filtering** - Filter puskesmas di modal detail dengan dropdown
+- **Column Organization** - Persentase K dan Rp ditempatkan setelah nilai realisasi-nya
+- **Sticky Headers** - Table headers tetap terlihat saat scroll vertical
+- **Full Sorting** - Semua kolom di tabel dapat di-sort (ascending/descending)
+- **Enhanced Placeholders** - "Semua Bulan" dan "Semua Puskesmas" untuk UX lebih intuitif
+
+### Technical Improvements
+- TypeScript strict mode compliance
+- Proper type annotations on all sorter functions
+- Safe handling for division by zero in percentage calculations
+- Responsive design for all filter and table components
 
 ## 📝 Available Scripts
 

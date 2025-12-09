@@ -78,6 +78,15 @@ Laporan.init({
         type: sequelize_1.DataTypes.BIGINT,
         allowNull: false,
     },
+    realisasi_fisik: {
+        type: sequelize_1.DataTypes.DECIMAL(5, 2),
+        allowNull: false,
+        defaultValue: 0,
+        validate: {
+            min: 0,
+            max: 100,
+        },
+    },
     permasalahan: {
         type: sequelize_1.DataTypes.TEXT,
         allowNull: false,

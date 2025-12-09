@@ -58,6 +58,7 @@ interface LaporanRow {
   target_rp?: number;
   realisasi_k?: number;
   realisasi_rp?: number;
+  realisasi_fisik?: number;
   permasalahan?: string;
   upaya?: string;
   
@@ -81,7 +82,7 @@ export const LaporanBulkInputPage: React.FC = () => {
   });
   
   // Filters
-  const [filterBulan, setFilterBulan] = useState<string>('');
+  const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
 
   const bulanOptions = [
@@ -205,6 +206,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
             realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
             realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
+            realisasi_fisik: existing?.realisasi_fisik ? Number(existing.realisasi_fisik) : undefined,
             permasalahan: existing?.permasalahan || '',
             upaya: existing?.upaya || '',
           });
@@ -271,6 +273,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             target_rp: row.target_rp || 0,
             realisasi_k: row.realisasi_k || 0,
             realisasi_rp: row.realisasi_rp || 0,
+            realisasi_fisik: row.realisasi_fisik || 0,
             permasalahan: row.permasalahan || '',
             upaya: row.upaya || '',
             bulan: filterBulan,
@@ -338,18 +341,21 @@ export const LaporanBulkInputPage: React.FC = () => {
       key: 'kode_sub',
       width: 100,
       fixed: 'left',
+      sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
     },
     {
       title: 'Kegiatan',
       dataIndex: 'kegiatan_parent',
       key: 'kegiatan_parent',
       width: 200,
+      sorter: (a, b) => a.kegiatan_parent.localeCompare(b.kegiatan_parent),
     },
     {
       title: 'Sub Kegiatan',
       dataIndex: 'kegiatan',
       key: 'kegiatan',
       width: 250,
+      sorter: (a, b) => a.kegiatan.localeCompare(b.kegiatan),
     },
     {
       title: 'Indikator Kinerja',
@@ -359,6 +365,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       render: (text: string) => (
         <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
       ),
+      sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
     },
     {
       title: 'Sumber Anggaran',
@@ -374,6 +381,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Tag>
         );
       },
+      sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
     },
     {
       title: 'Satuan',
@@ -396,6 +404,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target (K)',
       key: 'target_k',
       width: 120,
+      sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -422,6 +431,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target Angkas (Rp)',
       key: 'angkas',
       width: 150,
+      sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -448,6 +458,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Target Pagu (Rp)',
       key: 'target_rp',
       width: 150,
+      sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -474,6 +485,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Realisasi (K)',
       key: 'realisasi_k',
       width: 120,
+      sorter: (a, b) => (a.realisasi_k || 0) - (b.realisasi_k || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -500,6 +512,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       title: 'Realisasi (Rp)',
       key: 'realisasi_rp',
       width: 150,
+      sorter: (a, b) => (a.realisasi_rp || 0) - (b.realisasi_rp || 0),
       render: (_: any, record: LaporanRow) => (
         <InputNumber
           style={{ width: '100%' }}
@@ -518,6 +531,27 @@ export const LaporanBulkInputPage: React.FC = () => {
             const parsed = value?.replace(/\./g, '');
             return parsed ? Number(parsed) : 0;
           }}
+          disabled={record.status === 'terkirim'}
+        />
+      ),
+    },
+    {
+      title: 'Realisasi Fisik (%)',
+      key: 'realisasi_fisik',
+      width: 120,
+      sorter: (a, b) => (a.realisasi_fisik || 0) - (b.realisasi_fisik || 0),
+      render: (_: any, record: LaporanRow) => (
+        <InputNumber
+          style={{ width: '100%' }}
+          value={record.realisasi_fisik}
+          onChange={(value) =>
+            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_fisik', value)
+          }
+          min={0}
+          max={100}
+          step={0.01}
+          controls={false}
+          formatter={(value) => `${value}`}
           disabled={record.status === 'terkirim'}
         />
       ),
@@ -557,6 +591,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       key: 'status',
       width: 120,
       fixed: 'right',
+      sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
       render: (_: any, record: LaporanRow) => {
         if (!record.status) return <Tag>Belum Disimpan</Tag>;
         const color =
@@ -605,7 +640,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Col>
           <Col xs={24} sm={8} md={6}>
             <Select
-              placeholder="Pilih bulan"
+              placeholder="Pilih Bulan"
               style={{ width: '100%' }}
               value={filterBulan}
               onChange={setFilterBulan}
@@ -685,7 +720,8 @@ export const LaporanBulkInputPage: React.FC = () => {
               dataSource={rows}
               loading={loading}
               rowKey={(record) => `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
-              scroll={{ x: 2800 }}
+              sticky
+              scroll={{ x: 2800, y: 500 }}
               pagination={false}
               bordered
             />

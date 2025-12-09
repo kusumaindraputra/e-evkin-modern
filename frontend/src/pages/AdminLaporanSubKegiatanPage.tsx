@@ -68,6 +68,7 @@ interface DetailLaporan {
   realisasi_k: number;
   target_rp: number;
   realisasi_rp: number;
+  realisasi_fisik: number;
   angkas: number;
   status: string;
   permasalahan: string;
@@ -81,11 +82,12 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [detailData, setDetailData] = useState<DetailLaporan[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailPuskesmasFilter, setDetailPuskesmasFilter] = useState<string | undefined>(undefined);
 
   // Filters
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadReports();
@@ -220,6 +222,27 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     return 'red';
   };
 
+  const getUniquePuskesmas = () => {
+    const puskesmasList = Array.from(
+      new Map(
+        detailData.map((item) => [
+          item.user?.nama_puskesmas,
+          { nama_puskesmas: item.user?.nama_puskesmas },
+        ])
+      ).values()
+    );
+    return puskesmasList.sort((a, b) =>
+      (a.nama_puskesmas || '').localeCompare(b.nama_puskesmas || '')
+    );
+  };
+
+  const getFilteredDetailData = () => {
+    if (!detailPuskesmasFilter) return detailData;
+    return detailData.filter(
+      (item) => item.user?.nama_puskesmas === detailPuskesmasFilter
+    );
+  };
+
   const columns = [
     {
       title: 'Kode Sub Kegiatan',
@@ -227,12 +250,14 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       key: 'kode_sub',
       width: 180,
       fixed: 'left' as const,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => (a.sub_kegiatan?.kode_sub || '').localeCompare(b.sub_kegiatan?.kode_sub || ''),
     },
     {
       title: 'Sub Kegiatan',
       dataIndex: ['sub_kegiatan', 'kegiatan'],
       key: 'kegiatan',
       width: 300,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => (a.sub_kegiatan?.kegiatan || '').localeCompare(b.sub_kegiatan?.kegiatan || ''),
     },
     {
       title: 'Kegiatan Parent',
@@ -240,12 +265,18 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       key: 'parent',
       width: 250,
       ellipsis: true,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => (a.sub_kegiatan?.kegiatanParent?.kegiatan || '').localeCompare(b.sub_kegiatan?.kegiatanParent?.kegiatan || ''),
     },
     {
       title: 'Bulan/Tahun',
       key: 'periode',
       width: 120,
       render: (_: any, record: AggregatedReport) => `${record.bulan}/${record.tahun}`,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => {
+        const aMonth = `${a.bulan}/${a.tahun}`;
+        const bMonth = `${b.bulan}/${b.tahun}`;
+        return aMonth.localeCompare(bMonth);
+      },
     },
     {
       title: 'Jumlah Laporan',
@@ -254,6 +285,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 120,
       align: 'center' as const,
       render: (value: number) => <Tag color="blue">{value}</Tag>,
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.jumlah_laporan - b.jumlah_laporan,
     },
     {
       title: 'Target K',
@@ -262,6 +294,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => value.toLocaleString('id-ID'),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_k - b.total_target_k,
     },
     {
       title: 'Realisasi K',
@@ -270,6 +303,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => value.toLocaleString('id-ID'),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_k - b.total_realisasi_k,
     },
     {
       title: '% K',
@@ -280,6 +314,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       render: (value: number) => (
         <Tag color={getPersentaseColor(value)}>{value.toFixed(2)}%</Tag>
       ),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.persentase_k - b.persentase_k,
     },
     {
       title: 'Target Rp',
@@ -288,6 +323,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_rp - b.total_target_rp,
     },
     {
       title: 'Realisasi Rp',
@@ -296,6 +332,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_rp - b.total_realisasi_rp,
     },
     {
       title: '% Rp',
@@ -306,6 +343,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       render: (value: number) => (
         <Tag color={getPersentaseColor(value)}>{value.toFixed(2)}%</Tag>
       ),
+      sorter: (a: AggregatedReport, b: AggregatedReport) => a.persentase_rp - b.persentase_rp,
     },
     {
       title: 'Aksi',
@@ -330,12 +368,14 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       dataIndex: ['user', 'nama_puskesmas'],
       key: 'puskesmas',
       width: 200,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => (a.user?.nama_puskesmas || '').localeCompare(b.user?.nama_puskesmas || ''),
     },
     {
       title: 'Sumber Anggaran',
       dataIndex: ['sumberAnggaran', 'sumber'],
       key: 'sumber',
       width: 150,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => (a.sumberAnggaran?.sumber || '').localeCompare(b.sumberAnggaran?.sumber || ''),
     },
     {
       title: 'Target K',
@@ -343,6 +383,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       key: 'target_k',
       width: 100,
       align: 'right' as const,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_k - b.target_k,
     },
     {
       title: 'Realisasi K',
@@ -350,6 +391,23 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       key: 'realisasi_k',
       width: 100,
       align: 'right' as const,
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_k - b.realisasi_k,
+    },
+    {
+      title: '% K',
+      key: 'persen_k',
+      width: 100,
+      align: 'right' as const,
+      render: (_: any, record: DetailLaporan) => {
+        if (record.target_k === 0) return '0.00%';
+        const capaian = (record.realisasi_k / record.target_k) * 100;
+        return `${capaian.toFixed(2)}%`;
+      },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => {
+        const aCapaian = a.target_k === 0 ? 0 : (a.realisasi_k / a.target_k) * 100;
+        const bCapaian = b.target_k === 0 ? 0 : (b.realisasi_k / b.target_k) * 100;
+        return aCapaian - bCapaian;
+      },
     },
     {
       title: 'Target Rp',
@@ -358,6 +416,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_rp - b.target_rp,
     },
     {
       title: 'Realisasi Rp',
@@ -366,6 +425,35 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (value: number) => formatRupiah(value),
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_rp - b.realisasi_rp,
+    },
+    {
+      title: '% Rp',
+      key: 'persen_rp',
+      width: 100,
+      align: 'right' as const,
+      render: (_: any, record: DetailLaporan) => {
+        if (record.target_rp === 0) return '0.00%';
+        const capaian = (record.realisasi_rp / record.target_rp) * 100;
+        return `${capaian.toFixed(2)}%`;
+      },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => {
+        const aCapaian = a.target_rp === 0 ? 0 : (a.realisasi_rp / a.target_rp) * 100;
+        const bCapaian = b.target_rp === 0 ? 0 : (b.realisasi_rp / b.target_rp) * 100;
+        return aCapaian - bCapaian;
+      },
+    },
+    {
+      title: 'Realisasi Fisik (%)',
+      dataIndex: 'realisasi_fisik',
+      key: 'realisasi_fisik',
+      width: 120,
+      align: 'right' as const,
+      render: (value: number) => {
+        const num = Number(value);
+        return isNaN(num) ? '0.00%' : `${num.toFixed(2)}%`;
+      },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_fisik - b.realisasi_fisik,
     },
     {
       title: 'Status',
@@ -381,6 +469,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
         };
         return <Tag color={colors[status] || 'default'}>{status}</Tag>;
       },
+      sorter: (a: DetailLaporan, b: DetailLaporan) => a.status.localeCompare(b.status),
     },
   ];
 
@@ -453,7 +542,7 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
             ))}
           </Select>
           <Select
-            placeholder="Pilih Bulan"
+            placeholder="Semua Bulan"
             style={{ width: 150 }}
             value={selectedMonth}
             onChange={setSelectedMonth}
@@ -490,7 +579,8 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
           rowKey={(record) => `${record.id_sub_kegiatan}-${record.bulan}-${record.tahun}`}
           loading={loading}
           pagination={{ pageSize: 20, showTotal: (total) => `Total ${total} records` }}
-          scroll={{ x: 2000 }}
+          sticky
+          scroll={{ x: 2000, y: 500 }}
         />
       </Card>
 
@@ -498,17 +588,36 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       <Modal
         title="Detail Laporan Per Puskesmas"
         open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
+        onCancel={() => {
+          setDetailModalVisible(false);
+          setDetailPuskesmasFilter(undefined);
+        }}
         footer={null}
         width={1200}
       >
+        <Space style={{ marginBottom: 16 }}>
+          <Select
+            placeholder="Semua Puskesmas"
+            style={{ width: 250 }}
+            value={detailPuskesmasFilter}
+            onChange={setDetailPuskesmasFilter}
+            allowClear
+          >
+            {getUniquePuskesmas().map((puskesmas) => (
+              <Option key={puskesmas.nama_puskesmas} value={puskesmas.nama_puskesmas || ''}>
+                {puskesmas.nama_puskesmas}
+              </Option>
+            ))}
+          </Select>
+        </Space>
         <Table
           columns={detailColumns}
-          dataSource={detailData}
+          dataSource={getFilteredDetailData()}
           rowKey="id"
           loading={detailLoading}
           pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000 }}
+          sticky
+          scroll={{ x: 1000, y: 400 }}
         />
       </Modal>
     </div>

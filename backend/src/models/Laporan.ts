@@ -13,6 +13,7 @@ interface LaporanAttributes {
   target_rp: number;
   realisasi_k: number;
   realisasi_rp: number;
+  realisasi_fisik: number;
   permasalahan: string;
   upaya: string;
   bulan: string;
@@ -26,7 +27,7 @@ interface LaporanAttributes {
 }
 
 interface LaporanCreationAttributes 
-  extends Optional<LaporanAttributes, 'id' | 'status' | 'created_at' | 'updated_at'> {}
+  extends Optional<LaporanAttributes, 'id' | 'status' | 'realisasi_fisik' | 'created_at' | 'updated_at'> {}
 
 class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes> implements LaporanAttributes {
   declare id: string;
@@ -40,6 +41,7 @@ class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes> implem
   declare target_rp: number;
   declare realisasi_k: number;
   declare realisasi_rp: number;
+  declare realisasi_fisik: number;
   declare permasalahan: string;
   declare upaya: string;
   declare bulan: string;
@@ -126,6 +128,15 @@ Laporan.init(
     realisasi_rp: {
       type: DataTypes.BIGINT,
       allowNull: false,
+    },
+    realisasi_fisik: {
+      type: DataTypes.DECIMAL(5, 2),
+      allowNull: false,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100,
+      },
     },
     permasalahan: {
       type: DataTypes.TEXT,

@@ -207,6 +207,53 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     message.success('Data berhasil diunduh');
   };
 
+  const handleExportDetailExcel = () => {
+    const filteredData = getFilteredDetailData();
+    if (filteredData.length === 0) {
+      message.warning('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const exportColumns = [
+      { header: 'Puskesmas', key: 'user.nama_puskesmas', width: 30 },
+      { header: 'Sumber Anggaran', key: 'sumberAnggaran.sumber', width: 25 },
+      { header: 'Angkas', key: 'angkas', width: 20, format: (value: number) => formatRupiahForExcel(value) },
+      { header: 'Target K', key: 'target_k', width: 15 },
+      { header: 'Realisasi K', key: 'realisasi_k', width: 15 },
+      {
+        header: '% K',
+        key: 'persen_k',
+        width: 12,
+        format: (_: any, row?: Record<string, any>) => {
+          if (!row || row.target_k === 0) return '0.00%';
+          return formatPercentageForExcel((row.realisasi_k / row.target_k) * 100);
+        },
+      },
+      { header: 'Target Rp', key: 'target_rp', width: 20, format: (value: number) => formatRupiahForExcel(value) },
+      { header: 'Realisasi Rp', key: 'realisasi_rp', width: 20, format: (value: number) => formatRupiahForExcel(value) },
+      {
+        header: '% Rp',
+        key: 'persen_rp',
+        width: 12,
+        format: (_: any, row?: Record<string, any>) => {
+          if (!row || row.target_rp === 0) return '0.00%';
+          return formatPercentageForExcel((row.realisasi_rp / row.target_rp) * 100);
+        },
+      },
+      { header: 'Realisasi Fisik (%)', key: 'realisasi_fisik', width: 18, format: (value: number) => formatPercentageForExcel(value) },
+      { header: 'Status', key: 'status', width: 15 },
+    ];
+
+    exportToExcel({
+      fileName: 'laporan-detail-sub-kegiatan',
+      sheetName: 'Detail Laporan',
+      columns: exportColumns,
+      data: filteredData,
+    });
+
+    message.success('Data berhasil diunduh');
+  };
+
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -609,6 +656,14 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
               </Option>
             ))}
           </Select>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportDetailExcel}
+            disabled={getFilteredDetailData().length === 0}
+          >
+            Download Excel
+          </Button>
         </Space>
         <Table
           columns={detailColumns}

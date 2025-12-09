@@ -485,5 +485,86 @@ router.get('/dashboard/budget-ytd', auth_1.authenticate, async (req, res) => {
         res.status(500).json({ message: 'Gagal mengambil data anggaran', error: error.message });
     }
 });
+// Get puskesmas reporting details (who has reported and who hasn't)
+router.get('/dashboard/puskesmas-reporting-details', auth_1.authenticate, async (req, res) => {
+    try {
+        const userRole = req.user?.role;
+        if (userRole !== 'admin') {
+            res.status(403).json({ message: 'Access denied. Admin only.' });
+            return;
+        }
+        const { tahun, bulan } = req.query;
+        const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
+        const currentMonth = bulan || undefined;
+        // Build where clause for laporan
+        const laporanWhere = { tahun: currentYear, status: 'terkirim' };
+        if (currentMonth) {
+            laporanWhere.bulan = currentMonth;
+        }
+        // Get all puskesmas users
+        const allPuskesmas = await models_1.User.findAll({
+            where: { role: 'puskesmas' },
+            attributes: ['id', 'nama_puskesmas'],
+            order: [['nama_puskesmas', 'ASC']],
+            raw: true
+        });
+        // Use raw query to get puskesmas that have submitted reports with latest date
+        const reportedLaporan = await models_1.Laporan.sequelize.query(`SELECT 
+        l.user_id,
+        u.nama_puskesmas,
+        MAX(l.updated_at) as tanggal_lapor
+      FROM laporan l
+      INNER JOIN users u ON l.user_id = u.id
+      WHERE l.tahun = :tahun 
+        AND l.status = 'terkirim'
+        ${currentMonth ? "AND l.bulan = :bulan" : ""}
+        AND u.role = 'puskesmas'
+      GROUP BY l.user_id, u.nama_puskesmas`, {
+            replacements: { tahun: currentYear, bulan: currentMonth },
+            type: sequelize_1.QueryTypes.SELECT
+        });
+        // Create map of reported puskesmas
+        const reportedMap = new Map(reportedLaporan.map(item => [
+            item.user_id,
+            {
+                user_id: item.user_id,
+                nama_puskesmas: item.nama_puskesmas,
+                tanggal_lapor: item.tanggal_lapor
+            }
+        ]));
+        // Separate puskesmas into reported and not reported
+        const sudahLapor = [];
+        const belumLapor = [];
+        allPuskesmas.forEach((puskesmas) => {
+            if (reportedMap.has(puskesmas.id)) {
+                const reported = reportedMap.get(puskesmas.id);
+                sudahLapor.push({
+                    user_id: puskesmas.id,
+                    nama_puskesmas: puskesmas.nama_puskesmas,
+                    tanggal_lapor: reported?.tanggal_lapor
+                });
+            }
+            else {
+                belumLapor.push({
+                    user_id: puskesmas.id,
+                    nama_puskesmas: puskesmas.nama_puskesmas
+                });
+            }
+        });
+        res.status(200).json({
+            message: 'Puskesmas reporting details retrieved successfully',
+            data: {
+                sudahLapor,
+                belumLapor
+            },
+            tahun: currentYear,
+            bulan: currentMonth
+        });
+    }
+    catch (error) {
+        console.error('Puskesmas reporting details error:', error);
+        res.status(500).json({ message: 'Gagal mengambil detail puskesmas', error: error.message });
+    }
+});
 exports.default = router;
 //# sourceMappingURL=admin.routes.js.map

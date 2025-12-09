@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Typography, Progress, Space, Spin, Select } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Progress, Space, Spin, Select, Modal, Table } from 'antd';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -56,6 +56,17 @@ interface DashboardStats {
   persentasePuskesmasReporting: number;
 }
 
+interface PuskesmasSudahLapor {
+  user_id: number;
+  nama_puskesmas: string;
+  tanggal_lapor: string;
+}
+
+interface PuskesmasBelumLapor {
+  user_id: number;
+  nama_puskesmas: string;
+}
+
 export const DashboardPage: React.FC = () => {
   const { user, token } = useAuthStore();
   const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
@@ -78,6 +89,12 @@ export const DashboardPage: React.FC = () => {
     totalRealisasi: 0,
     persentaseRealisasi: 0,
   });
+  const [showPuskesmasModal, setShowPuskesmasModal] = useState(false);
+  const [puskesmasSudahLapor, setPuskesmasSudahLapor] = useState<PuskesmasSudahLapor[]>([]);
+  const [puskesmasBelumLapor, setPuskesmasBelumLapor] = useState<PuskesmasBelumLapor[]>([]);
+  const [loadingPuskesmasDetails, setLoadingPuskesmasDetails] = useState(false);
+  const [sudahLaporPage, setSudahLaporPage] = useState(1);
+  const [belumLaporPage, setBelumLaporPage] = useState(1);
 
   // Filter states
   const currentDate = new Date();
@@ -236,6 +253,30 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const fetchPuskesmasReportingDetails = async () => {
+    setLoadingPuskesmasDetails(true);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/admin/dashboard/puskesmas-reporting-details?tahun=${statsYear}&bulan=${statsMonth}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setPuskesmasSudahLapor(response.data.data.sudahLapor || []);
+      setPuskesmasBelumLapor(response.data.data.belumLapor || []);
+    } catch (error) {
+      console.error('Error fetching puskesmas reporting details:', error);
+    } finally {
+      setLoadingPuskesmasDetails(false);
+    }
+  };
+
+  const handlePuskesmasCardClick = async () => {
+    setShowPuskesmasModal(true);
+    await fetchPuskesmasReportingDetails();
+  };
+
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -314,7 +355,13 @@ export const DashboardPage: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={8}>
-                <Card loading={loadingStats} bordered={false}>
+                <Card 
+                  loading={loadingStats} 
+                  bordered={false}
+                  hoverable
+                  onClick={handlePuskesmasCardClick}
+                  style={{ cursor: 'pointer' }}
+                >
                   <Statistic
                     title="Puskesmas Melaporkan"
                     value={stats.puskesmasReporting}
@@ -601,6 +648,101 @@ export const DashboardPage: React.FC = () => {
           </Col>
         )}
       </Row>
+
+      {/* Modal Detail Puskesmas Melaporkan */}
+      <Modal
+        title={`Detail Puskesmas Melaporkan - ${statsMonth} ${statsYear}`}
+        open={showPuskesmasModal}
+        onCancel={() => setShowPuskesmasModal(false)}
+        footer={null}
+        width={900}
+      >
+        <Spin spinning={loadingPuskesmasDetails}>
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            {/* Puskesmas Sudah Melaporkan */}
+            <div>
+              <Title level={5} style={{ marginBottom: 12 }}>
+                Puskesmas Sudah Melaporkan ({puskesmasSudahLapor.length})
+              </Title>
+              <Table
+                dataSource={puskesmasSudahLapor}
+                rowKey="user_id"
+                size="small"
+                pagination={{ 
+                  pageSize: 10,
+                  current: sudahLaporPage,
+                  onChange: (page) => setSudahLaporPage(page)
+                }}
+                columns={[
+                  {
+                    title: 'No',
+                    key: 'no',
+                    width: 60,
+                    render: (_: any, __: any, index: number) => {
+                      return (sudahLaporPage - 1) * 10 + index + 1;
+                    },
+                  },
+                  {
+                    title: 'Nama Puskesmas',
+                    dataIndex: 'nama_puskesmas',
+                    key: 'nama_puskesmas',
+                    sorter: (a, b) => a.nama_puskesmas.localeCompare(b.nama_puskesmas),
+                  },
+                  {
+                    title: 'Tanggal Lapor',
+                    dataIndex: 'tanggal_lapor',
+                    key: 'tanggal_lapor',
+                    width: 140,
+                    render: (date: string) => {
+                      const d = new Date(date);
+                      const day = String(d.getDate()).padStart(2, '0');
+                      const month = String(d.getMonth() + 1).padStart(2, '0');
+                      const year = d.getFullYear();
+                      const hour = String(d.getHours()).padStart(2, '0');
+                      const minute = String(d.getMinutes()).padStart(2, '0');
+                      return `${day}/${month}/${year} ${hour}:${minute}`;
+                    },
+                    sorter: (a, b) => new Date(a.tanggal_lapor).getTime() - new Date(b.tanggal_lapor).getTime(),
+                  },
+                ]}
+              />
+            </div>
+
+            {/* Puskesmas Belum Melaporkan */}
+            <div>
+              <Title level={5} style={{ marginBottom: 12, color: '#ff4d4f' }}>
+                Puskesmas Belum Melaporkan ({puskesmasBelumLapor.length})
+              </Title>
+              <Table
+                dataSource={puskesmasBelumLapor}
+                rowKey="user_id"
+                size="small"
+                pagination={{ 
+                  pageSize: 10,
+                  current: belumLaporPage,
+                  onChange: (page) => setBelumLaporPage(page)
+                }}
+                columns={[
+                  {
+                    title: 'No',
+                    key: 'no',
+                    width: 60,
+                    render: (_: any, __: any, index: number) => {
+                      return (belumLaporPage - 1) * 10 + index + 1;
+                    },
+                  },
+                  {
+                    title: 'Nama Puskesmas',
+                    dataIndex: 'nama_puskesmas',
+                    key: 'nama_puskesmas',
+                    sorter: (a, b) => a.nama_puskesmas.localeCompare(b.nama_puskesmas),
+                  },
+                ]}
+              />
+            </div>
+          </Space>
+        </Spin>
+      </Modal>
     </div>
   );
 };

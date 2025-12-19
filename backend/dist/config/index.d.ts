@@ -17,5 +17,9 @@ export declare const config: {
         windowMs: number;
         maxRequests: number;
     };
+    openai: {
+        apiKey: string;
+        model: string;
+    };
 };
 //# sourceMappingURL=index.d.ts.map

@@ -19,6 +19,7 @@ import usersRoutes from './routes/users.routes';
 import reportRoutes from './routes/report.routes';
 import puskesmasConfigRoutes from './routes/puskesmas-config.routes';
 import subKegiatanSumberAnggaranRoutes from './routes/sub-kegiatan-sumber-anggaran.routes';
+import chatRoutes from './routes/chat.routes';
 
 const app: Application = express();
 
@@ -54,6 +55,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/puskesmas-config', puskesmasConfigRoutes);
 app.use('/api/sub-kegiatan-sumber-anggaran', subKegiatanSumberAnggaranRoutes);
+app.use('/api/admin', chatRoutes);
 
 // Error handling
 app.use(errorHandler);

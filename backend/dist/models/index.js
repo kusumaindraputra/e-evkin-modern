@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SubKegiatanSumberAnggaran = exports.PuskesmasSubKegiatan = exports.SubKegiatan = exports.Kegiatan = exports.Satuan = exports.SumberAnggaran = exports.Laporan = exports.User = void 0;
+exports.SubKegiatanTarget = exports.SubKegiatanSumberAnggaran = exports.PuskesmasSubKegiatan = exports.SubKegiatan = exports.Kegiatan = exports.Satuan = exports.SumberAnggaran = exports.Laporan = exports.User = void 0;
 const User_1 = __importDefault(require("./User"));
 exports.User = User_1.default;
 const Laporan_1 = __importDefault(require("./Laporan"));
@@ -20,6 +20,8 @@ const PuskesmasSubKegiatan_1 = __importDefault(require("./PuskesmasSubKegiatan")
 exports.PuskesmasSubKegiatan = PuskesmasSubKegiatan_1.default;
 const SubKegiatanSumberAnggaran_1 = __importDefault(require("./SubKegiatanSumberAnggaran"));
 exports.SubKegiatanSumberAnggaran = SubKegiatanSumberAnggaran_1.default;
+const SubKegiatanTarget_1 = __importDefault(require("./SubKegiatanTarget"));
+exports.SubKegiatanTarget = SubKegiatanTarget_1.default;
 // Define associations
 User_1.default.hasMany(Laporan_1.default, {
     foreignKey: 'user_id',

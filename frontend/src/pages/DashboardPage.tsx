@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
+import ChatWidget from '../components/ChatWidget';
 import {
   LineChart,
   Line,
@@ -305,6 +306,9 @@ export const DashboardPage: React.FC = () => {
         </Text>
       </div>
 
+      {/* AI Chat Widget */}
+      <ChatWidget compact={true} />
+
       {/* Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col span={24}>
@@ -335,7 +339,7 @@ export const DashboardPage: React.FC = () => {
           >
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={8}>
-                <Card loading={loadingStats} bordered={false}>
+                <Card loading={loadingStats} variant="borderless">
                   <Statistic
                     title="Total Laporan Terkirim"
                     value={stats.terkirim}
@@ -345,7 +349,7 @@ export const DashboardPage: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={8}>
-                <Card loading={loadingStats} bordered={false}>
+                <Card loading={loadingStats} variant="borderless">
                   <Statistic
                     title="Laporan Tersimpan (Draft)"
                     value={stats.tersimpan}
@@ -357,7 +361,7 @@ export const DashboardPage: React.FC = () => {
               <Col xs={24} sm={8}>
                 <Card 
                   loading={loadingStats} 
-                  bordered={false}
+                  variant="borderless"
                   hoverable
                   onClick={handlePuskesmasCardClick}
                   style={{ cursor: 'pointer' }}
@@ -429,7 +433,7 @@ export const DashboardPage: React.FC = () => {
         {/* Budget Chart YTD - Admin Only */}
         {user?.role === 'admin' && (
           <Col xs={24}>
-            <Card title="Grafik Realisasi Anggaran Year to Date" bordered={false}>
+            <Card title="Grafik Realisasi Anggaran Year to Date" variant="borderless">
               {loadingBudget ? (
                 <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Spin size="large" />
@@ -481,7 +485,7 @@ export const DashboardPage: React.FC = () => {
           <Col xs={24}>
             <Card 
               title="Top 10 Puskesmas - Penyerapan Anggaran Tertinggi"
-              bordered={false}
+              variant="borderless"
               extra={
                 <Space>
                   <Select
@@ -563,7 +567,7 @@ export const DashboardPage: React.FC = () => {
           <Col xs={24}>
             <Card 
               title="Realisasi Anggaran Per Bulan"
-              bordered={false}
+              variant="borderless"
               extra={
                 <Space>
                   <Select
@@ -640,7 +644,7 @@ export const DashboardPage: React.FC = () => {
         {/* Performance Chart - Hidden when admin */}
         {user?.role !== 'admin' && (
           <Col xs={24} lg={16}>
-            <Card title="Grafik Kinerja Bulanan" bordered={false}>
+            <Card title="Grafik Kinerja Bulanan" variant="borderless">
               <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Text type="secondary">Grafik akan ditampilkan di sini (Recharts)</Text>
               </div>

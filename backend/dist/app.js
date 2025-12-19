@@ -24,6 +24,7 @@ const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const report_routes_1 = __importDefault(require("./routes/report.routes"));
 const puskesmas_config_routes_1 = __importDefault(require("./routes/puskesmas-config.routes"));
 const sub_kegiatan_sumber_anggaran_routes_1 = __importDefault(require("./routes/sub-kegiatan-sumber-anggaran.routes"));
+const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const app = (0, express_1.default)();
 // Security middleware
 app.use((0, helmet_1.default)());
@@ -54,6 +55,7 @@ app.use('/api/users', users_routes_1.default);
 app.use('/api/report', report_routes_1.default);
 app.use('/api/puskesmas-config', puskesmas_config_routes_1.default);
 app.use('/api/sub-kegiatan-sumber-anggaran', sub_kegiatan_sumber_anggaran_routes_1.default);
+app.use('/api/admin', chat_routes_1.default);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 exports.default = app;

@@ -416,10 +416,35 @@ router.get('/admin', authenticate, authorizeAdmin, async (req, res) => {
     const { user_id, id_sub_kegiatan, id_sumber_anggaran, tahun } = req.query;
 
     const whereClause: any = { bulan: null };
-    if (user_id) whereClause.user_id = parseInt(user_id as string);
-    if (id_sub_kegiatan) whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan as string);
-    if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
-    if (tahun) whereClause.tahun = parseInt(tahun as string);
+    
+    // Safe parsing with validation
+    if (user_id && user_id !== 'undefined' && user_id !== 'null') {
+      // For UUID, no need to parse as integer
+      whereClause.user_id = user_id;
+    }
+    
+    if (id_sub_kegiatan && id_sub_kegiatan !== 'undefined' && id_sub_kegiatan !== 'null') {
+      const parsed = parseInt(id_sub_kegiatan as string);
+      if (!isNaN(parsed)) {
+        whereClause.id_sub_kegiatan = parsed;
+      }
+    }
+    
+    if (id_sumber_anggaran && id_sumber_anggaran !== 'undefined' && id_sumber_anggaran !== 'null') {
+      const parsed = parseInt(id_sumber_anggaran as string);
+      if (!isNaN(parsed)) {
+        whereClause.id_sumber_anggaran = parsed;
+      }
+    }
+    
+    if (tahun && tahun !== 'undefined' && tahun !== 'null') {
+      const parsed = parseInt(tahun as string);
+      if (!isNaN(parsed)) {
+        whereClause.tahun = parsed;
+      }
+    }
+
+    console.log('Admin targets whereClause:', whereClause);
 
     // Get all targets
     const allTargets = await SubKegiatanTarget.findAll({
@@ -567,12 +592,31 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
       });
     }
 
+    // Safe parsing - user_id is UUID string, others are integers
+    const parsedIdSubKegiatan = parseInt(id_sub_kegiatan as string);
+    const parsedIdSumberAnggaran = parseInt(id_sumber_anggaran as string);
+    const parsedTahun = parseInt(tahun as string);
+
+    if (isNaN(parsedIdSubKegiatan) || isNaN(parsedIdSumberAnggaran) || isNaN(parsedTahun)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parameter id_sub_kegiatan, id_sumber_anggaran, dan tahun harus berupa angka yang valid',
+      });
+    }
+
+    console.log('Fetching history for:', {
+      user_id,
+      id_sub_kegiatan: parsedIdSubKegiatan,
+      id_sumber_anggaran: parsedIdSumberAnggaran,
+      tahun: parsedTahun,
+    });
+
     const history = await SubKegiatanTarget.findAll({
       where: {
-        user_id: parseInt(user_id as string),
-        id_sub_kegiatan: parseInt(id_sub_kegiatan as string),
-        id_sumber_anggaran: parseInt(id_sumber_anggaran as string),
-        tahun: parseInt(tahun as string),
+        user_id: user_id as string, // Keep as string UUID
+        id_sub_kegiatan: parsedIdSubKegiatan,
+        id_sumber_anggaran: parsedIdSumberAnggaran,
+        tahun: parsedTahun,
         bulan: null,
       },
       include: [
@@ -585,9 +629,27 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
       order: [['created_at', 'DESC']],
     });
 
+    // Format the response to ensure proper date formatting
+    const formattedHistory = history.map(record => {
+      const json = record.toJSON();
+      console.log('Raw record keys:', Object.keys(json));
+      console.log('created_at value:', json.created_at);
+      console.log('createdAt value:', json.createdAt);
+      
+      // Handle both created_at and createdAt (Sequelize alias)
+      const createdAtValue = json.createdAt || json.created_at;
+      
+      return {
+        ...json,
+        created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+      };
+    });
+
+    console.log('Formatted history sample:', JSON.stringify(formattedHistory[0], null, 2));
+
     return res.json({
       success: true,
-      data: history,
+      data: formattedHistory,
     });
   } catch (error) {
     console.error('Error fetching admin history:', error);

@@ -13,8 +13,9 @@ import {
   Timeline,
   Row,
   Col,
+  Upload,
 } from 'antd';
-import { EditOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, HistoryOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
@@ -81,6 +82,35 @@ interface SumberAnggaran {
 const AdminTargetPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuthStore();
+
+  // Helper function untuk format tanggal
+  const formatDate = (dateString: string | null | undefined) => {
+    try {
+      if (!dateString) {
+        return 'No Date';
+      }
+      
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Input:', dateString);
+      return 'Format Error';
+    }
+  };
+
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -94,6 +124,8 @@ const AdminTargetPage: React.FC = () => {
   const [subKegiatanList, setSubKegiatanList] = useState<SubKegiatan[]>([]);
   const [sumberAnggaranList, setSumberAnggaranList] = useState<SumberAnggaran[]>([]);
   const [satuanList, setSatuanList] = useState<Array<{ value: number; label: string }>>([]);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [modalSubKegiatanList, setModalSubKegiatanList] = useState<SubKegiatan[]>([]);
 
   // Filters
@@ -118,8 +150,9 @@ const AdminTargetPage: React.FC = () => {
 
       // Load puskesmas list
       const puskesmasRes = await axios.get(`${API_BASE_URL}/users/puskesmas`, { headers });
+      const puskesmasData = Array.isArray(puskesmasRes.data) ? puskesmasRes.data : (puskesmasRes.data.data || []);
       setPuskesmasList(
-        (Array.isArray(puskesmasRes.data) ? puskesmasRes.data : puskesmasRes.data.data || [])
+        puskesmasData
           .filter((u: any) => u.role === 'puskesmas')
           .map((u: any) => ({
             value: u.id,
@@ -148,8 +181,8 @@ const AdminTargetPage: React.FC = () => {
       const sumberAnggaranRes = await axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, {
         headers,
       });
-      // API already returns formatted array with value/label
-      setSumberAnggaranList(Array.isArray(sumberAnggaranRes.data) ? sumberAnggaranRes.data : []);
+      const sumberAnggaranData = Array.isArray(sumberAnggaranRes.data) ? sumberAnggaranRes.data : (sumberAnggaranRes.data.data || []);
+      setSumberAnggaranList(sumberAnggaranData);
 
       // Load satuan
       const satuanRes = await axios.get(`${API_BASE_URL}/reference/satuan`, { headers });
@@ -169,10 +202,22 @@ const AdminTargetPage: React.FC = () => {
     setLoading(true);
     try {
       const params: any = {};
-      if (filters.user_id) params.user_id = filters.user_id;
-      if (filters.id_sub_kegiatan) params.id_sub_kegiatan = filters.id_sub_kegiatan;
-      if (filters.id_sumber_anggaran) params.id_sumber_anggaran = filters.id_sumber_anggaran;
-      if (filters.tahun) params.tahun = filters.tahun;
+      
+      // Only add params if they have valid values
+      if (filters.user_id && filters.user_id !== undefined) {
+        params.user_id = filters.user_id;
+      }
+      if (filters.id_sub_kegiatan && filters.id_sub_kegiatan !== undefined) {
+        params.id_sub_kegiatan = filters.id_sub_kegiatan;
+      }
+      if (filters.id_sumber_anggaran && filters.id_sumber_anggaran !== undefined) {
+        params.id_sumber_anggaran = filters.id_sumber_anggaran;
+      }
+      if (filters.tahun && filters.tahun !== undefined) {
+        params.tahun = filters.tahun;
+      }
+
+      console.log('Loading targets with params:', params);
 
       const response = await axios.get(`${API_BASE_URL}/target/admin`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -194,6 +239,119 @@ const AdminTargetPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/target/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        const result = response.data.data;
+        
+        Modal.success({
+          title: 'Upload Selesai',
+          width: 800,
+          content: (
+            <div>
+              <p><strong>Total Berhasil:</strong> {result.success} target</p>
+              <p style={{ marginLeft: 20, color: '#52c41a' }}>
+                • Inserted (Baru): {result.inserted}
+              </p>
+              <p style={{ marginLeft: 20, color: '#1890ff' }}>
+                • Updated (Existing): {result.updated}
+              </p>
+              <p style={{ marginLeft: 20, color: '#faad14' }}>
+                • Skipped (Same Value): {result.skipped || 0}
+              </p>
+              <p style={{ marginLeft: 20, color: '#722ed1' }}>
+                • Sub Kegiatan Baru: {result.createdSubKegiatan || 0}
+              </p>
+              <p><strong>Gagal:</strong> {result.failed} target</p>
+              
+              {/* Success List */}
+              {result.successList && result.successList.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <p><strong>Data Berhasil Diproses:</strong></p>
+                  <div style={{ maxHeight: 250, overflow: 'auto', border: '1px solid #d9d9d9', borderRadius: 4 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead style={{ position: 'sticky', top: 0, background: '#fafafa' }}>
+                        <tr>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Status</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Puskesmas</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Sub Kegiatan</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Sumber Dana</th>
+                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'right' }}>Target Rp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.successList.map((item: any, idx: number) => (
+                          <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>
+                              <span style={{ 
+                                padding: '2px 8px', 
+                                borderRadius: 4, 
+                                fontSize: 11,
+                                background: item.type === 'inserted' ? '#f6ffed' : '#e6f7ff',
+                                color: item.type === 'inserted' ? '#52c41a' : '#1890ff',
+                                border: `1px solid ${item.type === 'inserted' ? '#b7eb8f' : '#91d5ff'}`
+                              }}>
+                                {item.type === 'inserted' ? 'INSERT' : 'UPDATE'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.puskesmas}</td>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.subKegiatan}>{item.subKegiatan}</td>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.sumberDana}</td>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>Rp {item.target_rp?.toLocaleString('id-ID')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {/* Error List */}
+              {result.errors.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <p><strong>Detail Error (10 pertama):</strong></p>
+                  <ul style={{ maxHeight: 150, overflow: 'auto' }}>
+                    {result.errors.slice(0, 10).map((err: any, idx: number) => (
+                      <li key={idx}>
+                        Row {err.row}: {err.puskesmas} - {err.subKegiatan}
+                        <br />
+                        <small style={{ color: 'red' }}>{err.error}</small>
+                      </li>
+                    ))}
+                  </ul>
+                  {result.errors.length > 10 && (
+                    <p style={{ color: 'gray' }}>... dan {result.errors.length - 10} error lainnya</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ),
+        });
+        
+        setUploadModalVisible(false);
+        loadTargets();
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      message.error(error.response?.data?.message || 'Gagal upload file');
+    } finally {
+      setUploading(false);
+    }
+
+    return false; // Prevent default upload behavior
   };
 
   const handleEdit = (target: Target) => {
@@ -288,6 +446,13 @@ const AdminTargetPage: React.FC = () => {
   };
 
   const columns = [
+    {
+      title: 'No',
+      key: 'no',
+      width: 50,
+      align: 'center' as const,
+      render: (_: any, __: any, index: number) => index + 1,
+    },
     {
       title: 'Puskesmas',
       dataIndex: ['puskesmas', 'nama'],
@@ -433,17 +598,25 @@ const AdminTargetPage: React.FC = () => {
         </Row>
 
         <div style={{ marginBottom: 16 }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              form.resetFields();
-              setSelectedTarget(null);
-              setEditModalVisible(true);
-            }}
-          >
-            Tambah Target Baru
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                form.resetFields();
+                setSelectedTarget(null);
+                setEditModalVisible(true);
+              }}
+            >
+              Tambah Target Baru
+            </Button>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={() => setUploadModalVisible(true)}
+            >
+              Upload Excel
+            </Button>
+          </Space>
         </div>
 
         <Table
@@ -585,7 +758,7 @@ const AdminTargetPage: React.FC = () => {
             children: (
               <div>
                 <div style={{ fontWeight: 'bold' }}>
-                  {new Date(record.created_at).toLocaleString('id-ID')}
+                  {formatDate(record.created_at)}
                 </div>
                 <div style={{ marginTop: 8 }}>
                   Target K: <strong>{record.target_k.toLocaleString('id-ID')}</strong>
@@ -600,6 +773,51 @@ const AdminTargetPage: React.FC = () => {
             ),
           }))}
         />
+      </Modal>
+
+      {/* Upload Modal */}
+      <Modal
+        title="Upload File Excel Target"
+        open={uploadModalVisible}
+        onCancel={() => setUploadModalVisible(false)}
+        footer={null}
+      >
+        <div style={{ marginTop: 20 }}>
+          <p>
+            Format file Excel harus sesuai dengan template Rekap Ver3.xlsx dengan kolom:
+          </p>
+          <ul style={{ marginLeft: 20, marginBottom: 20 }}>
+            <li>TAHUN</li>
+            <li>NAMA SUB UNIT (Nama Puskesmas)</li>
+            <li>KODE SUB KEGIATAN</li>
+            <li>NAMA SUB KEGIATAN</li>
+            <li>KODE SUMBER DANA</li>
+            <li>NAMA SUMBER DANA</li>
+            <li>PAGU</li>
+          </ul>
+          <p style={{ color: '#888', fontSize: '12px', marginBottom: 16 }}>
+            * Target Kinerja (K) akan diset default 10<br />
+            * Satuan akan diset default "Dokumen"<br />
+            * PAGU akan diagregat per kombinasi Puskesmas + Sub Kegiatan + Sumber Dana
+          </p>
+          <Upload.Dragger
+            name="file"
+            accept=".xlsx,.xls"
+            beforeUpload={handleUpload}
+            showUploadList={false}
+            disabled={uploading}
+          >
+            <p className="ant-upload-drag-icon">
+              <UploadOutlined />
+            </p>
+            <p className="ant-upload-text">
+              {uploading ? 'Uploading...' : 'Klik atau drag file Excel ke sini'}
+            </p>
+            <p className="ant-upload-hint">
+              Support file .xlsx dan .xls
+            </p>
+          </Upload.Dragger>
+        </div>
       </Modal>
     </div>
   );

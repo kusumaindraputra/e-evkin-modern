@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Schema - E-EVKIN Modern</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .toc {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            page-break-after: avoid;
+        }
+        
+        .toc h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .toc ol {
+            margin-left: 25px;
+            columns: 2;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        h3 {
+            color: #34495e;
+            font-size: 1.3em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        
+        table th {
+            background-color: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        table tr:hover {
+            background-color: #ecf0f1;
+        }
+        
+        .table-desc {
+            background-color: #fff3cd;
+            padding: 12px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        
+        .table-desc strong {
+            color: #856404;
+        }
+        
+        .code-block {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        
+        .diagram-container {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+        
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            font-size: 0.9em;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            color: #856404;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 5px;
+            margin-bottom: 3px;
+        }
+        
+        .badge-pk {
+            background-color: #e8f4f8;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .badge-fk {
+            background-color: #f8e8f4;
+            color: #5c0c46;
+            border: 1px solid #beade5;
+        }
+        
+        .badge-unique {
+            background-color: #e8f4e8;
+            color: #0c5c0c;
+            border: 1px solid #beebe5;
+        }
+        
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #bdc3c7;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .relasi-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            margin: 3px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            margin-bottom: 40px;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 30px;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            section {
+                page-break-inside: avoid;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+        }
+        
+        .constraint-list {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .constraint-list li {
+            margin: 8px 0;
+            padding-left: 5px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📊 DATABASE SCHEMA</h1>
+            <p>E-EVKIN Modern - Dokumentasi Lengkap Struktur Data & Relasi</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Platform: Node.js + Express + TypeScript + PostgreSQL + Sequelize ORM</p>
+        </div>
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc">
+            <h2>📑 Daftar Isi</h2>
+            <ol>
+                <li><a href="#users">Users (Pengguna)</a></li>
+                <li><a href="#kegiatan">Kegiatan</a></li>
+                <li><a href="#sub-kegiatan">Sub Kegiatan</a></li>
+                <li><a href="#satuan">Satuan</a></li>
+                <li><a href="#sumber-anggaran">Sumber Anggaran</a></li>
+                <li><a href="#laporan">Laporan</a></li>
+                <li><a href="#puskesmas-sub-kegiatan">Puskesmas Sub Kegiatan</a></li>
+                <li><a href="#sub-kegiatan-sumber-dana">Sub Kegiatan Sumber Dana</a></li>
+                <li><a href="#sub-kegiatan-target">Sub Kegiatan Target</a></li>
+                <li><a href="#diagram-er">Diagram Entity-Relationship</a></li>
+                <li><a href="#ringkasan">Ringkasan Relasi</a></li>
+            </ol>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- 1. USERS -->
+        <section id="users">
+            <h2>1️⃣ USERS (Pengguna Sistem)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">users</span></p>
+            <p><strong>Deskripsi:</strong> Menyimpan informasi pengguna sistem (Admin & Puskesmas)</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id</td>
+                        <td>UUID</td>
+                        <td>UUIDV4</td>
+                        <td>Primary Key identitas unik pengguna</td>
+                    </tr>
+                    <tr>
+                        <td>username</td>
+                        <td>VARCHAR(100)</td>
+                        <td>UNIQUE, NOT NULL</td>
+                        <td>Username login, harus unik</td>
+                    </tr>
+                    <tr>
+                        <td>password</td>
+                        <td>VARCHAR(255)</td>
+                        <td>NOT NULL</td>
+                        <td>Password ter-hash menggunakan bcrypt</td>
+                    </tr>
+                    <tr>
+                        <td>nama</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Nama lengkap pengguna</td>
+                    </tr>
+                    <tr>
+                        <td>role</td>
+                        <td>ENUM</td>
+                        <td>NOT NULL</td>
+                        <td>Role: 'puskesmas' atau 'admin'</td>
+                    </tr>
+                    <tr>
+                        <td>kode_puskesmas</td>
+                        <td>VARCHAR(50)</td>
+                        <td>NULLABLE</td>
+                        <td>Kode identitas puskesmas</td>
+                    </tr>
+                    <tr>
+                        <td>nama_puskesmas</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NULLABLE</td>
+                        <td>Nama lengkap puskesmas</td>
+                    </tr>
+                    <tr>
+                        <td>id_blud</td>
+                        <td>VARCHAR(50)</td>
+                        <td>NULLABLE</td>
+                        <td>ID BLUD (Badan Layanan Umum Daerah)</td>
+                    </tr>
+                    <tr>
+                        <td>kecamatan</td>
+                        <td>VARCHAR(100)</td>
+                        <td>NULLABLE</td>
+                        <td>Nama kecamatan tempat puskesmas</td>
+                    </tr>
+                    <tr>
+                        <td>wilayah</td>
+                        <td>VARCHAR(100)</td>
+                        <td>NULLABLE</td>
+                        <td>Nama wilayah/kabupaten</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan record</td>
+                    </tr>
+                    <tr>
+                        <td>updated_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir record</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Relasi Outgoing</h3>
+            <div>
+                <span class="relasi-badge">↔ Laporan (1:N)</span>
+                <span class="relasi-badge">↔ PuskesmasSubKegiatan (1:N)</span>
+                <span class="relasi-badge">↔ SubKegiatanTarget (1:N)</span>
+            </div>
+        </section>
+
+        <!-- 2. KEGIATAN -->
+        <section id="kegiatan">
+            <h2>2️⃣ KEGIATAN (Master Data Kegiatan)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">kegiatan</span></p>
+            <p><strong>Deskripsi:</strong> Master data kegiatan utama dalam program kesehatan</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td>id_uraian</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>ID uraian kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td>kode</td>
+                        <td>VARCHAR(20)</td>
+                        <td>NOT NULL</td>
+                        <td>Kode kegiatan untuk identifikasi</td>
+                    </tr>
+                    <tr>
+                        <td>kegiatan</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Nama lengkap kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td>createdAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan record</td>
+                    </tr>
+                    <tr>
+                        <td>updatedAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir record</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Relasi Outgoing</h3>
+            <div>
+                <span class="relasi-badge">→ SubKegiatan (1:N)</span>
+            </div>
+        </section>
+
+        <!-- 3. SUB_KEGIATAN -->
+        <section id="sub-kegiatan">
+            <h2>3️⃣ SUB_KEGIATAN (Detail Kegiatan)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">sub_kegiatan</span></p>
+            <p><strong>Deskripsi:</strong> Detail sub-kegiatan yang merupakan breakdown dari kegiatan utama</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key sub-kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key</td>
+                        <td>Reference ke Kegiatan parent</td>
+                    </tr>
+                    <tr>
+                        <td>kode_sub</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Kode sub-kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td>kegiatan</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Nama sub-kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td>indikator_kinerja</td>
+                        <td>TEXT</td>
+                        <td>NOT NULL</td>
+                        <td>Indikator kinerja yang akan diukur</td>
+                    </tr>
+                    <tr>
+                        <td>createdAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan record</td>
+                    </tr>
+                    <tr>
+                        <td>updatedAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir record</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Relasi</h3>
+            <div>
+                <span class="relasi-badge">← Kegiatan (N:1)</span>
+                <span class="relasi-badge">→ Laporan (1:N)</span>
+                <span class="relasi-badge">↔ SumberAnggaran (M:N)</span>
+                <span class="relasi-badge">↔ User (M:N)</span>
+            </div>
+        </section>
+
+        <!-- 4. SATUAN -->
+        <section id="satuan">
+            <h2>4️⃣ SATUAN (Master Data Satuan)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">satuan</span></p>
+            <p><strong>Deskripsi:</strong> Master data satuan pengukuran untuk realisasi</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id_satuan</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key satuan</td>
+                    </tr>
+                    <tr>
+                        <td>satuannya</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Nama satuan (unit, buah, orang, dll)</td>
+                    </tr>
+                    <tr>
+                        <td>createdAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan record</td>
+                    </tr>
+                    <tr>
+                        <td>updatedAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir record</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Relasi Outgoing</h3>
+            <div>
+                <span class="relasi-badge">→ Laporan (1:N)</span>
+            </div>
+        </section>
+
+        <!-- 5. SUMBER_ANGGARAN -->
+        <section id="sumber-anggaran">
+            <h2>5️⃣ SUMBER_ANGGARAN (Master Data Sumber Dana)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">sumber_anggaran</span></p>
+            <p><strong>Deskripsi:</strong> Master data sumber dana/anggaran</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id_sumber</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key sumber anggaran</td>
+                    </tr>
+                    <tr>
+                        <td>sumber</td>
+                        <td>VARCHAR(200)</td>
+                        <td>NOT NULL</td>
+                        <td>Nama sumber anggaran (Pusat, Daerah, dll)</td>
+                    </tr>
+                    <tr>
+                        <td>createdAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan record</td>
+                    </tr>
+                    <tr>
+                        <td>updatedAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir record</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Relasi Outgoing</h3>
+            <div>
+                <span class="relasi-badge">→ Laporan (1:N)</span>
+                <span class="relasi-badge">→ SubKegiatanTarget (1:N)</span>
+                <span class="relasi-badge">↔ SubKegiatan (M:N)</span>
+            </div>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- 6. LAPORAN -->
+        <section id="laporan">
+            <h2>6️⃣ LAPORAN (Laporan Kinerja Bulanan)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">laporan</span></p>
+            <p><strong>Deskripsi:</strong> Laporan kinerja bulanan puskesmas dengan data realisasi dan target</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id</td>
+                        <td>UUID</td>
+                        <td>UUIDV4</td>
+                        <td>Primary Key laporan unik</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> user_id</td>
+                        <td>UUID</td>
+                        <td>Foreign Key</td>
+                        <td>User/Puskesmas pembuat laporan</td>
+                    </tr>
+                    <tr>
+                        <td>id_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>ID Kegiatan yang dilaporkan</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key</td>
+                        <td>ID Sub-Kegiatan yang dilaporkan</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sumber_anggaran</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key</td>
+                        <td>Sumber anggaran untuk kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_satuan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key</td>
+                        <td>Satuan pengukuran realisasi</td>
+                    </tr>
+                    <tr>
+                        <td>target_k</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>Target kuantitas (jumlah)</td>
+                    </tr>
+                    <tr>
+                        <td>angkas</td>
+                        <td>BIGINT</td>
+                        <td>NOT NULL</td>
+                        <td>Angka keterangan/satuan harga</td>
+                    </tr>
+                    <tr>
+                        <td>target_rp</td>
+                        <td>BIGINT</td>
+                        <td>NOT NULL</td>
+                        <td>Target dalam rupiah (target_k × angkas)</td>
+                    </tr>
+                    <tr>
+                        <td>realisasi_k</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>Realisasi kuantitas (yang tercapai)</td>
+                    </tr>
+                    <tr>
+                        <td>realisasi_rp</td>
+                        <td>BIGINT</td>
+                        <td>NOT NULL</td>
+                        <td>Realisasi dalam rupiah</td>
+                    </tr>
+                    <tr>
+                        <td>realisasi_fisik</td>
+                        <td>DECIMAL(5,2)</td>
+                        <td>NOT NULL, DEFAULT 0</td>
+                        <td>Persentase realisasi fisik (0-100%)</td>
+                    </tr>
+                    <tr>
+                        <td>permasalahan</td>
+                        <td>TEXT</td>
+                        <td>NOT NULL</td>
+                        <td>Deskripsi permasalahan yang dihadapi</td>
+                    </tr>
+                    <tr>
+                        <td>upaya</td>
+                        <td>TEXT</td>
+                        <td>NOT NULL</td>
+                        <td>Upaya/solusi yang dilakukan</td>
+                    </tr>
+                    <tr>
+                        <td>bulan</td>
+                        <td>VARCHAR(20)</td>
+                        <td>NOT NULL</td>
+                        <td>Bulan laporan (Januari-Desember)</td>
+                    </tr>
+                    <tr>
+                        <td>tahun</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>Tahun laporan</td>
+                    </tr>
+                    <tr>
+                        <td>status</td>
+                        <td>ENUM</td>
+                        <td></td>
+                        <td>Status: menunggu|terkirim|diverifikasi|ditolak|tersimpan</td>
+                    </tr>
+                    <tr>
+                        <td>catatan</td>
+                        <td>TEXT</td>
+                        <td>NULLABLE</td>
+                        <td>Catatan dari admin saat verifikasi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> verified_by</td>
+                        <td>UUID</td>
+                        <td>Foreign Key (Self-Ref)</td>
+                        <td>Admin yang memverifikasi laporan</td>
+                    </tr>
+                    <tr>
+                        <td>verified_at</td>
+                        <td>TIMESTAMP</td>
+                        <td>NULLABLE</td>
+                        <td>Waktu verifikasi laporan</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan laporan</td>
+                    </tr>
+                    <tr>
+                        <td>updated_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Status Workflow</h3>
+            <div class="info-box">
+                <strong>tersimpan → terkirim → diverifikasi ✓</strong><br>
+                Laporan dapat ditolak dari status <strong>diverifikasi</strong> kembali ke <strong>ditolak</strong>
+            </div>
+            
+            <h3>Relasi</h3>
+            <div>
+                <span class="relasi-badge">← User (N:1) - Pembuat</span>
+                <span class="relasi-badge">← User (N:1) - Verifier</span>
+                <span class="relasi-badge">← SubKegiatan (N:1)</span>
+                <span class="relasi-badge">← SumberAnggaran (N:1)</span>
+                <span class="relasi-badge">← Satuan (N:1)</span>
+            </div>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- 7. PUSKESMAS_SUB_KEGIATAN -->
+        <section id="puskesmas-sub-kegiatan">
+            <h2>7️⃣ PUSKESMAS_SUB_KEGIATAN (Junction Table)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">puskesmas_sub_kegiatan</span></p>
+            <p><strong>Deskripsi:</strong> Junction table untuk relasi Many-to-Many antara User (Puskesmas) dan SubKegiatan</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key junction table</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> user_id</td>
+                        <td>UUID</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Puskesmas</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Sub-Kegiatan yang ditugaskan</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penugasan</td>
+                    </tr>
+                    <tr>
+                        <td>updated_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Constraints</h3>
+            <ul class="constraint-list">
+                <li><span class="badge badge-unique">UNIQUE</span> (user_id, id_sub_kegiatan) - Setiap puskesmas hanya ditugaskan 1x per sub-kegiatan</li>
+                <li><strong>CASCADE Delete:</strong> Jika user/sub-kegiatan dihapus, assignment otomatis terhapus</li>
+                <li><strong>CASCADE Update:</strong> Update otomatis saat user/sub-kegiatan diupdate</li>
+            </ul>
+            
+            <h3>Relasi (Many-to-Many)</h3>
+            <div class="info-box">
+                <strong>User ↔ SubKegiatan</strong> melalui junction table ini<br>
+                • User.belongsToMany(SubKegiatan, as: 'assignedSubKegiatan')<br>
+                • SubKegiatan.belongsToMany(User, as: 'assignedPuskesmas')
+            </div>
+        </section>
+
+        <!-- 8. SUB_KEGIATAN_SUMBER_DANA -->
+        <section id="sub-kegiatan-sumber-dana">
+            <h2>8️⃣ SUB_KEGIATAN_SUMBER_DANA (Junction Table)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">sub_kegiatan_sumber_dana</span></p>
+            <p><strong>Deskripsi:</strong> Junction table untuk relasi Many-to-Many antara SubKegiatan dan SumberAnggaran</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key junction table</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Sub-Kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sumber_anggaran</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Sumber Anggaran</td>
+                    </tr>
+                    <tr>
+                        <td>is_active</td>
+                        <td>BOOLEAN</td>
+                        <td>NOT NULL, DEFAULT true</td>
+                        <td>Status aktivasi mapping</td>
+                    </tr>
+                    <tr>
+                        <td>createdAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu pembuatan mapping</td>
+                    </tr>
+                    <tr>
+                        <td>updatedAt</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Constraints & Indexes</h3>
+            <ul class="constraint-list">
+                <li><span class="badge badge-unique">UNIQUE</span> (id_sub_kegiatan, id_sumber_anggaran) - Kombinasi unik per mapping</li>
+                <li><strong>CASCADE:</strong> DELETE dan UPDATE otomatis saat sub-kegiatan/sumber-anggaran dihapus</li>
+                <li><strong>INDEX:</strong> (id_sub_kegiatan) - Untuk query by sub-kegiatan</li>
+                <li><strong>INDEX:</strong> (id_sumber_anggaran) - Untuk query by sumber-anggaran</li>
+            </ul>
+            
+            <h3>Relasi (Many-to-Many)</h3>
+            <div class="info-box">
+                <strong>SubKegiatan ↔ SumberAnggaran</strong> melalui junction table ini<br>
+                • SubKegiatan.belongsToMany(SumberAnggaran, as: 'sumberAnggaranList')<br>
+                • SumberAnggaran.belongsToMany(SubKegiatan, as: 'subKegiatanList')
+            </div>
+        </section>
+
+        <!-- 9. SUB_KEGIATAN_TARGET -->
+        <section id="sub-kegiatan-target">
+            <h2>9️⃣ SUB_KEGIATAN_TARGET (Target per Puskesmas)</h2>
+            <p><strong>Tabel:</strong> <span class="highlight">sub_kegiatan_target</span></p>
+            <p><strong>Deskripsi:</strong> Menyimpan target tahunan/bulanan per puskesmas untuk setiap sub-kegiatan dan sumber dana</p>
+            
+            <h3>Field Schema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Constraint</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-pk">PK</span> id</td>
+                        <td>INTEGER</td>
+                        <td>AUTO_INCREMENT</td>
+                        <td>Primary Key target</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> user_id</td>
+                        <td>UUID</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Puskesmas pemilik target</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Sub-Kegiatan target</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> id_sumber_anggaran</td>
+                        <td>INTEGER</td>
+                        <td>Foreign Key, CASCADE</td>
+                        <td>ID Sumber Anggaran target</td>
+                    </tr>
+                    <tr>
+                        <td>target_k</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL, DEFAULT 0</td>
+                        <td>Target kuantitas</td>
+                    </tr>
+                    <tr>
+                        <td>target_rp</td>
+                        <td>BIGINT</td>
+                        <td>NOT NULL, DEFAULT 0</td>
+                        <td>Target dalam Rupiah</td>
+                    </tr>
+                    <tr>
+                        <td>bulan</td>
+                        <td>VARCHAR(20)</td>
+                        <td>NULLABLE</td>
+                        <td>Bulan target (null = tahunan)</td>
+                    </tr>
+                    <tr>
+                        <td>tahun</td>
+                        <td>INTEGER</td>
+                        <td>NOT NULL</td>
+                        <td>Tahun target</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-fk">FK</span> created_by</td>
+                        <td>UUID</td>
+                        <td>Foreign Key</td>
+                        <td>User yang membuat/mengupdate target</td>
+                    </tr>
+                    <tr>
+                        <td>created_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu penciptaan target</td>
+                    </tr>
+                    <tr>
+                        <td>updated_at</td>
+                        <td>TIMESTAMP</td>
+                        <td></td>
+                        <td>Waktu update terakhir</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Deskripsi Field Penting</h3>
+            <div class="info-box">
+                <strong>bulan:</strong> Jika NULL = target tahunan, Jika ada value = target bulanan<br>
+                <strong>target_k:</strong> Jumlah target yang ingin dicapai dalam unit satuan<br>
+                <strong>target_rp:</strong> Budget/anggaran yang dialokasikan untuk mencapai target<br>
+                <strong>created_by:</strong> User admin/supervisor yang membuat atau mengupdate target ini
+            </div>
+            
+            <h3>Relasi</h3>
+            <div>
+                <span class="relasi-badge">← User (N:1) - Puskesmas</span>
+                <span class="relasi-badge">← SubKegiatan (N:1)</span>
+                <span class="relasi-badge">← SumberAnggaran (N:1)</span>
+                <span class="relasi-badge">← User (N:1) - Pembuat</span>
+            </div>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- DIAGRAM ER -->
+        <section id="diagram-er">
+            <h2>🔗 DIAGRAM ENTITY-RELATIONSHIP (ER)</h2>
+            
+            <h3>Diagram Lengkap</h3>
+            <div class="diagram-container">
+                <div class="mermaid">
+erDiagram
+    USERS ||--o{ LAPORAN : "creates"
+    USERS ||--o{ LAPORAN : "verifies"
+    USERS ||--o{ PUSKESMAS_SUB_KEGIATAN : "assigns"
+    USERS ||--o{ SUB_KEGIATAN_TARGET : "owns"
+    USERS ||--o{ SUB_KEGIATAN_TARGET : "creates"
+    
+    KEGIATAN ||--o{ SUB_KEGIATAN : "contains"
+    
+    SUB_KEGIATAN ||--o{ LAPORAN : "reported"
+    SUB_KEGIATAN ||--o{ PUSKESMAS_SUB_KEGIATAN : "assigned"
+    SUB_KEGIATAN ||--o{ SUB_KEGIATAN_SUMBER_DANA : "links"
+    SUB_KEGIATAN ||--o{ SUB_KEGIATAN_TARGET : "targets"
+    
+    SATUAN ||--o{ LAPORAN : "measures"
+    
+    SUMBER_ANGGARAN ||--o{ LAPORAN : "funds"
+    SUMBER_ANGGARAN ||--o{ SUB_KEGIATAN_SUMBER_DANA : "links"
+    SUMBER_ANGGARAN ||--o{ SUB_KEGIATAN_TARGET : "funds"
+    
+    PUSKESMAS_SUB_KEGIATAN {
+        int id PK
+        string user_id FK
+        int id_sub_kegiatan FK
+    }
+    
+    SUB_KEGIATAN_SUMBER_DANA {
+        int id PK
+        int id_sub_kegiatan FK
+        int id_sumber_anggaran FK
+        boolean is_active
+    }
+    
+    USERS {
+        string id PK
+        string username UK
+        string password
+        string nama
+        string role
+        string kode_puskesmas
+        string nama_puskesmas
+        string id_blud
+        string kecamatan
+        string wilayah
+    }
+    
+    KEGIATAN {
+        int id_kegiatan PK
+        int id_uraian
+        string kode
+        string kegiatan
+    }
+    
+    SUB_KEGIATAN {
+        int id_sub_kegiatan PK
+        int id_kegiatan FK
+        string kode_sub
+        string kegiatan
+        string indikator_kinerja
+    }
+    
+    SATUAN {
+        int id_satuan PK
+        string satuannya
+    }
+    
+    SUMBER_ANGGARAN {
+        int id_sumber PK
+        string sumber
+    }
+    
+    LAPORAN {
+        string id PK
+        string user_id FK
+        int id_kegiatan
+        int id_sub_kegiatan FK
+        int id_sumber_anggaran FK
+        int id_satuan FK
+        int target_k
+        bigint angkas
+        bigint target_rp
+        int realisasi_k
+        bigint realisasi_rp
+        decimal realisasi_fisik
+        string permasalahan
+        string upaya
+        string bulan
+        int tahun
+        string status
+        string catatan
+        string verified_by FK
+        timestamp verified_at
+    }
+    
+    SUB_KEGIATAN_TARGET {
+        int id PK
+        string user_id FK
+        int id_sub_kegiatan FK
+        int id_sumber_anggaran FK
+        int target_k
+        bigint target_rp
+        string bulan
+        int tahun
+        string created_by FK
+    }
+                </div>
+            </div>
+
+            <h3>Keterangan Relasi</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Simbol</th>
+                        <th>Arti</th>
+                        <th>Contoh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>||</td>
+                        <td>Exactly One</td>
+                        <td>Laporan harus milik 1 User</td>
+                    </tr>
+                    <tr>
+                        <td>o{</td>
+                        <td>Zero or More</td>
+                        <td>User bisa punya 0 atau lebih Laporan</td>
+                    </tr>
+                    <tr>
+                        <td>|o</td>
+                        <td>Zero or One</td>
+                        <td>Laporan bisa verified oleh 0 atau 1 User</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- RINGKASAN RELASI -->
+        <section id="ringkasan">
+            <h2>📊 RINGKASAN RELASI</h2>
+            
+            <h3>One-to-Many (1:N) Relationships</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dari</th>
+                        <th>Ke</th>
+                        <th>Field Foreign Key</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td><strong>Laporan</strong></td>
+                        <td>user_id</td>
+                        <td>User membuat laporan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td><strong>Laporan</strong></td>
+                        <td>verified_by</td>
+                        <td>User memverifikasi laporan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td><strong>SubKegiatanTarget</strong></td>
+                        <td>user_id</td>
+                        <td>User memiliki target</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td><strong>SubKegiatanTarget</strong></td>
+                        <td>created_by</td>
+                        <td>User membuat target</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Kegiatan</strong></td>
+                        <td><strong>SubKegiatan</strong></td>
+                        <td>id_kegiatan</td>
+                        <td>Kegiatan punya sub-kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SubKegiatan</strong></td>
+                        <td><strong>Laporan</strong></td>
+                        <td>id_sub_kegiatan</td>
+                        <td>Sub-kegiatan punya laporan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SumberAnggaran</strong></td>
+                        <td><strong>Laporan</strong></td>
+                        <td>id_sumber_anggaran</td>
+                        <td>Sumber anggaran dalam laporan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SumberAnggaran</strong></td>
+                        <td><strong>SubKegiatanTarget</strong></td>
+                        <td>id_sumber_anggaran</td>
+                        <td>Sumber anggaran dalam target</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Satuan</strong></td>
+                        <td><strong>Laporan</strong></td>
+                        <td>id_satuan</td>
+                        <td>Satuan dalam laporan</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Many-to-Many (M:N) Relationships</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tabel 1</th>
+                        <th>Tabel 2</th>
+                        <th>Junction Table</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td><strong>SubKegiatan</strong></td>
+                        <td>PuskesmasSubKegiatan</td>
+                        <td>Puskesmas ditugaskan ke sub-kegiatan</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SubKegiatan</strong></td>
+                        <td><strong>SumberAnggaran</strong></td>
+                        <td>SubKegiatanSumberDana</td>
+                        <td>Sub-kegiatan menggunakan sumber anggaran</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Self-Reference Relationships</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tabel</th>
+                        <th>Field</th>
+                        <th>Referensi</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Laporan</strong></td>
+                        <td>verified_by</td>
+                        <td>users.id</td>
+                        <td>Admin yang memverifikasi laporan yang dibuat user lain</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SubKegiatanTarget</strong></td>
+                        <td>created_by</td>
+                        <td>users.id</td>
+                        <td>User yang membuat/update target</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <div class="page-break"></div>
+
+        <!-- SUMMARY SECTION -->
+        <section id="summary">
+            <h2>📌 SUMMARY TEKNIS</h2>
+            
+            <h3>Primary Keys Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tabel</th>
+                        <th>Primary Key</th>
+                        <th>Type</th>
+                        <th>Generator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>users</td>
+                        <td>id</td>
+                        <td>UUID</td>
+                        <td>UUIDV4</td>
+                    </tr>
+                    <tr>
+                        <td>kegiatan</td>
+                        <td>id_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>sub_kegiatan</td>
+                        <td>id_sub_kegiatan</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>satuan</td>
+                        <td>id_satuan</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>sumber_anggaran</td>
+                        <td>id_sumber</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>laporan</td>
+                        <td>id</td>
+                        <td>UUID</td>
+                        <td>UUIDV4</td>
+                    </tr>
+                    <tr>
+                        <td>puskesmas_sub_kegiatan</td>
+                        <td>id</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>sub_kegiatan_sumber_dana</td>
+                        <td>id</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                    <tr>
+                        <td>sub_kegiatan_target</td>
+                        <td>id</td>
+                        <td>INTEGER</td>
+                        <td>Auto Increment</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Cascade Delete Behavior</h3>
+            <div class="warning-box">
+                <strong>⚠️ Perhatian:</strong> Berikut tabel yang memiliki CASCADE delete:
+                <ul style="margin-top: 10px;">
+                    <li><strong>puskesmas_sub_kegiatan:</strong> Jika user/sub-kegiatan dihapus, assignment otomatis terhapus</li>
+                    <li><strong>sub_kegiatan_sumber_dana:</strong> Jika sub-kegiatan/sumber-anggaran dihapus, mapping otomatis terhapus</li>
+                    <li><strong>sub_kegiatan_target:</strong> Jika user/sub-kegiatan/sumber-anggaran dihapus, target otomatis terhapus</li>
+                </ul>
+            </div>
+
+            <h3>Business Rules</h3>
+            <div class="success-box">
+                <strong>✓ Realisasi Fisik:</strong> Persentase (0-100), biasanya dihitung dari (realisasi_k / target_k) * 100
+            </div>
+            <div class="success-box">
+                <strong>✓ Status Laporan Workflow:</strong> tersimpan → terkirim → diverifikasi ✓ / ditolak
+            </div>
+            <div class="success-box">
+                <strong>✓ Target vs Realisasi:</strong> SubKegiatanTarget adalah target awal di awal tahun/bulan, Laporan adalah realisasi aktual
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p><strong>E-EVKIN Modern - Database Schema Documentation</strong></p>
+            <p>Terakhir diperbarui: December 2025</p>
+            <p>Platform: Node.js + Express + TypeScript + PostgreSQL + Sequelize ORM</p>
+            <p>Dibuat dengan ❤️ untuk dokumentasi sistem informasi kesehatan</p>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</body>
+</html>

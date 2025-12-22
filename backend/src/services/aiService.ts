@@ -29,6 +29,19 @@ interface LaporanAnalysis {
   }[];
   topPerformers: string[];
   lowPerformers: string[];
+  allPuskesmasPerformance: string[];
+  detailLaporanByPuskesmas: {
+    [puskesmasName: string]: {
+      persentase: number;
+      kegiatan: Array<{
+        nama: string;
+        target: number;
+        realisasi: number;
+        satuan: string;
+        persentase: number;
+      }>;
+    };
+  };
   trends: {
     comparison: string;
     improvement: string;
@@ -161,6 +174,36 @@ export const aggregateLaporanData = async (): Promise<LaporanAnalysis> => {
     const topPerformers = performers.slice(0, 3).map(p => `${p.name} (${p.persentase}%)`);
     const lowPerformers = performers.slice(-3).map(p => `${p.name} (${p.persentase}%)`);
 
+    // Build all puskesmas performance data sorted by percentage
+    const allPuskesmasPerformance = performers.map(p => `${p.name}: ${p.persentase}%`);
+
+    // Build detail laporan grouped by puskesmas with kegiatan details
+    const detailLaporanByPuskesmas: LaporanAnalysis['detailLaporanByPuskesmas'] = {};
+    
+    for (const lap of laporan) {
+      const puskesmasName = (lap as any).user?.nama_puskesmas || 'Unknown';
+      const subKegiatanName = (lap as any).subKegiatan?.sub_kegiatan || 'Unknown';
+      const satuanName = (lap as any).subKegiatan?.satuan?.satuan || 'Unknown';
+
+      if (!detailLaporanByPuskesmas[puskesmasName]) {
+        const puskesmasPerf = puskesmasPerformance.get(puskesmasName);
+        detailLaporanByPuskesmas[puskesmasName] = {
+          persentase: puskesmasPerf?.totalTarget > 0 
+            ? Math.round((puskesmasPerf.totalRealisasi / puskesmasPerf.totalTarget) * 100) 
+            : 0,
+          kegiatan: []
+        };
+      }
+
+      detailLaporanByPuskesmas[puskesmasName].kegiatan.push({
+        nama: subKegiatanName,
+        target: lap.target_k || 0,
+        realisasi: lap.realisasi_k || 0,
+        satuan: satuanName,
+        persentase: lap.target_k > 0 ? Math.round((lap.realisasi_k / lap.target_k) * 100) : 0
+      });
+    }
+
     // Get previous month data for comparison
     const prevMonthIndex = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
     const prevMonth = months[prevMonthIndex];
@@ -181,6 +224,8 @@ export const aggregateLaporanData = async (): Promise<LaporanAnalysis> => {
       sumberAnggaran: sumberAnggaranArray,
       topPerformers,
       lowPerformers,
+      allPuskesmasPerformance,
+      detailLaporanByPuskesmas,
       trends: {
         comparison: laporan.length > prevLaporan ? 'meningkat' : laporan.length < prevLaporan ? 'menurun' : 'sama',
         improvement: laporan.length > prevLaporan 
@@ -205,20 +250,13 @@ export const getAIInsights = async (userQuestion: string): Promise<string> => {
     const laporanData = await aggregateLaporanData();
 
     // Build system prompt
-    const systemPrompt = `Anda adalah analis kesehatan publik berpengalaman untuk sistem evaluasi kinerja puskesmas (E-EVKIN). 
-Anda memiliki pengetahuan mendalam tentang:
-- Analisis performa kesehatan masyarakat
-- Target vs realisasi kegiatan kesehatan
-- Optimasi penyerapan anggaran kesehatan
-- Strategi peningkatan kinerja puskesmas
-
-Anda diminta memberikan insights, rekomendasi, dan analisis berdasarkan data laporan yang diberikan.
-Jawaban harus:
-- Konkret dan actionable
-- Berbahasa Indonesia profesional
-- Data-driven dengan referensi angka dari laporan
-- Fokus pada solusi peningkatan performa
-- Singkat namun informatif (max 3-4 paragraf)`;
+    const systemPrompt = `Anda adalah analis kinerja puskesmas.
+INSTRUKSI:
+- Jawab LANGSUNG dan SINGKAT (max 2 paragraf)
+- Gunakan angka spesifik dari data
+- Berikan 2-3 action points konkret
+- Hindari penjelasan panjang atau teori umum
+- Bahasa Indonesia profesional dan to the point`;
 
     const userPrompt = `
 Data Laporan Terkini (Bulan: ${laporanData.month} ${laporanData.year}):
@@ -227,20 +265,34 @@ RINGKASAN:
 - Total Laporan Masuk: ${laporanData.totalLaporan}
 - Trend: ${laporanData.trends.comparison.charAt(0).toUpperCase() + laporanData.trends.comparison.slice(1)} (${laporanData.trends.improvement})
 
-KEGIATAN PERFORMA:
+KEGIATAN PERFORMA (AGGREGASI):
 ${laporanData.kegiatan.map(k => `- ${k.name}: ${k.persentase}% (Target: ${k.totalTarget}, Realisasi: ${k.totalRealisasi}) - ${k.status}`).join('\n')}
 
-SUMBER ANGGARAN:
+SUMBER ANGGARAN (AGGREGASI):
 ${laporanData.sumberAnggaran.map(s => `- ${s.name}: ${s.persentase}% (Target: Rp${s.totalTarget.toLocaleString()}, Realisasi: Rp${s.totalRealisasi.toLocaleString()})`).join('\n')}
 
-PERFORMA PUSKESMAS:
-Top Performers: ${laporanData.topPerformers.join(', ')}
-Low Performers: ${laporanData.lowPerformers.join(', ')}
+PERFORMA SEMUA PUSKESMAS (RANKING):
+${laporanData.allPuskesmasPerformance.join('\n')}
+
+DETAIL LAPORAN SETIAP PUSKESMAS (DATA TRAINING LENGKAP):
+${Object.entries(laporanData.detailLaporanByPuskesmas)
+  .sort(([, a], [, b]) => b.persentase - a.persentase)
+  .map(([puskesmas, data]) => {
+    const kegiatanDetail = data.kegiatan
+      .map(k => `  • ${k.nama}: ${k.realisasi}/${k.target} ${k.satuan} (${k.persentase}%)`)
+      .join('\n');
+    return `${puskesmas} (${data.persentase}%):\n${kegiatanDetail}`;
+  })
+  .join('\n\n')}
+
+HIGHLIGHT:
+- Top Performer: ${laporanData.topPerformers[0]}
+- Perlu Perhatian: ${laporanData.lowPerformers[0]}
 
 PERTANYAAN ADMIN:
 ${userQuestion}
 
-Berikan analisis dan rekomendasi konkret berdasarkan data di atas.`;
+Gunakan SEMUA data detail di atas untuk memberikan jawaban yang akurat, spesifik, dan berbasis data laporan lengkap.`;
 
     // Call OpenAI
     const message = await openai.chat.completions.create({
@@ -272,10 +324,10 @@ Berikan analisis dan rekomendasi konkret berdasarkan data di atas.`;
  */
 export const getSuggestedQuestions = (): string[] => {
   return [
+    'Puskesmas mana yang memiliki serapan anggaran tertinggi dan terendah?',
+    'Bagaimana performa semua puskesmas dan apa rekomendasi untuk yang tertinggal?',
     'Kegiatan mana yang perlu perhatian khusus untuk mencapai 70% penyerapan?',
-    'Bagaimana strategi untuk meningkatkan performa puskesmas yang masih di bawah target?',
-    'Analisis keseluruhan alokasi anggaran per sumber dana, mana yang paling efektif?',
-    'Prediksi: kegiatan mana yang paling mungkin mencapai target bulan depan?',
-    'Rekomendasi realokasi anggaran untuk optimasi penyerapan?',
+    'Analisis anggaran per sumber dana, mana yang paling efektif dan efisien?',
+    'Strategi apa yang bisa diterapkan untuk meningkatkan performa puskesmas yang lemah?',
   ];
 };

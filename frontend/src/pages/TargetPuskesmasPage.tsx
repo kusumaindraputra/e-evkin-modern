@@ -79,7 +79,7 @@ export const TargetPuskesmasPage: React.FC = () => {
   // Load assigned sub kegiatan
   useEffect(() => {
     loadAssignedSubKegiatan();
-  }, []);
+  }, [selectedTahun]);
 
   // Load sumber anggaran when sub kegiatan changes
   useEffect(() => {
@@ -92,22 +92,27 @@ export const TargetPuskesmasPage: React.FC = () => {
   const loadAssignedSubKegiatan = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/puskesmas-config/puskesmas/me/sub-kegiatan`,
+        `${API_BASE_URL}/target/assigned?tahun=${selectedTahun}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      const subKegiatan = response.data.assignments.map((item: any) => ({
-        value: item.subKegiatan.id_sub_kegiatan,
-        label: item.subKegiatan.kegiatan,
-        kegiatan: item.subKegiatan.kegiatan,
-        indikator_kinerja: item.subKegiatan.indikator_kinerja,
-      }));
+      // Response format: { data: [{ subKegiatan, targets }] }
+      const subKegiatan = response.data.data
+        .filter((item: any) => item.targets && item.targets.length > 0)
+        .map((item: any) => ({
+          value: item.subKegiatan.id_sub_kegiatan,
+          label: item.subKegiatan.kegiatan,
+          kegiatan: item.subKegiatan.kegiatan,
+          indikator_kinerja: item.subKegiatan.indikator_kinerja,
+        }));
 
       setSubKegiatanList(subKegiatan);
       if (subKegiatan.length > 0) {
         setSelectedSubKegiatan(subKegiatan[0].value);
+      } else {
+        message.warning('Belum ada sub kegiatan dengan target yang diset untuk tahun ini');
       }
     } catch (error: any) {
       console.error('Error loading sub kegiatan:', error);

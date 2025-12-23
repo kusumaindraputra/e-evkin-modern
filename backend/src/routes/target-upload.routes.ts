@@ -124,13 +124,27 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     for (const [key, group] of grouped) {
       try {
         // Find puskesmas by nama
+        // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+        let puskesmas: User | null = null;
+        
+        if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+          puskesmas = await User.findOne({
+            where: { 
+              username: 'labkesda',
+              role: 'puskesmas',
+            },
+          });
+        }
+
         // Handle prefix "Puskesmas" in Excel vs DB without prefix
-        let puskesmas = await User.findOne({
-          where: { 
-            nama: group.puskesmas,
-            role: 'puskesmas',
-          },
-        });
+        if (!puskesmas) {
+          puskesmas = await User.findOne({
+            where: { 
+              nama: group.puskesmas,
+              role: 'puskesmas',
+            },
+          });
+        }
 
         // If not found, try without "Puskesmas" prefix
         if (!puskesmas && group.puskesmas.startsWith('Puskesmas ')) {

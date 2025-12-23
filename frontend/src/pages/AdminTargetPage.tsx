@@ -127,6 +127,8 @@ const AdminTargetPage: React.FC = () => {
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [modalSubKegiatanList, setModalSubKegiatanList] = useState<SubKegiatan[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -451,7 +453,7 @@ const AdminTargetPage: React.FC = () => {
       key: 'no',
       width: 50,
       align: 'center' as const,
-      render: (_: any, __: any, index: number) => index + 1,
+      render: (_: any, __: any, index: number) => (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: 'Puskesmas',
@@ -625,7 +627,15 @@ const AdminTargetPage: React.FC = () => {
           rowKey="id"
           loading={loading}
           scroll={{ x: 1500 }}
-          pagination={{ pageSize: 10 }}
+          pagination={{ 
+            pageSize: pageSize,
+            showSizeChanger: false,
+            current: currentPage,
+            onChange: (page, size) => {
+              setCurrentPage(page);
+              setPageSize(size || 10);
+            }
+          }}
         />
       </Card>
 
@@ -798,7 +808,8 @@ const AdminTargetPage: React.FC = () => {
           <p style={{ color: '#888', fontSize: '12px', marginBottom: 16 }}>
             * Target Kinerja (K) akan diset default 10<br />
             * Satuan akan diset default "Dokumen"<br />
-            * PAGU akan diagregat per kombinasi Puskesmas + Sub Kegiatan + Sumber Dana
+            * PAGU akan diagregat per kombinasi Puskesmas + Sub Kegiatan + Sumber Dana<br />
+            * Nama unit "Laboratorium Kesehatan Daerah" akan dipetakan ke user "labkesda"
           </p>
           <Upload.Dragger
             name="file"

@@ -47,10 +47,12 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
   const [selectedIndikator, setSelectedIndikator] = useState<string>('');
   const [selectedSubKegiatan, setSelectedSubKegiatan] = useState<string>('');
   const [assignedSumberAnggaran, setAssignedSumberAnggaran] = useState<Array<{ value: number; label: string }>>([]);
+  const [targetData, setTargetData] = useState<Record<number, { target_k: number; target_rp: number }>>({});
 
   // Load reference data
   useEffect(() => {
     const loadReferenceData = async () => {
+      console.log('🚀 LaporanForm: Starting loadReferenceData...');
       try {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -61,27 +63,47 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         if (userStr) {
           const user = JSON.parse(userStr);
           userId = user.id;
+          console.log('👤 User ID:', userId);
         }
 
-        const [sumberAnggaranRes, satuanRes, kegiatanRes, subKegiatanRes] = await Promise.all([
+        const tahunSekarang = new Date().getFullYear();
+        console.log('📅 Tahun sekarang:', tahunSekarang);
+
+        console.log('📡 Fetching data from APIs...');
+        const [sumberAnggaranRes, satuanRes, kegiatanRes, assignedWithTargetsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, config),
           axios.get(`${API_BASE_URL}/reference/satuan`, config),
           axios.get(`${API_BASE_URL}/reference/kegiatan`, config),
-          // Fetch only assigned sub kegiatan for puskesmas
+          // Fetch sub kegiatan yang sudah ada targetnya di tahun ini (STRICT)
           userId 
-            ? axios.get(`${API_BASE_URL}/puskesmas-config/puskesmas/${userId}/sub-kegiatan`, config)
+            ? axios.get(`${API_BASE_URL}/target/assigned?tahun=${tahunSekarang}`, config)
             : axios.get(`${API_BASE_URL}/reference/sub-kegiatan`, config),
         ]);
 
-        // Transform assigned sub kegiatan data to match reference format
-        let subKegiatanData = subKegiatanRes.data;
-        if (userId && subKegiatanRes.data.assignments) {
-          subKegiatanData = subKegiatanRes.data.assignments.map((assignment: any) => ({
-            value: assignment.subKegiatan.id_sub_kegiatan,
-            label: assignment.subKegiatan.kegiatan,
-            id_kegiatan: assignment.subKegiatan.kegiatanParent?.id_kegiatan,
-            indikator_kinerja: assignment.subKegiatan.indikator_kinerja,
-          }));
+        console.log('✅ All API responses received');
+
+        // Transform data: hanya tampilkan sub kegiatan yang ADA TARGET-nya
+        let subKegiatanData: any[] = [];
+        if (userId && assignedWithTargetsRes.data.data) {
+          console.log('🔍 Raw target data:', assignedWithTargetsRes.data.data);
+          
+          // Filter hanya yang punya targets (STRICT)
+          subKegiatanData = assignedWithTargetsRes.data.data
+            .filter((item: any) => item.targets && item.targets.length > 0)
+            .map((item: any) => ({
+              value: item.subKegiatan.id_sub_kegiatan,
+              label: item.subKegiatan.kegiatan,
+              id_kegiatan: item.subKegiatan.kegiatanParent?.id_kegiatan,
+              indikator_kinerja: item.subKegiatan.indikator_kinerja,
+            }));
+          
+          console.log('📊 Filtered sub kegiatan:', subKegiatanData.length, subKegiatanData);
+          
+          if (subKegiatanData.length === 0) {
+            message.warning('Belum ada sub kegiatan dengan target yang diset untuk tahun ini. Hubungi admin.');
+          }
+        } else {
+          subKegiatanData = assignedWithTargetsRes.data;
         }
 
         const refData: ReferenceData = {
@@ -119,7 +141,16 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
           }
         }
       } catch (error) {
-        console.error('Failed to load reference data:', error);
+        console.error('❌ Failed to load reference data:', error);
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
+            console.error('Response error:', error.response.status, error.response.data);
+          } else if (error.request) {
+            console.error('Request error (no response):', error.request);
+          } else {
+            console.error('Error message:', error.message);
+          }
+        }
         message.error('Gagal memuat data referensi');
       }
     };
@@ -163,15 +194,48 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         if (sumberAnggaranList.length === 0) {
           message.warning('Tidak ada sumber anggaran yang tersedia untuk sub kegiatan ini. Hubungi admin.');
         }
+
+        // Fetch targets for this sub kegiatan and assigned sumber anggaran
+        const tahunValue = form.getFieldValue('tahun') || new Date().getFullYear();
+        const targetsMap: Record<number, { target_k: number; target_rp: number }> = {};
+        
+        for (const sa of sumberAnggaranList) {
+          try {
+            const targetRes = await axios.get(
+              `${API_BASE_URL}/target/latest/${value}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                  tahun: tahunValue,
+                  id_sumber_anggaran: sa.value,
+                },
+              }
+            );
+            
+            if (targetRes.data.success && targetRes.data.data) {
+              targetsMap[sa.value] = {
+                target_k: targetRes.data.data.target_k,
+                target_rp: targetRes.data.data.target_rp,
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch target for sumber anggaran ${sa.value}:`, error);
+          }
+        }
+        
+        setTargetData(targetsMap);
+        
       } catch (error) {
         console.error('Failed to fetch sumber anggaran:', error);
         message.error('Gagal memuat sumber anggaran');
         setAssignedSumberAnggaran([]);
+        setTargetData({});
       }
     } else {
       setSelectedIndikator('');
       setSelectedSubKegiatan('');
       setAssignedSumberAnggaran([]);
+      setTargetData({});
     }
     form.setFieldValue('id_sub_kegiatan', value);
     form.setFieldValue('id_kegiatan', sub?.id_kegiatan);
@@ -186,14 +250,17 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
       // Build array of laporan objects
       const laporanArray = Object.keys(sumberAnggaranData || {}).map((idSumberAnggaran) => {
         const data = sumberAnggaranData[idSumberAnggaran];
+        const idSumberAnggaranNum = Number(idSumberAnggaran);
+        const targetForSumber = targetData[idSumberAnggaranNum] || { target_k: 0, target_rp: 0 };
+        
         return {
           id_sub_kegiatan,
           id_kegiatan,
-          id_sumber_anggaran: Number(idSumberAnggaran),
+          id_sumber_anggaran: idSumberAnggaranNum,
           id_satuan: data.id_satuan,
-          target_k: data.target_k,
+          target_k: targetForSumber.target_k,
           realisasi_k: data.realisasi_k,
-          target_rp: data.target_rp,
+          target_rp: targetForSumber.target_rp,
           realisasi_rp: data.realisasi_rp,
           realisasi_fisik: data.realisasi_fisik || 0,
           angkas: data.angkas,
@@ -322,17 +389,18 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="Target Kinerja (K)"
-                  name={['sumberAnggaranData', sa.value, 'target_k']}
-                  rules={[{ required: true, message: 'Isi target kinerja!' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    min={0}
-                    placeholder="0"
-                  />
-                </Form.Item>
+                <div style={{ marginBottom: 24 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 8 }}>Target Kinerja (K)</Text>
+                  <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '14px' }}>
+                    {targetData[sa.value] ? (
+                      <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
+                        {targetData[sa.value].target_k.toLocaleString('id-ID')}
+                      </Text>
+                    ) : (
+                      <Text type="secondary">Target belum diset oleh admin</Text>
+                    )}
+                  </div>
+                </div>
               </Col>
             </Row>
 
@@ -341,7 +409,21 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                 <Form.Item
                   label="Realisasi Kinerja (K)"
                   name={['sumberAnggaranData', sa.value, 'realisasi_k']}
-                  rules={[{ required: true, message: 'Isi realisasi kinerja!' }]}
+                  rules={[
+                    { required: true, message: 'Isi realisasi kinerja!' },
+                    () => ({
+                      validator(_, value) {
+                        const target = targetData[sa.value];
+                        if (!target) {
+                          return Promise.reject(new Error('Target belum diset untuk sumber anggaran ini'));
+                        }
+                        if (value > target.target_k) {
+                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (${target.target_k})`));
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
                 >
                   <InputNumber
                     style={{ width: '100%' }}
@@ -351,17 +433,18 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="Target Anggaran (Rp)"
-                  name={['sumberAnggaranData', sa.value, 'target_rp']}
-                  rules={[{ required: true, message: 'Isi target anggaran!' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    min={0}
-                    placeholder="0"
-                  />
-                </Form.Item>
+                <div style={{ marginBottom: 24 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 8 }}>Target Anggaran (Rp)</Text>
+                  <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '14px' }}>
+                    {targetData[sa.value] ? (
+                      <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
+                        Rp {targetData[sa.value].target_rp.toLocaleString('id-ID')}
+                      </Text>
+                    ) : (
+                      <Text type="secondary">Target belum diset oleh admin</Text>
+                    )}
+                  </div>
+                </div>
               </Col>
             </Row>
 
@@ -370,7 +453,21 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                 <Form.Item
                   label="Realisasi Anggaran (Rp)"
                   name={['sumberAnggaranData', sa.value, 'realisasi_rp']}
-                  rules={[{ required: true, message: 'Isi realisasi anggaran!' }]}
+                  rules={[
+                    { required: true, message: 'Isi realisasi anggaran!' },
+                    () => ({
+                      validator(_, value) {
+                        const target = targetData[sa.value];
+                        if (!target) {
+                          return Promise.reject(new Error('Target belum diset untuk sumber anggaran ini'));
+                        }
+                        if (value > target.target_rp) {
+                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`));
+                        }
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
                 >
                   <InputNumber
                     style={{ width: '100%' }}

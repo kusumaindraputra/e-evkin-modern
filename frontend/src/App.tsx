@@ -11,6 +11,7 @@ import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage
 import { AdminLaporanSumberAnggaranPage } from './pages/AdminLaporanSumberAnggaranPage';
 import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
 import { CaraPengisianPage } from './pages/CaraPengisianPage';
+import AdminTargetPage from './pages/AdminTargetPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
 
@@ -157,6 +158,16 @@ function App() {
             <AdminRoute>
               <Layout>
                 <AdminLaporanSumberAnggaranPage />
+              </Layout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/target"
+          element={
+            <AdminRoute>
+              <Layout>
+                <AdminTargetPage />
               </Layout>
             </AdminRoute>
           }

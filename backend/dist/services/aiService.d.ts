@@ -19,6 +19,19 @@ interface LaporanAnalysis {
     }[];
     topPerformers: string[];
     lowPerformers: string[];
+    allPuskesmasPerformance: string[];
+    detailLaporanByPuskesmas: {
+        [puskesmasName: string]: {
+            persentase: number;
+            kegiatan: Array<{
+                nama: string;
+                target: number;
+                realisasi: number;
+                satuan: string;
+                persentase: number;
+            }>;
+        };
+    };
     trends: {
         comparison: string;
         improvement: string;

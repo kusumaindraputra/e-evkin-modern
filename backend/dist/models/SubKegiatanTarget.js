@@ -8,6 +8,7 @@ const database_1 = __importDefault(require("../config/database"));
 const User_1 = __importDefault(require("./User"));
 const SubKegiatan_1 = __importDefault(require("./SubKegiatan"));
 const SumberAnggaran_1 = __importDefault(require("./SumberAnggaran"));
+const Satuan_1 = __importDefault(require("./Satuan"));
 class SubKegiatanTarget extends sequelize_1.Model {
 }
 SubKegiatanTarget.init({
@@ -42,6 +43,15 @@ SubKegiatanTarget.init({
             key: 'id_sumber',
         },
         onDelete: 'CASCADE',
+    },
+    id_satuan: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'satuan',
+            key: 'id_satuan',
+        },
+        onDelete: 'SET NULL',
     },
     target_k: {
         type: sequelize_1.DataTypes.INTEGER,
@@ -104,6 +114,10 @@ SubKegiatanTarget.belongsTo(SubKegiatan_1.default, {
 SubKegiatanTarget.belongsTo(SumberAnggaran_1.default, {
     foreignKey: 'id_sumber_anggaran',
     as: 'sumberAnggaran',
+});
+SubKegiatanTarget.belongsTo(Satuan_1.default, {
+    foreignKey: 'id_satuan',
+    as: 'satuan',
 });
 SubKegiatanTarget.belongsTo(User_1.default, {
     foreignKey: 'created_by',

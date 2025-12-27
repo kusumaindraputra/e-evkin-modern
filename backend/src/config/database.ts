@@ -10,10 +10,10 @@ const sequelize = new Sequelize({
   password: config.database.password,
   logging: config.env === 'development' ? console.log : false,
   pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
+    max: 15,        // Increased from 5 for better concurrency
+    min: 2,         // Maintain minimum active connections
+    acquire: 60000, // Increased timeout for high load (60s)
+    idle: 10000,    // Keep idle timeout at 10s
   },
   define: {
     timestamps: true,

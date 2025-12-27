@@ -4,6 +4,7 @@ interface SubKegiatanTargetAttributes {
     user_id: string;
     id_sub_kegiatan: number;
     id_sumber_anggaran: number;
+    id_satuan?: number | null;
     target_k: number;
     target_rp: number;
     bulan?: string | null;
@@ -19,6 +20,7 @@ declare class SubKegiatanTarget extends Model<SubKegiatanTargetAttributes, SubKe
     user_id: string;
     id_sub_kegiatan: number;
     id_sumber_anggaran: number;
+    id_satuan: number | null;
     target_k: number;
     target_rp: number;
     bulan: string | null;

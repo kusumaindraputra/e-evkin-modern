@@ -3,16 +3,19 @@ import sequelize from '../config/database';
 import User from './User';
 import SubKegiatan from './SubKegiatan';
 import SumberAnggaran from './SumberAnggaran';
+import Satuan from './Satuan';
 
 interface SubKegiatanTargetAttributes {
   id: number;
   user_id: string; // UUID puskesmas
   id_sub_kegiatan: number;
   id_sumber_anggaran: number;
+  id_satuan?: number | null;
   target_k: number;
   target_rp: number;
   bulan?: string | null; // Optional for yearly targets
   tahun: number;
+  catatan?: string | null; // Catatan perubahan untuk history
   created_by: string; // UUID user yang membuat/update
   created_at?: Date;
   updated_at?: Date;
@@ -27,10 +30,12 @@ class SubKegiatanTarget extends Model<SubKegiatanTargetAttributes, SubKegiatanTa
   declare user_id: string;
   declare id_sub_kegiatan: number;
   declare id_sumber_anggaran: number;
+  declare id_satuan: number | null;
   declare target_k: number;
   declare target_rp: number;
   declare bulan: string | null;
   declare tahun: number;
+  declare catatan: string | null;
   declare created_by: string;
   declare readonly created_at: Date;
   declare readonly updated_at: Date;
@@ -70,6 +75,15 @@ SubKegiatanTarget.init(
       },
       onDelete: 'CASCADE',
     },
+    id_satuan: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'satuan',
+        key: 'id_satuan',
+      },
+      onDelete: 'SET NULL',
+    },
     target_k: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -87,6 +101,10 @@ SubKegiatanTarget.init(
     tahun: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    catatan: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     created_by: {
       type: DataTypes.UUID,
@@ -136,6 +154,11 @@ SubKegiatanTarget.belongsTo(SubKegiatan, {
 SubKegiatanTarget.belongsTo(SumberAnggaran, {
   foreignKey: 'id_sumber_anggaran',
   as: 'sumberAnggaran',
+});
+
+SubKegiatanTarget.belongsTo(Satuan, {
+  foreignKey: 'id_satuan',
+  as: 'satuan',
 });
 
 SubKegiatanTarget.belongsTo(User, {

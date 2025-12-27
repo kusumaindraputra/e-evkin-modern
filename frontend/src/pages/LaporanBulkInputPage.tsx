@@ -27,35 +27,19 @@ import { useAuthStore } from '../store/authStore';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-interface SubKegiatanAssignment {
-  id_sub_kegiatan: number;
-  subKegiatan: {
-    id_sub_kegiatan: number;
-    kode_sub: string;
-    kegiatan: string;
-    indikator_kinerja: string;
-    kegiatanParent: {
-      id_kegiatan: number;
-      kode: string;
-      kegiatan: string;
-    };
-  };
-}
-
 interface LaporanRow {
   id_sub_kegiatan: number;
   kode_sub: string;
   kegiatan: string;
   indikator_kinerja: string;
   id_kegiatan: number;
-  kegiatan_parent: string;
   
   // Form fields
   id_sumber_anggaran?: number;
-  id_satuan?: number;
-  target_k?: number;
+  id_satuan?: number; // Read-only dari admin target
+  target_k?: number; // Read-only dari admin
+  target_rp?: number; // Read-only dari admin
   angkas?: number;
-  target_rp?: number;
   realisasi_k?: number;
   realisasi_rp?: number;
   realisasi_fisik?: number;
@@ -141,11 +125,13 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Load assigned sub kegiatan
+      // Load sub kegiatan yang punya target di tahun ini
       const assignmentsRes = await axios.get(
-        `${API_BASE_URL}/puskesmas-config/puskesmas/${user.id}/sub-kegiatan`,
+        `${API_BASE_URL}/target/assigned?tahun=${filterTahun}`,
         config
       );
+
+      console.log('🔍 Target assigned response:', assignmentsRes.data);
 
       // Load existing laporan for this month
       const laporanRes = await axios.get(`${API_BASE_URL}/laporan`, {
@@ -159,25 +145,24 @@ export const LaporanBulkInputPage: React.FC = () => {
         ? laporanRes.data
         : [];
 
-      // Map assignments to rows WITH sumber anggaran expansion
-      const assignments: SubKegiatanAssignment[] = assignmentsRes.data.assignments || [];
+      // Map target data to rows (NEW FORMAT)
+      const targetData = assignmentsRes.data.data || [];
+      console.log('📊 Target data:', targetData);
+      
       const mappedRows: LaporanRow[] = [];
       
-      // For each sub kegiatan, get assigned sumber anggaran
-      for (const assignment of assignments) {
-        const subKegiatanId = assignment.subKegiatan.id_sub_kegiatan;
+      // For each sub kegiatan with targets
+      for (const item of targetData) {
+        const subKegiatan = item.subKegiatan;
+        const targets = item.targets || [];
         
-        // Fetch sumber anggaran assignments for this sub kegiatan
-        const sumberAnggaranRes = await axios.get(
-          `${API_BASE_URL}/sub-kegiatan-sumber-anggaran/by-sub-kegiatan/${subKegiatanId}`,
-          config
-        );
+        if (targets.length === 0) continue; // Skip jika tidak ada target
         
-        const assignedSumberAnggaran = sumberAnggaranRes.data.data || [];
+        const subKegiatanId = subKegiatan.id_sub_kegiatan;
         
-        // Create one row for each sumber anggaran
-        assignedSumberAnggaran.forEach((sa: any) => {
-          const idSumberAnggaran = sa.sumberAnggaran.id_sumber;
+        // Create one row for each target (each sumber anggaran)
+        targets.forEach((target: any) => {
+          const idSumberAnggaran = target.id_sumber_anggaran;
           
           // Find existing laporan for this sub kegiatan + sumber anggaran combo
           const existing = existingLaporan.find(
@@ -188,22 +173,23 @@ export const LaporanBulkInputPage: React.FC = () => {
 
           mappedRows.push({
             id_sub_kegiatan: subKegiatanId,
-            kode_sub: assignment.subKegiatan.kode_sub,
-            kegiatan: assignment.subKegiatan.kegiatan,
-            indikator_kinerja: assignment.subKegiatan.indikator_kinerja,
-            id_kegiatan: assignment.subKegiatan.kegiatanParent?.id_kegiatan || 0,
-            kegiatan_parent: assignment.subKegiatan.kegiatanParent?.kegiatan || '',
+            kode_sub: subKegiatan.kode_sub,
+            kegiatan: subKegiatan.kegiatan,
+            indikator_kinerja: subKegiatan.indikator_kinerja,
+            id_kegiatan: 0,
             
-            // Pre-fill sumber anggaran (readonly, dari config admin)
+            // Pre-fill sumber anggaran (readonly, dari target)
             id_sumber_anggaran: idSumberAnggaran,
+            
+            // Target dan satuan dari admin (READ-ONLY)
+            target_k: target.target_k,
+            target_rp: target.target_rp,
+            id_satuan: target.id_satuan,
             
             // Populate with existing data if available
             laporan_id: existing?.id,
             status: existing?.status,
-            id_satuan: existing?.id_satuan,
-            target_k: existing?.target_k ? Number(existing.target_k) : undefined,
             angkas: existing?.angkas ? Number(existing.angkas) : undefined,
-            target_rp: existing?.target_rp ? Number(existing.target_rp) : undefined,
             realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
             realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
             realisasi_fisik: existing?.realisasi_fisik ? Number(existing.realisasi_fisik) : undefined,
@@ -256,45 +242,45 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Save each row (create or update)
-      const promises = rows
-        .filter(
-          (row) =>
-            row.id_sumber_anggaran && row.id_satuan // At minimum need these fields
-        )
-        .map((row) => {
-          const payload = {
-            id_kegiatan: row.id_kegiatan,
-            id_sub_kegiatan: row.id_sub_kegiatan,
-            id_sumber_anggaran: row.id_sumber_anggaran,
-            id_satuan: row.id_satuan,
-            target_k: row.target_k || 0,
-            angkas: row.angkas || 0,
-            target_rp: row.target_rp || 0,
-            realisasi_k: row.realisasi_k || 0,
-            realisasi_rp: row.realisasi_rp || 0,
-            realisasi_fisik: row.realisasi_fisik || 0,
-            permasalahan: row.permasalahan || '',
-            upaya: row.upaya || '',
-            bulan: filterBulan,
-            tahun: filterTahun,
-          };
+      // Prepare laporan array for bulk upsert
+      const laporanArray = rows
+        .filter((row) => row.id_sumber_anggaran && row.id_satuan)
+        .map((row) => ({
+          id: row.laporan_id, // Include ID for update detection
+          id_kegiatan: row.id_kegiatan,
+          id_sub_kegiatan: row.id_sub_kegiatan,
+          id_sumber_anggaran: row.id_sumber_anggaran,
+          id_satuan: row.id_satuan,
+          target_k: row.target_k || 0,
+          angkas: row.angkas || 0,
+          target_rp: row.target_rp || 0,
+          realisasi_k: row.realisasi_k || 0,
+          realisasi_rp: row.realisasi_rp || 0,
+          realisasi_fisik: row.realisasi_fisik || 0,
+          permasalahan: row.permasalahan || '',
+          upaya: row.upaya || '',
+          bulan: filterBulan,
+          tahun: filterTahun,
+        }));
 
-          if (row.laporan_id) {
-            // Update existing
-            return axios.put(
-              `${API_BASE_URL}/laporan/${row.laporan_id}`,
-              payload,
-              config
-            );
-          } else {
-            // Create new
-            return axios.post(`${API_BASE_URL}/laporan`, payload, config);
-          }
-        });
+      // Use optimized bulk-upsert endpoint (single transaction)
+      const response = await axios.post(
+        `${API_BASE_URL}/laporan/bulk-upsert`,
+        { laporanArray },
+        config
+      );
 
-      await Promise.all(promises);
-      message.success(`Berhasil menyimpan ${promises.length} laporan`);
+      const { results } = response.data;
+      message.success(
+        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${
+          results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
+        }`
+      );
+      
+      if (results.errors?.length > 0) {
+        console.warn('Errors during save:', results.errors);
+      }
+      
       loadData(); // Reload to get updated data
     } catch (error: any) {
       console.error('Error saving:', error);
@@ -344,13 +330,6 @@ export const LaporanBulkInputPage: React.FC = () => {
       sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
     },
     {
-      title: 'Kegiatan',
-      dataIndex: 'kegiatan_parent',
-      key: 'kegiatan_parent',
-      width: 200,
-      sorter: (a, b) => a.kegiatan_parent.localeCompare(b.kegiatan_parent),
-    },
-    {
       title: 'Sub Kegiatan',
       dataIndex: 'kegiatan',
       key: 'kegiatan',
@@ -384,48 +363,28 @@ export const LaporanBulkInputPage: React.FC = () => {
       sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
     },
     {
-      title: 'Satuan',
-      key: 'id_satuan',
-      width: 120,
-      render: (_: any, record: LaporanRow) => (
-        <Select
-          style={{ width: '100%' }}
-          value={record.id_satuan}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'id_satuan', value)
-          }
-          options={referenceData.satuan}
-          placeholder="Pilih"
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
       title: 'Target (K)',
       key: 'target_k',
       width: 120,
       sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
       render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.target_k}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'target_k', value)
-          }
-          min={0}
-          step={1}
-          controls={false}
-          formatter={(value) => {
-            if (!value) return '0';
-            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-          }}
-          parser={(value) => {
-            const parsed = value?.replace(/\./g, '');
-            return parsed ? Number(parsed) : 0;
-          }}
-          disabled={record.status === 'terkirim'}
-        />
+        <div style={{ textAlign: 'right' }}>
+          {(record.target_k || 0).toLocaleString('id-ID')}
+        </div>
       ),
+    },
+    {
+      title: 'Satuan',
+      key: 'id_satuan',
+      width: 120,
+      render: (_: any, record: LaporanRow) => {
+        const satuan = referenceData.satuan.find((s) => s.value === record.id_satuan);
+        return (
+          <div style={{ textAlign: 'center' }}>
+            {satuan?.label || '-'}
+          </div>
+        );
+      },
     },
     {
       title: 'Target Angkas (Rp)',
@@ -460,25 +419,9 @@ export const LaporanBulkInputPage: React.FC = () => {
       width: 150,
       sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
       render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.target_rp}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'target_rp', value)
-          }
-          min={0}
-          step={1}
-          controls={false}
-          formatter={(value) => {
-            if (!value) return '0';
-            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-          }}
-          parser={(value) => {
-            const parsed = value?.replace(/\./g, '');
-            return parsed ? Number(parsed) : 0;
-          }}
-          disabled={record.status === 'terkirim'}
-        />
+        <div style={{ textAlign: 'right' }}>
+          {(record.target_rp || 0).toLocaleString('id-ID')}
+        </div>
       ),
     },
     {

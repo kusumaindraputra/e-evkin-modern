@@ -261,6 +261,100 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
   }
 });
 
+// Bulk upsert laporan (optimized for bulk input page - create or update in one transaction)
+router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) => {
+  const transaction = await Laporan.sequelize!.transaction();
+  
+  try {
+    const { laporanArray } = req.body;
+    
+    if (!Array.isArray(laporanArray) || laporanArray.length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+    }
+
+    // SECURITY: Puskesmas hanya bisa create/update laporan untuk diri sendiri
+    const userId = req.user?.role === 'puskesmas' ? req.user.id : laporanArray[0].user_id;
+    
+    const results = {
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      errors: [] as string[],
+    };
+
+    // Process each laporan within the transaction
+    for (const data of laporanArray) {
+      try {
+        // Skip if missing critical fields
+        if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
+          results.skipped++;
+          continue;
+        }
+
+        const laporanData = {
+          ...data,
+          user_id: userId,
+          status: data.status || 'tersimpan',
+        };
+
+        if (data.id) {
+          // Update existing
+          const [updatedCount] = await Laporan.update(laporanData, {
+            where: { id: data.id, user_id: userId },
+            transaction,
+          });
+          
+          if (updatedCount > 0) {
+            results.updated++;
+          } else {
+            results.skipped++;
+          }
+        } else {
+          // Check if exists based on unique combination
+          const existing = await Laporan.findOne({
+            where: {
+              user_id: userId,
+              id_sub_kegiatan: data.id_sub_kegiatan,
+              id_sumber_anggaran: data.id_sumber_anggaran,
+              bulan: data.bulan,
+              tahun: data.tahun,
+            },
+            transaction,
+          });
+
+          if (existing) {
+            // Update existing
+            await existing.update(laporanData, { transaction });
+            results.updated++;
+          } else {
+            // Create new
+            await Laporan.create(laporanData, { transaction });
+            results.created++;
+          }
+        }
+      } catch (err: any) {
+        results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: ${err.message}`);
+      }
+    }
+
+    await transaction.commit();
+
+    return res.status(200).json({
+      success: true,
+      message: `Bulk upsert completed: ${results.created} created, ${results.updated} updated, ${results.skipped} skipped`,
+      results,
+    });
+  } catch (error: any) {
+    await transaction.rollback();
+    console.error('Error bulk upserting laporan:', error);
+    return res.status(500).json({ 
+      error: 'Failed to bulk upsert laporan', 
+      message: error.message 
+    });
+  }
+});
+
 // Update laporan (puskesmas hanya bisa update laporan sendiri)
 router.put('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {

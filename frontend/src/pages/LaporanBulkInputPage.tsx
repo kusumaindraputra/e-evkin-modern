@@ -27,21 +27,6 @@ import { useAuthStore } from '../store/authStore';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-interface SubKegiatanAssignment {
-  id_sub_kegiatan: number;
-  subKegiatan: {
-    id_sub_kegiatan: number;
-    kode_sub: string;
-    kegiatan: string;
-    indikator_kinerja: string;
-    kegiatanParent: {
-      id_kegiatan: number;
-      kode: string;
-      kegiatan: string;
-    };
-  };
-}
-
 interface LaporanRow {
   id_sub_kegiatan: number;
   kode_sub: string;
@@ -257,45 +242,45 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Save each row (create or update)
-      const promises = rows
-        .filter(
-          (row) =>
-            row.id_sumber_anggaran && row.id_satuan // At minimum need these fields
-        )
-        .map((row) => {
-          const payload = {
-            id_kegiatan: row.id_kegiatan,
-            id_sub_kegiatan: row.id_sub_kegiatan,
-            id_sumber_anggaran: row.id_sumber_anggaran,
-            id_satuan: row.id_satuan,
-            target_k: row.target_k || 0,
-            angkas: row.angkas || 0,
-            target_rp: row.target_rp || 0,
-            realisasi_k: row.realisasi_k || 0,
-            realisasi_rp: row.realisasi_rp || 0,
-            realisasi_fisik: row.realisasi_fisik || 0,
-            permasalahan: row.permasalahan || '',
-            upaya: row.upaya || '',
-            bulan: filterBulan,
-            tahun: filterTahun,
-          };
+      // Prepare laporan array for bulk upsert
+      const laporanArray = rows
+        .filter((row) => row.id_sumber_anggaran && row.id_satuan)
+        .map((row) => ({
+          id: row.laporan_id, // Include ID for update detection
+          id_kegiatan: row.id_kegiatan,
+          id_sub_kegiatan: row.id_sub_kegiatan,
+          id_sumber_anggaran: row.id_sumber_anggaran,
+          id_satuan: row.id_satuan,
+          target_k: row.target_k || 0,
+          angkas: row.angkas || 0,
+          target_rp: row.target_rp || 0,
+          realisasi_k: row.realisasi_k || 0,
+          realisasi_rp: row.realisasi_rp || 0,
+          realisasi_fisik: row.realisasi_fisik || 0,
+          permasalahan: row.permasalahan || '',
+          upaya: row.upaya || '',
+          bulan: filterBulan,
+          tahun: filterTahun,
+        }));
 
-          if (row.laporan_id) {
-            // Update existing
-            return axios.put(
-              `${API_BASE_URL}/laporan/${row.laporan_id}`,
-              payload,
-              config
-            );
-          } else {
-            // Create new
-            return axios.post(`${API_BASE_URL}/laporan`, payload, config);
-          }
-        });
+      // Use optimized bulk-upsert endpoint (single transaction)
+      const response = await axios.post(
+        `${API_BASE_URL}/laporan/bulk-upsert`,
+        { laporanArray },
+        config
+      );
 
-      await Promise.all(promises);
-      message.success(`Berhasil menyimpan ${promises.length} laporan`);
+      const { results } = response.data;
+      message.success(
+        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${
+          results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
+        }`
+      );
+      
+      if (results.errors?.length > 0) {
+        console.warn('Errors during save:', results.errors);
+      }
+      
       loadData(); // Reload to get updated data
     } catch (error: any) {
       console.error('Error saving:', error);

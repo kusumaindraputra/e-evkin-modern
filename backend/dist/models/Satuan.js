@@ -1,0 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const sequelize_1 = require("sequelize");
+const database_1 = __importDefault(require("../config/database"));
+class Satuan extends sequelize_1.Model {
+}
+Satuan.init({
+    id_satuan: {
+        type: sequelize_1.DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    satuannya: {
+        type: sequelize_1.DataTypes.STRING(200),
+        allowNull: false,
+    },
+}, {
+    sequelize: database_1.default,
+    tableName: 'satuan',
+    timestamps: true,
+});
+exports.default = Satuan;
+//# sourceMappingURL=Satuan.js.map

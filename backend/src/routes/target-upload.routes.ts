@@ -28,7 +28,9 @@ interface UploadResult {
   updated: number;
   skipped: number;
   createdSubKegiatan: number;
+  createdSumberAnggaran: number;
   failed: number;
+  excludedNonPuskesmas: number;
   errors: Array<{
     row: number;
     puskesmas: string;
@@ -45,10 +47,38 @@ interface UploadResult {
   }>;
 }
 
+// Helper function to check if entity should be excluded from errors
+// Only Puskesmas and Labkesda are valid - everything else is excluded
+function isExcludedEntity(puskesmasName: string): boolean {
+  const normalizedName = puskesmasName.toLowerCase();
+  
+  // Valid entities that should NOT be excluded
+  const validPrefixes = ['puskesmas', 'puskemas']; // Include typo variant
+  const validNames = ['laboratorium kesehatan daerah', 'labkesda'];
+  
+  // Check if it's a valid Puskesmas
+  for (const prefix of validPrefixes) {
+    if (normalizedName.startsWith(prefix)) {
+      return false; // Don't exclude - it's a Puskesmas
+    }
+  }
+  
+  // Check if it's Labkesda
+  for (const name of validNames) {
+    if (normalizedName.includes(name)) {
+      return false; // Don't exclude - it's Labkesda
+    }
+  }
+  
+  // Everything else should be excluded
+  return true;
+}
+
 // POST /api/target/upload - Upload Excel file to bulk import targets
 router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), async (req: Request, res: Response) => {
   try {
     const adminId = req.user!.id;
+    const catatan = req.body.catatan || null; // Catatan manual dari user
 
     if (!req.file) {
       return res.status(400).json({
@@ -76,7 +106,9 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       updated: 0,
       skipped: 0,
       createdSubKegiatan: 0,
+      createdSumberAnggaran: 0,
       failed: 0,
+      excludedNonPuskesmas: 0,
       errors: [],
       successList: [],
     };
@@ -206,6 +238,13 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
         }
 
         if (!puskesmas) {
+          // Check if this is a non-Puskesmas entity that should be excluded
+          if (isExcludedEntity(group.puskesmas)) {
+            result.excludedNonPuskesmas++;
+            console.log(`⏭️  Excluded non-Puskesmas entity: ${group.puskesmas}`);
+            continue;
+          }
+          
           result.failed++;
           result.errors.push({
             row: group.rows[0],
@@ -250,20 +289,26 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
         }
 
         // Find sumber anggaran - need to map KODE SUMBER DANA to our table
-        // For now, try to match by nama
-        const sumberAnggaran = await SumberAnggaran.findOne({
-          where: { sumber: group.sumberDanaNama },
+        // Trim whitespace and try to match by nama
+        const sumberDanaNamaTrimmed = group.sumberDanaNama.trim();
+        let sumberAnggaran = await SumberAnggaran.findOne({
+          where: { sumber: sumberDanaNamaTrimmed },
         });
 
+        // If not found, try case-insensitive search
         if (!sumberAnggaran) {
-          result.failed++;
-          result.errors.push({
-            row: group.rows[0],
-            puskesmas: group.puskesmas,
-            subKegiatan: group.subKegiatanNama,
-            error: `Sumber dana "${group.sumberDanaNama}" tidak ditemukan`,
+          sumberAnggaran = await SumberAnggaran.findOne({
+            where: { sumber: { [Op.iLike]: sumberDanaNamaTrimmed } },
           });
-          continue;
+        }
+
+        // If still not found, create new sumber anggaran
+        if (!sumberAnggaran) {
+          sumberAnggaran = await SumberAnggaran.create({
+            sumber: sumberDanaNamaTrimmed,
+          });
+          result.createdSumberAnggaran++;
+          console.log(`✅ Created new sumber anggaran: ${sumberDanaNamaTrimmed}`);
         }
 
         // Check if target already exists
@@ -275,34 +320,23 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             tahun: group.tahun,
             bulan: null,
           },
+          order: [['created_at', 'DESC']], // Get the latest record
         });
 
         if (existingTarget) {
           // Check if target_rp is the same, skip if no change needed
-          if (existingTarget.target_rp === group.totalPagu) {
+          // Note: BIGINT dari database dikembalikan sebagai string oleh Sequelize
+          const existingTargetRp = Number(existingTarget.target_rp);
+          const newTargetRp = Number(group.totalPagu);
+          
+          if (existingTargetRp === newTargetRp) {
             result.skipped++;
-            console.log(`⏭️  Skipped (same value) ${group.puskesmas} - ${group.subKegiatanKode}: ${group.totalPagu}`);
+            console.log(`⏭️  Skipped (same value) ${group.puskesmas} - ${group.subKegiatanKode}: ${newTargetRp}`);
             continue; // Skip this iteration
           }
 
-          // UPDATE existing target
-          await existingTarget.update({
-            target_k: 10,
-            target_rp: group.totalPagu,
-            id_satuan: defaultSatuanId,
-            created_by: adminId,
-          });
-          result.updated++;
-          result.successList.push({
-            type: 'updated',
-            puskesmas: group.puskesmas,
-            subKegiatan: `${group.subKegiatanKode} - ${group.subKegiatanNama}`,
-            sumberDana: group.sumberDanaNama,
-            tahun: group.tahun,
-            target_rp: group.totalPagu,
-          });
-        } else {
-          // INSERT new target
+          // INSERT new record for history tracking (instead of UPDATE)
+          // This preserves the old value and creates a new entry
           await SubKegiatanTarget.create({
             user_id: puskesmas.id,
             id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
@@ -313,6 +347,31 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             target_rp: group.totalPagu,
             id_satuan: defaultSatuanId,
             created_by: adminId,
+            catatan: catatan,
+          });
+          result.updated++;
+          console.log(`✏️  New version ${group.puskesmas} - ${group.subKegiatanKode}: ${existingTargetRp} → ${newTargetRp}`);
+          result.successList.push({
+            type: 'updated',
+            puskesmas: group.puskesmas,
+            subKegiatan: `${group.subKegiatanKode} - ${group.subKegiatanNama}`,
+            sumberDana: group.sumberDanaNama,
+            tahun: group.tahun,
+            target_rp: group.totalPagu,
+          });
+        } else {
+          // INSERT new target (first entry)
+          await SubKegiatanTarget.create({
+            user_id: puskesmas.id,
+            id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaran.id_sumber,
+            tahun: group.tahun,
+            bulan: null,
+            target_k: 10,
+            target_rp: group.totalPagu,
+            id_satuan: defaultSatuanId,
+            created_by: adminId,
+            catatan: catatan,
           });
           result.inserted++;
           result.successList.push({
@@ -339,7 +398,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
 
     return res.json({
       success: true,
-      message: `Upload selesai. Berhasil: ${result.success}, Skipped: ${result.skipped}, Gagal: ${result.failed}, Sub Kegiatan Baru: ${result.createdSubKegiatan}`,
+      message: `Upload selesai. Berhasil: ${result.success}, Skipped: ${result.skipped}, Gagal: ${result.failed}, Sub Kegiatan Baru: ${result.createdSubKegiatan}, Sumber Dana Baru: ${result.createdSumberAnggaran}${result.excludedNonPuskesmas > 0 ? `, Excluded (bukan Puskesmas): ${result.excludedNonPuskesmas}` : ''}`,
       data: result,
     });
   } catch (error) {

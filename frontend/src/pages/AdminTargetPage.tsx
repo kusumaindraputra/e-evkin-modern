@@ -4,18 +4,16 @@ import {
   Table,
   Button,
   Modal,
-  Form,
-  InputNumber,
   Select,
   message,
-  Space,
   Tag,
   Timeline,
   Row,
   Col,
   Upload,
+  Progress,
 } from 'antd';
-import { EditOutlined, HistoryOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { HistoryOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
@@ -42,8 +40,12 @@ interface Target {
     indikator_kinerja: string;
   };
   sumberAnggaran: {
-    id: number;
-    nama: string;
+    id_sumber: number;
+    sumber: string;
+  };
+  satuan?: {
+    id_satuan: number;
+    satuannya: string;
   };
   creator: {
     id: number;
@@ -56,6 +58,7 @@ interface HistoryRecord {
   id: number;
   target_k: number;
   target_rp: number;
+  catatan?: string | null;
   created_at: string;
   creator: {
     id: number;
@@ -113,20 +116,19 @@ const AdminTargetPage: React.FC = () => {
 
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<Target | null>(null);
   const [historyData, setHistoryData] = useState<HistoryRecord[]>([]);
-  const [form] = Form.useForm();
 
   // Reference data
   const [puskesmasList, setPuskesmasList] = useState<Puskesmas[]>([]);
   const [subKegiatanList, setSubKegiatanList] = useState<SubKegiatan[]>([]);
   const [sumberAnggaranList, setSumberAnggaranList] = useState<SumberAnggaran[]>([]);
-  const [satuanList, setSatuanList] = useState<Array<{ value: number; label: string }>>([]);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [modalSubKegiatanList, setModalSubKegiatanList] = useState<SubKegiatan[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<'uploading' | 'processing'>('uploading');
+  const [uploadCatatan, setUploadCatatan] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -185,10 +187,6 @@ const AdminTargetPage: React.FC = () => {
       });
       const sumberAnggaranData = Array.isArray(sumberAnggaranRes.data) ? sumberAnggaranRes.data : (sumberAnggaranRes.data.data || []);
       setSumberAnggaranList(sumberAnggaranData);
-
-      // Load satuan
-      const satuanRes = await axios.get(`${API_BASE_URL}/reference/satuan`, { headers });
-      setSatuanList(Array.isArray(satuanRes.data) ? satuanRes.data : []);
     } catch (error: any) {
       console.error('Error loading reference data:', error);
       if (error.response?.status === 401) {
@@ -246,15 +244,36 @@ const AdminTargetPage: React.FC = () => {
   const handleUpload = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (uploadCatatan.trim()) {
+      formData.append('catatan', uploadCatatan.trim());
+    }
 
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStatus('uploading');
+    
+    // Simulate progress for better UX
+    let simulatedProgress = 0;
+    const progressInterval = setInterval(() => {
+      simulatedProgress += Math.random() * 8 + 2; // Add 2-10% randomly
+      if (simulatedProgress > 90) simulatedProgress = 90; // Cap at 90% until response
+      setUploadProgress(Math.round(simulatedProgress));
+    }, 300);
+
     try {
+      // Switch to processing status after a brief upload phase
+      setTimeout(() => setUploadStatus('processing'), 500);
+      
       const response = await axios.post(`${API_BASE_URL}/target/upload`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
+      
+      // Stop simulation and set to 100%
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (response.data.success) {
         const result = response.data.data;
@@ -277,7 +296,15 @@ const AdminTargetPage: React.FC = () => {
               <p style={{ marginLeft: 20, color: '#722ed1' }}>
                 • Sub Kegiatan Baru: {result.createdSubKegiatan || 0}
               </p>
+              <p style={{ marginLeft: 20, color: '#13c2c2' }}>
+                • Sumber Dana Baru: {result.createdSumberAnggaran || 0}
+              </p>
               <p><strong>Gagal:</strong> {result.failed} target</p>
+              {result.excludedNonPuskesmas > 0 && (
+                <p style={{ color: '#8c8c8c' }}>
+                  <strong>Excluded (bukan Puskesmas):</strong> {result.excludedNonPuskesmas} data
+                </p>
+              )}
               
               {/* Success List */}
               {result.successList && result.successList.length > 0 && (
@@ -347,76 +374,17 @@ const AdminTargetPage: React.FC = () => {
         loadTargets();
       }
     } catch (error: any) {
+      clearInterval(progressInterval);
       console.error('Upload error:', error);
       message.error(error.response?.data?.message || 'Gagal upload file');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setUploadStatus('uploading');
+      setUploadCatatan('');
     }
 
     return false; // Prevent default upload behavior
-  };
-
-  const handleEdit = (target: Target) => {
-    setSelectedTarget(target);
-    form.setFieldsValue({
-      user_id: target.user_id,
-      id_sub_kegiatan: target.id_sub_kegiatan,
-      id_sumber_anggaran: target.id_sumber_anggaran,
-      target_k: target.target_k,
-      target_rp: target.target_rp,
-      tahun: target.tahun,
-    });
-    setEditModalVisible(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-
-      await axios.post(`${API_BASE_URL}/target/admin`, values, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      message.success('Target berhasil disimpan');
-      setEditModalVisible(false);
-      loadTargets();
-    } catch (error: any) {
-      console.error('Error saving target:', error);
-      if (error.response?.status === 401) {
-        message.error('Session expired. Please login again.');
-        navigate('/login');
-        return;
-      }
-      message.error(error.response?.data?.message || 'Gagal menyimpan target');
-    }
-  };
-
-  const handlePuskesmasChange = async (userId: string) => {
-    // Reset dependent fields
-    form.setFieldsValue({
-      id_sub_kegiatan: undefined,
-      id_sumber_anggaran: undefined,
-    });
-    
-    // Fetch assigned sub kegiatan for this puskesmas
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/puskesmas-config/puskesmas/${userId}/sub-kegiatan`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (response.data.assignments) {
-        const assigned = response.data.assignments.map((a: any) => ({
-          value: a.subKegiatan.id_sub_kegiatan,
-          label: `${a.subKegiatan.kode_sub} - ${a.subKegiatan.kegiatan}`,
-        }));
-        setModalSubKegiatanList(assigned);
-      }
-    } catch (error) {
-      console.error('Error fetching assigned sub kegiatan:', error);
-      message.error('Gagal memuat sub kegiatan yang di-assign');
-      setModalSubKegiatanList([]);
-    }
   };
 
   const handleViewHistory = async (target: Target) => {
@@ -478,7 +446,7 @@ const AdminTargetPage: React.FC = () => {
       dataIndex: ['sumberAnggaran', 'sumber'],
       key: 'sumberAnggaran',
       width: 150,
-      render: (text: string, record: Target) => record.sumberAnggaran?.sumber || <Tag color="red">Tidak ada data</Tag>,
+      render: (_: string, record: Target) => record.sumberAnggaran?.sumber || <Tag color="red">Tidak ada data</Tag>,
     },
     {
       title: 'Tahun',
@@ -499,7 +467,7 @@ const AdminTargetPage: React.FC = () => {
       dataIndex: ['satuan', 'satuannya'],
       key: 'satuan',
       width: 100,
-      render: (text: string, record: Target) => record.satuan?.satuannya || '-',
+      render: (_: string, record: Target) => record.satuan?.satuannya || '-',
     },
     {
       title: 'Target Rp',
@@ -518,26 +486,16 @@ const AdminTargetPage: React.FC = () => {
     {
       title: 'Aksi',
       key: 'action',
-      width: 120,
+      width: 100,
       fixed: 'right' as const,
       render: (_: any, record: Target) => (
-        <Space>
-          <Button
-            type="primary"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            Edit
-          </Button>
-          <Button
-            size="small"
-            icon={<HistoryOutlined />}
-            onClick={() => handleViewHistory(record)}
-          >
-            History
-          </Button>
-        </Space>
+        <Button
+          size="small"
+          icon={<HistoryOutlined />}
+          onClick={() => handleViewHistory(record)}
+        >
+          History
+        </Button>
       ),
     },
   ];
@@ -600,25 +558,13 @@ const AdminTargetPage: React.FC = () => {
         </Row>
 
         <div style={{ marginBottom: 16 }}>
-          <Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                form.resetFields();
-                setSelectedTarget(null);
-                setEditModalVisible(true);
-              }}
-            >
-              Tambah Target Baru
-            </Button>
-            <Button
-              icon={<UploadOutlined />}
-              onClick={() => setUploadModalVisible(true)}
-            >
-              Upload Excel
-            </Button>
-          </Space>
+          <Button
+            type="primary"
+            icon={<UploadOutlined />}
+            onClick={() => setUploadModalVisible(true)}
+          >
+            Upload Excel
+          </Button>
         </div>
 
         <Table
@@ -638,98 +584,6 @@ const AdminTargetPage: React.FC = () => {
           }}
         />
       </Card>
-
-      {/* Edit Modal */}
-      <Modal
-        title={selectedTarget ? "Edit Target" : "Tambah Target Baru"}
-        open={editModalVisible}
-        onOk={handleSave}
-        onCancel={() => setEditModalVisible(false)}
-        width={600}
-      >
-        <Form form={form} layout="vertical" style={{ marginTop: 20 }}>
-          <Form.Item name="user_id" label="Puskesmas" rules={[{ required: true }]}>
-            <Select
-              placeholder="Pilih Puskesmas"
-              disabled={!!selectedTarget}
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={puskesmasList}
-              onChange={(value) => {
-                if (!selectedTarget) {
-                  fetchAssignedSubKegiatan(value);
-                  form.setFieldValue('id_sub_kegiatan', undefined);
-                }
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item name="id_sub_kegiatan" label="Sub Kegiatan" rules={[{ required: true }]}>
-            <Select
-              placeholder="Pilih Sub Kegiatan"
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={selectedTarget ? modalSubKegiatanList : subKegiatanList}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="id_sumber_anggaran"
-            label="Sumber Anggaran"
-            rules={[{ required: true }]}
-          >
-            <Select placeholder="Pilih Sumber Anggaran" options={sumberAnggaranList} />
-          </Form.Item>
-
-          <Form.Item name="tahun" label="Tahun" rules={[{ required: true }]}>
-            <Select
-              placeholder="Pilih Tahun"
-              options={[
-                { value: 2024, label: '2024' },
-                { value: 2025, label: '2025' },
-                { value: 2026, label: '2026' },
-              ]}
-            />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="target_k"
-                label="Target Kinerja (K)"
-                rules={[{ required: true, message: 'Isi target kinerja!' }]}
-              >
-                <InputNumber style={{ width: '100%' }} min={0} placeholder="0" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="id_satuan" label="Satuan">
-                <Select
-                  placeholder="Pilih Satuan"
-                  allowClear
-                  showSearch
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  options={satuanList}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="target_rp"
-            label="Target Anggaran (Rp)"
-            rules={[{ required: true, message: 'Isi target anggaran!' }]}
-          >
-            <InputNumber style={{ width: '100%' }} min={0} placeholder="0" />
-          </Form.Item>
-        </Form>
-      </Modal>
 
       {/* History Modal */}
       <Modal
@@ -779,6 +633,11 @@ const AdminTargetPage: React.FC = () => {
                 <div style={{ marginTop: 4, fontSize: '12px', color: '#888' }}>
                   Dibuat oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
                 </div>
+                {record.catatan && (
+                  <div style={{ marginTop: 6, padding: '6px 10px', background: '#f5f5f5', borderRadius: 4, fontSize: '12px', color: '#595959' }}>
+                    <strong>Catatan:</strong> {record.catatan}
+                  </div>
+                )}
               </div>
             ),
           }))}
@@ -811,22 +670,72 @@ const AdminTargetPage: React.FC = () => {
             * PAGU akan diagregat per kombinasi Puskesmas + Sub Kegiatan + Sumber Dana<br />
             * Nama unit "Laboratorium Kesehatan Daerah" akan dipetakan ke user "labkesda"
           </p>
+          
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+              Catatan Perubahan <span style={{ color: 'red' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={uploadCatatan}
+              onChange={(e) => setUploadCatatan(e.target.value)}
+              placeholder="Contoh: Pagu Murni / Perubahan Parsial 1 / Perubahan Reguler"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: uploadCatatan.trim() ? '1px solid #d9d9d9' : '1px solid #ff7875',
+                borderRadius: 6,
+                fontSize: 14,
+                backgroundColor: uploadCatatan.trim() ? '#fff' : '#fff2f0',
+              }}
+              disabled={uploading}
+            />
+            {!uploadCatatan.trim() && (
+              <p style={{ color: '#ff4d4f', fontSize: '12px', marginTop: 4 }}>
+                ⚠️ Catatan wajib diisi
+              </p>
+            )}
+            <p style={{ color: '#888', fontSize: '12px', marginTop: 4 }}>
+              Catatan ini akan tersimpan di history untuk data yang diupload/diupdate
+            </p>
+          </div>
+
           <Upload.Dragger
             name="file"
             accept=".xlsx,.xls"
             beforeUpload={handleUpload}
             showUploadList={false}
-            disabled={uploading}
+            disabled={uploading || !uploadCatatan.trim()}
           >
             <p className="ant-upload-drag-icon">
-              <UploadOutlined />
+              {uploading ? <LoadingOutlined style={{ fontSize: 48 }} spin /> : <UploadOutlined />}
             </p>
-            <p className="ant-upload-text">
-              {uploading ? 'Uploading...' : 'Klik atau drag file Excel ke sini'}
-            </p>
-            <p className="ant-upload-hint">
-              Support file .xlsx dan .xls
-            </p>
+            {uploading ? (
+              <div style={{ padding: '0 20px' }}>
+                <Progress 
+                  percent={uploadProgress} 
+                  status="active" 
+                  strokeColor={{
+                    '0%': '#108ee9',
+                    '100%': '#87d068',
+                  }}
+                />
+                <p style={{ marginTop: 8 }}>
+                  {uploadStatus === 'uploading' 
+                    ? 'Mengunggah file...' 
+                    : 'Memproses data Excel...'}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="ant-upload-text">
+                  Klik atau drag file Excel ke sini
+                </p>
+                <p className="ant-upload-hint">
+                  Support file .xlsx dan .xls
+                </p>
+              </>
+            )}
           </Upload.Dragger>
         </div>
       </Modal>

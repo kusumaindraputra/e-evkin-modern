@@ -142,12 +142,14 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         }
       } catch (error) {
         console.error('❌ Failed to load reference data:', error);
-        if (error.response) {
-          console.error('Response error:', error.response.status, error.response.data);
-        } else if (error.request) {
-          console.error('Request error (no response):', error.request);
-        } else {
-          console.error('Error message:', error.message);
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
+            console.error('Response error:', error.response.status, error.response.data);
+          } else if (error.request) {
+            console.error('Request error (no response):', error.request);
+          } else {
+            console.error('Error message:', error.message);
+          }
         }
         message.error('Gagal memuat data referensi');
       }

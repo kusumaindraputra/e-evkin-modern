@@ -6,7 +6,7 @@ import { authorizeAdmin } from '../middleware/authorize';
 
 const router = Router();
 
-// Get targets untuk puskesmas yang login
+// Get targets untuk puskesmas yang login (latest per combination)
 router.get('/', authenticate, async (req, res) => {
   try {
     const userId = req.user!.id;
@@ -17,7 +17,7 @@ router.get('/', authenticate, async (req, res) => {
     if (id_sub_kegiatan) whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan as string);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
 
-    const targets = await SubKegiatanTarget.findAll({
+    const allTargets = await SubKegiatanTarget.findAll({
       where: whereClause,
       include: [
         {
@@ -34,9 +34,20 @@ router.get('/', authenticate, async (req, res) => {
       order: [['created_at', 'DESC']],
     });
 
+    // Group by combination and get latest per group
+    const groupedTargets = allTargets.reduce((acc: any, target: any) => {
+      const key = `${target.user_id}_${target.id_sub_kegiatan}_${target.id_sumber_anggaran}_${target.tahun}`;
+      if (!acc[key]) {
+        acc[key] = target;
+      }
+      return acc;
+    }, {});
+
+    const latestTargets = Object.values(groupedTargets);
+
     res.json({
       success: true,
-      data: targets,
+      data: latestTargets,
     });
   } catch (error) {
     console.error('Error fetching targets:', error);
@@ -66,7 +77,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
 
     const history = await SubKegiatanTarget.findAll({
       where: whereClause,
-      attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'created_by', 'created_at', 'updated_at'],
+      attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
       order: [['created_at', 'DESC']],
     });
 
@@ -90,6 +101,10 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
           }
         }
 
+        // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
+        const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
+        const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
+
         return {
           id: item.getDataValue('id'),
           user_id: item.getDataValue('user_id'),
@@ -99,9 +114,10 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
           target_rp: item.getDataValue('target_rp'),
           bulan: item.getDataValue('bulan'),
           tahun: item.getDataValue('tahun'),
+          catatan: item.getDataValue('catatan'),
           created_by: item.getDataValue('created_by'),
-          created_at: item.getDataValue('created_at'),
-          updated_at: item.getDataValue('updated_at'),
+          created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+          updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
           creator: creator,
         };
       })
@@ -195,7 +211,7 @@ router.get('/assigned', authenticate, async (req, res) => {
         user_id: userId,
         bulan: null,
         tahun: parseInt(tahun as string),
-        id_sumber_anggaran: { [Op.ne]: null }, // Filter out null sumber anggaran
+        id_sumber_anggaran: { [Op.ne]: null } as any, // Type cast for Sequelize operator
       },
       include: [
         {
@@ -242,13 +258,13 @@ router.get('/assigned', authenticate, async (req, res) => {
 
     const result = Array.from(groupedBySubKegiatan.values());
 
-    res.json({
+    return res.json({
       success: true,
       data: result,
     });
   } catch (error) {
     console.error('Error fetching assigned sub kegiatan:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal memuat sub kegiatan yang punya target',
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -631,17 +647,17 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
 
     // Format the response to ensure proper date formatting
     const formattedHistory = history.map(record => {
-      const json = record.toJSON();
-      console.log('Raw record keys:', Object.keys(json));
-      console.log('created_at value:', json.created_at);
-      console.log('createdAt value:', json.createdAt);
+      const json = record.toJSON() as any;
       
-      // Handle both created_at and createdAt (Sequelize alias)
+      // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
+      // but we need to send created_at for frontend consistency
       const createdAtValue = json.createdAt || json.created_at;
+      const updatedAtValue = json.updatedAt || json.updated_at;
       
       return {
         ...json,
         created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+        updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
       };
     });
 

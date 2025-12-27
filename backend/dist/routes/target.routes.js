@@ -6,7 +6,7 @@ const sequelize_1 = require("sequelize");
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
 const router = (0, express_1.Router)();
-// Get targets untuk puskesmas yang login
+// Get targets untuk puskesmas yang login (latest per combination)
 router.get('/', auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -18,7 +18,7 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan);
         if (id_sumber_anggaran)
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
-        const targets = await models_1.SubKegiatanTarget.findAll({
+        const allTargets = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
             include: [
                 {
@@ -34,9 +34,18 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             ],
             order: [['created_at', 'DESC']],
         });
+        // Group by combination and get latest per group
+        const groupedTargets = allTargets.reduce((acc, target) => {
+            const key = `${target.user_id}_${target.id_sub_kegiatan}_${target.id_sumber_anggaran}_${target.tahun}`;
+            if (!acc[key]) {
+                acc[key] = target;
+            }
+            return acc;
+        }, {});
+        const latestTargets = Object.values(groupedTargets);
         res.json({
             success: true,
-            data: targets,
+            data: latestTargets,
         });
     }
     catch (error) {
@@ -65,7 +74,7 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
         const history = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
-            attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'created_by', 'created_at', 'updated_at'],
+            attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
             order: [['created_at', 'DESC']],
         });
         // Map to include creator info by fetching user separately
@@ -84,6 +93,9 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                     };
                 }
             }
+            // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
+            const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
+            const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
             return {
                 id: item.getDataValue('id'),
                 user_id: item.getDataValue('user_id'),
@@ -93,9 +105,10 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                 target_rp: item.getDataValue('target_rp'),
                 bulan: item.getDataValue('bulan'),
                 tahun: item.getDataValue('tahun'),
+                catatan: item.getDataValue('catatan'),
                 created_by: item.getDataValue('created_by'),
-                created_at: item.getDataValue('created_at'),
-                updated_at: item.getDataValue('updated_at'),
+                created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+                updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
                 creator: creator,
             };
         }));
@@ -180,7 +193,7 @@ router.get('/assigned', auth_1.authenticate, async (req, res) => {
                 user_id: userId,
                 bulan: null,
                 tahun: parseInt(tahun),
-                id_sumber_anggaran: { [sequelize_1.Op.ne]: null }, // Filter out null sumber anggaran
+                id_sumber_anggaran: { [sequelize_1.Op.ne]: null }, // Type cast for Sequelize operator
             },
             include: [
                 {
@@ -220,14 +233,14 @@ router.get('/assigned', auth_1.authenticate, async (req, res) => {
             }
         }
         const result = Array.from(groupedBySubKegiatan.values());
-        res.json({
+        return res.json({
             success: true,
             data: result,
         });
     }
     catch (error) {
         console.error('Error fetching assigned sub kegiatan:', error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Gagal memuat sub kegiatan yang punya target',
             error: error instanceof Error ? error.message : 'Unknown error',
@@ -526,6 +539,91 @@ router.post('/admin', auth_1.authenticate, authorize_1.authorizeAdmin, async (re
         });
     }
 });
+// Update target K dan satuan only (admin only) - creates new record for history
+router.put('/admin/:id/target-kinerja', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const adminId = req.user.id;
+        const { id } = req.params;
+        const { target_k, id_satuan, catatan } = req.body;
+        // Validasi input
+        if (target_k === undefined || target_k === null) {
+            return res.status(400).json({
+                success: false,
+                message: 'Target K harus diisi',
+            });
+        }
+        if (!catatan || !catatan.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Catatan perubahan harus diisi',
+            });
+        }
+        // Find existing target
+        const existingTarget = await models_1.SubKegiatanTarget.findByPk(id);
+        if (!existingTarget) {
+            return res.status(404).json({
+                success: false,
+                message: 'Target tidak ditemukan',
+            });
+        }
+        // INSERT new record for history (preserve target_rp, only update target_k and satuan)
+        const newTarget = await models_1.SubKegiatanTarget.create({
+            user_id: existingTarget.user_id,
+            id_sub_kegiatan: existingTarget.id_sub_kegiatan,
+            id_sumber_anggaran: existingTarget.id_sumber_anggaran,
+            tahun: existingTarget.tahun,
+            bulan: existingTarget.bulan,
+            target_k: target_k,
+            target_rp: existingTarget.target_rp, // Preserve existing target_rp
+            id_satuan: id_satuan || null,
+            created_by: adminId,
+            catatan: catatan.trim(),
+        });
+        // Fetch with relations for response
+        const targetWithRelations = await models_1.SubKegiatanTarget.findByPk(newTarget.id, {
+            include: [
+                {
+                    model: models_1.User,
+                    as: 'puskesmas',
+                    attributes: ['id', 'username', 'nama'],
+                },
+                {
+                    model: models_1.SubKegiatan,
+                    as: 'subKegiatan',
+                    attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
+                },
+                {
+                    model: models_1.SumberAnggaran,
+                    as: 'sumberAnggaran',
+                    attributes: ['id_sumber', 'sumber'],
+                },
+                {
+                    model: models_1.Satuan,
+                    as: 'satuan',
+                    attributes: ['id_satuan', 'satuannya'],
+                },
+                {
+                    model: models_1.User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'nama'],
+                },
+            ],
+        });
+        return res.json({
+            success: true,
+            message: 'Target kinerja berhasil diperbarui',
+            data: targetWithRelations,
+        });
+    }
+    catch (error) {
+        console.error('Error updating target kinerja:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Gagal memperbarui target kinerja',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
 // Get history for specific combination (admin only)
 router.get('/admin/history', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
@@ -572,14 +670,14 @@ router.get('/admin/history', auth_1.authenticate, authorize_1.authorizeAdmin, as
         // Format the response to ensure proper date formatting
         const formattedHistory = history.map(record => {
             const json = record.toJSON();
-            console.log('Raw record keys:', Object.keys(json));
-            console.log('created_at value:', json.created_at);
-            console.log('createdAt value:', json.createdAt);
-            // Handle both created_at and createdAt (Sequelize alias)
+            // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
+            // but we need to send created_at for frontend consistency
             const createdAtValue = json.createdAt || json.created_at;
+            const updatedAtValue = json.updatedAt || json.updated_at;
             return {
                 ...json,
                 created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+                updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
             };
         });
         console.log('Formatted history sample:', JSON.stringify(formattedHistory[0], null, 2));

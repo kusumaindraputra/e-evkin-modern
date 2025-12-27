@@ -596,6 +596,98 @@ router.post('/admin', authenticate, authorizeAdmin, async (req, res) => {
   }
 });
 
+// Update target K dan satuan only (admin only) - creates new record for history
+router.put('/admin/:id/target-kinerja', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const adminId = req.user!.id;
+    const { id } = req.params;
+    const { target_k, id_satuan, catatan } = req.body;
+
+    // Validasi input
+    if (target_k === undefined || target_k === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target K harus diisi',
+      });
+    }
+
+    if (!catatan || !catatan.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Catatan perubahan harus diisi',
+      });
+    }
+
+    // Find existing target
+    const existingTarget = await SubKegiatanTarget.findByPk(id);
+
+    if (!existingTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target tidak ditemukan',
+      });
+    }
+
+    // INSERT new record for history (preserve target_rp, only update target_k and satuan)
+    const newTarget = await SubKegiatanTarget.create({
+      user_id: existingTarget.user_id,
+      id_sub_kegiatan: existingTarget.id_sub_kegiatan,
+      id_sumber_anggaran: existingTarget.id_sumber_anggaran,
+      tahun: existingTarget.tahun,
+      bulan: existingTarget.bulan,
+      target_k: target_k,
+      target_rp: existingTarget.target_rp,  // Preserve existing target_rp
+      id_satuan: id_satuan || null,
+      created_by: adminId,
+      catatan: catatan.trim(),
+    });
+
+    // Fetch with relations for response
+    const targetWithRelations = await SubKegiatanTarget.findByPk(newTarget.id, {
+      include: [
+        {
+          model: User,
+          as: 'puskesmas',
+          attributes: ['id', 'username', 'nama'],
+        },
+        {
+          model: SubKegiatan,
+          as: 'subKegiatan',
+          attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
+        },
+        {
+          model: SumberAnggaran,
+          as: 'sumberAnggaran',
+          attributes: ['id_sumber', 'sumber'],
+        },
+        {
+          model: Satuan,
+          as: 'satuan',
+          attributes: ['id_satuan', 'satuannya'],
+        },
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'username', 'nama'],
+        },
+      ],
+    });
+
+    return res.json({
+      success: true,
+      message: 'Target kinerja berhasil diperbarui',
+      data: targetWithRelations,
+    });
+  } catch (error) {
+    console.error('Error updating target kinerja:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal memperbarui target kinerja',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // Get history for specific combination (admin only)
 router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
   try {

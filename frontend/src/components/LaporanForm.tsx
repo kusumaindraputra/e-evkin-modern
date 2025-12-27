@@ -47,7 +47,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
   const [selectedIndikator, setSelectedIndikator] = useState<string>('');
   const [selectedSubKegiatan, setSelectedSubKegiatan] = useState<string>('');
   const [assignedSumberAnggaran, setAssignedSumberAnggaran] = useState<Array<{ value: number; label: string }>>([]);
-  const [targetData, setTargetData] = useState<Record<number, { target_k: number; target_rp: number }>>({});
+  const [targetData, setTargetData] = useState<Record<number, { target_k: number; target_rp: number; id_satuan: number | null; satuan_nama: string | null }>>({});;
 
   // Load reference data
   useEffect(() => {
@@ -197,7 +197,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
 
         // Fetch targets for this sub kegiatan and assigned sumber anggaran
         const tahunValue = form.getFieldValue('tahun') || new Date().getFullYear();
-        const targetsMap: Record<number, { target_k: number; target_rp: number }> = {};
+        const targetsMap: Record<number, { target_k: number; target_rp: number; id_satuan: number | null; satuan_nama: string | null }> = {};
         
         for (const sa of sumberAnggaranList) {
           try {
@@ -213,9 +213,14 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
             );
             
             if (targetRes.data.success && targetRes.data.data) {
+              const targetItem = targetRes.data.data;
+              // Find satuan name from reference data
+              const satuanInfo = referenceData.satuan.find((s: any) => s.value === targetItem.id_satuan);
               targetsMap[sa.value] = {
-                target_k: targetRes.data.data.target_k,
-                target_rp: targetRes.data.data.target_rp,
+                target_k: targetItem.target_k,
+                target_rp: targetItem.target_rp,
+                id_satuan: targetItem.id_satuan,
+                satuan_nama: satuanInfo?.label || null,
               };
             }
           } catch (error) {
@@ -251,13 +256,13 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
       const laporanArray = Object.keys(sumberAnggaranData || {}).map((idSumberAnggaran) => {
         const data = sumberAnggaranData[idSumberAnggaran];
         const idSumberAnggaranNum = Number(idSumberAnggaran);
-        const targetForSumber = targetData[idSumberAnggaranNum] || { target_k: 0, target_rp: 0 };
+        const targetForSumber = targetData[idSumberAnggaranNum] || { target_k: 0, target_rp: 0, id_satuan: null, satuan_nama: null };
         
         return {
           id_sub_kegiatan,
           id_kegiatan,
           id_sumber_anggaran: idSumberAnggaranNum,
-          id_satuan: data.id_satuan,
+          id_satuan: targetForSumber.id_satuan,  // Use satuan from target data
           target_k: targetForSumber.target_k,
           realisasi_k: data.realisasi_k,
           target_rp: targetForSumber.target_rp,
@@ -373,20 +378,18 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
           >
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  label="Satuan"
-                  name={['sumberAnggaranData', sa.value, 'id_satuan']}
-                  rules={[{ required: true, message: 'Pilih satuan!' }]}
-                >
-                  <Select
-                    placeholder="Pilih satuan"
-                    options={referenceData.satuan}
-                    showSearch
-                    filterOption={(input, option) =>
-                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                    }
-                  />
-                </Form.Item>
+                <div style={{ marginBottom: 24 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 8 }}>Satuan Kinerja</Text>
+                  <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '14px' }}>
+                    {targetData[sa.value]?.satuan_nama ? (
+                      <Text strong style={{ fontSize: '16px', color: '#52c41a' }}>
+                        {targetData[sa.value].satuan_nama}
+                      </Text>
+                    ) : (
+                      <Text type="warning">Satuan belum diset - hubungi admin atau set di menu Target Kinerja</Text>
+                    )}
+                  </div>
+                </div>
               </Col>
               <Col span={12}>
                 <div style={{ marginBottom: 24 }}>

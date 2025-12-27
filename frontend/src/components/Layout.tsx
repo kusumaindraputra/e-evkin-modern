@@ -48,6 +48,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClick: () => navigate('/laporan'),
       },
       {
+        key: '/target-kinerja',
+        icon: <AimOutlined />,
+        label: 'Target Kinerja',
+        onClick: () => navigate('/target-kinerja'),
+      },
+      {
         key: '/cara-pengisian',
         icon: <QuestionCircleOutlined />,
         label: 'Cara Pengisian',

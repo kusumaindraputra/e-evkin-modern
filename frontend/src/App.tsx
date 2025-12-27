@@ -13,6 +13,7 @@ import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
 import { CaraPengisianPage } from './pages/CaraPengisianPage';
 import AdminTargetPage from './pages/AdminTargetPage';
 import AdminTargetKinerjaPage from './pages/AdminTargetKinerjaPage';
+import { PuskesmasTargetKinerjaPage } from './pages/PuskesmasTargetKinerjaPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
 
@@ -97,6 +98,16 @@ function App() {
             <PuskesmasRoute>
               <Layout>
                 <CaraPengisianPage />
+              </Layout>
+            </PuskesmasRoute>
+          }
+        />
+        <Route
+          path="/target-kinerja"
+          element={
+            <PuskesmasRoute>
+              <Layout>
+                <PuskesmasTargetKinerjaPage />
               </Layout>
             </PuskesmasRoute>
           }

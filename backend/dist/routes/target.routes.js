@@ -338,6 +338,93 @@ router.post('/bulk', auth_1.authenticate, async (req, res) => {
         });
     }
 });
+// Update target K dan satuan for puskesmas's own target (creates new record for history)
+router.put('/:id/kinerja', auth_1.authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { target_k, id_satuan, catatan } = req.body;
+        // Validasi input
+        if (target_k === undefined || target_k === null) {
+            return res.status(400).json({
+                success: false,
+                message: 'Target K harus diisi',
+            });
+        }
+        if (!catatan || !catatan.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Catatan perubahan harus diisi',
+            });
+        }
+        // Find existing target
+        const existingTarget = await models_1.SubKegiatanTarget.findByPk(id);
+        if (!existingTarget) {
+            return res.status(404).json({
+                success: false,
+                message: 'Target tidak ditemukan',
+            });
+        }
+        // Verify ownership - puskesmas can only update their own target
+        if (existingTarget.user_id !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tidak memiliki akses untuk mengubah target ini',
+            });
+        }
+        // INSERT new record for history (preserve target_rp, only update target_k and satuan)
+        const newTarget = await models_1.SubKegiatanTarget.create({
+            user_id: existingTarget.user_id,
+            id_sub_kegiatan: existingTarget.id_sub_kegiatan,
+            id_sumber_anggaran: existingTarget.id_sumber_anggaran,
+            tahun: existingTarget.tahun,
+            bulan: existingTarget.bulan,
+            target_k: target_k,
+            target_rp: existingTarget.target_rp, // Preserve existing target_rp
+            id_satuan: id_satuan || null,
+            created_by: userId,
+            catatan: catatan.trim(),
+        });
+        // Fetch with relations for response
+        const targetWithRelations = await models_1.SubKegiatanTarget.findByPk(newTarget.id, {
+            include: [
+                {
+                    model: models_1.SubKegiatan,
+                    as: 'subKegiatan',
+                    attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
+                },
+                {
+                    model: models_1.SumberAnggaran,
+                    as: 'sumberAnggaran',
+                    attributes: ['id_sumber', 'sumber'],
+                },
+                {
+                    model: models_1.Satuan,
+                    as: 'satuan',
+                    attributes: ['id_satuan', 'satuannya'],
+                },
+                {
+                    model: models_1.User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'nama'],
+                },
+            ],
+        });
+        return res.json({
+            success: true,
+            message: 'Target kinerja berhasil diperbarui',
+            data: targetWithRelations,
+        });
+    }
+    catch (error) {
+        console.error('Error updating puskesmas target kinerja:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Gagal memperbarui target kinerja',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
 // Delete target (soft delete dengan membuat record target_k = 0, target_rp = 0)
 router.delete('/:id', auth_1.authenticate, async (req, res) => {
     try {

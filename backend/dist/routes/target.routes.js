@@ -4,6 +4,7 @@ const express_1 = require("express");
 const models_1 = require("../models");
 const sequelize_1 = require("sequelize");
 const auth_1 = require("../middleware/auth");
+const editPermission_1 = require("../middleware/editPermission");
 const authorize_1 = require("../middleware/authorize");
 const router = (0, express_1.Router)();
 // Get targets untuk puskesmas yang login (latest per combination)
@@ -11,6 +12,7 @@ router.get('/', auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.user.id;
         const { tahun, id_sub_kegiatan, id_sumber_anggaran } = req.query;
+        console.log('📊 GET /target - userId:', userId, 'params:', { tahun, id_sub_kegiatan, id_sumber_anggaran });
         const whereClause = { user_id: userId, bulan: null };
         if (tahun)
             whereClause.tahun = parseInt(tahun);
@@ -18,6 +20,7 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan);
         if (id_sumber_anggaran)
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
+        console.log('📊 whereClause:', whereClause);
         const allTargets = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
             include: [
@@ -27,13 +30,24 @@ router.get('/', auth_1.authenticate, async (req, res) => {
                     attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
                 },
                 {
+                    model: models_1.SumberAnggaran,
+                    as: 'sumberAnggaran',
+                    attributes: ['id_sumber', 'sumber'],
+                },
+                {
+                    model: models_1.Satuan,
+                    as: 'satuan',
+                    attributes: ['id_satuan', 'satuannya'],
+                },
+                {
                     model: models_1.User,
                     as: 'creator',
-                    attributes: ['id', 'username', 'email'],
+                    attributes: ['id', 'username', 'nama'],
                 },
             ],
             order: [['created_at', 'DESC']],
         });
+        console.log('📊 Found targets:', allTargets.length);
         // Group by combination and get latest per group
         const groupedTargets = allTargets.reduce((acc, target) => {
             const key = `${target.user_id}_${target.id_sub_kegiatan}_${target.id_sumber_anggaran}_${target.tahun}`;
@@ -74,7 +88,14 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
         const history = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
-            attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
+            attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'id_satuan', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
+            include: [
+                {
+                    model: models_1.Satuan,
+                    as: 'satuan',
+                    attributes: ['id_satuan', 'satuannya'],
+                },
+            ],
             order: [['created_at', 'DESC']],
         });
         // Map to include creator info by fetching user separately
@@ -101,6 +122,7 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                 user_id: item.getDataValue('user_id'),
                 id_sub_kegiatan: item.getDataValue('id_sub_kegiatan'),
                 id_sumber_anggaran: item.getDataValue('id_sumber_anggaran'),
+                id_satuan: item.getDataValue('id_satuan'),
                 target_k: item.getDataValue('target_k'),
                 target_rp: item.getDataValue('target_rp'),
                 bulan: item.getDataValue('bulan'),
@@ -110,6 +132,10 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                 created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
                 updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
                 creator: creator,
+                satuan: item.satuan ? {
+                    id_satuan: item.satuan.getDataValue('id_satuan'),
+                    satuannya: item.satuan.getDataValue('satuannya'),
+                } : null,
             };
         }));
         return res.json({
@@ -339,7 +365,7 @@ router.post('/bulk', auth_1.authenticate, async (req, res) => {
     }
 });
 // Update target K dan satuan for puskesmas's own target (creates new record for history)
-router.put('/:id/kinerja', auth_1.authenticate, async (req, res) => {
+router.put('/:id/kinerja', auth_1.authenticate, (0, editPermission_1.checkEditPermission)('target_kinerja'), async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;

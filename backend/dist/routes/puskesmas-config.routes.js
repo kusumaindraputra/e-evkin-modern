@@ -10,6 +10,8 @@ const SubKegiatan_1 = __importDefault(require("../models/SubKegiatan"));
 const Kegiatan_1 = __importDefault(require("../models/Kegiatan"));
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
+const PuskesmasEditPermission_1 = __importDefault(require("../models/PuskesmasEditPermission"));
+const sequelize_1 = require("sequelize");
 const router = (0, express_1.Router)();
 // GET all sub kegiatan assigned to a specific puskesmas
 router.get('/puskesmas/:userId/sub-kegiatan', auth_1.authenticate, async (req, res) => {
@@ -165,4 +167,114 @@ router.get('/puskesmas-overview', auth_1.authenticate, authorize_1.authorizeAdmi
     }
 });
 exports.default = router;
+// =============================
+// Edit Permission (Admin)
+// =============================
+// Create or update edit permission window for a puskesmas
+router.post('/edit-permission', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const adminId = req.user.id;
+        const { user_id, scope, bulan, tahun, enabled, start_at, end_at } = req.body;
+        if (!scope || !tahun) {
+            return res.status(400).json({ message: 'scope dan tahun wajib diisi' });
+        }
+        const record = await PuskesmasEditPermission_1.default.create({
+            user_id: user_id || null,
+            scope,
+            bulan: bulan || null,
+            tahun: parseInt(String(tahun)),
+            enabled: Boolean(enabled),
+            start_at: start_at ? new Date(start_at) : null,
+            end_at: end_at ? new Date(end_at) : null,
+            created_by: adminId,
+        });
+        return res.status(201).json({ success: true, data: record });
+    }
+    catch (error) {
+        console.error('Error setting edit permission:', error);
+        return res.status(500).json({ success: false, message: 'Gagal menyimpan konfigurasi permission' });
+    }
+});
+// Get permissions by filter (admin)
+router.get('/edit-permission', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const { user_id, scope, bulan, tahun } = req.query;
+        const where = {};
+        if (user_id)
+            where.user_id = user_id; // if omitted, returns all including global
+        if (scope)
+            where.scope = scope;
+        if (bulan)
+            where.bulan = bulan;
+        if (tahun)
+            where.tahun = parseInt(String(tahun));
+        const rows = await PuskesmasEditPermission_1.default.findAll({ where, order: [['created_at', 'DESC']] });
+        return res.json({ success: true, data: rows });
+    }
+    catch (error) {
+        console.error('Error fetching edit permissions:', error);
+        return res.status(500).json({ success: false, message: 'Gagal mengambil data permission' });
+    }
+});
+// Get latest permission (admin) for a specific scope/period, optional user or global
+router.get('/edit-permission/latest', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const { user_id, scope, bulan, tahun } = req.query;
+        if (!scope || !tahun) {
+            return res.status(400).json({ success: false, message: 'scope dan tahun wajib diisi' });
+        }
+        const where = {
+            scope,
+            bulan: bulan || null,
+            tahun: parseInt(String(tahun)),
+        };
+        if (user_id) {
+            where.user_id = user_id;
+        }
+        else {
+            // Prefer user-specific if supplied; otherwise only global
+            where.user_id = null;
+        }
+        const latest = await PuskesmasEditPermission_1.default.findOne({
+            where,
+            order: [['created_at', 'DESC']],
+        });
+        return res.json({ success: true, data: latest });
+    }
+    catch (error) {
+        console.error('Error fetching latest permission:', error);
+        return res.status(500).json({ success: false, message: 'Gagal mengambil permission terbaru' });
+    }
+});
+// Puskesmas: check current status for a period and scope
+router.get('/edit-permission/status', auth_1.authenticate, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { scope, bulan, tahun } = req.query;
+        if (!scope || !tahun) {
+            return res.status(400).json({ success: false, message: 'scope dan tahun wajib diisi' });
+        }
+        const record = await PuskesmasEditPermission_1.default.findOne({
+            where: {
+                scope: String(scope),
+                bulan: bulan || null,
+                tahun: parseInt(String(tahun)),
+                [sequelize_1.Op.or]: [{ user_id: userId }, { user_id: null }],
+            },
+            order: [['created_at', 'DESC']],
+        });
+        if (!record)
+            return res.json({ success: true, data: { allowed: false } });
+        const now = new Date();
+        const start = record.start_at ? new Date(record.start_at) : null;
+        const end = record.end_at ? new Date(record.end_at) : null;
+        const withinWindow = (start ? now >= start : true) && (end ? now <= end : true);
+        const allowed = record.enabled || withinWindow;
+        return res.json({ success: true, data: { allowed, enabled: record.enabled, start_at: record.start_at, end_at: record.end_at } });
+    }
+    catch (error) {
+        console.error('Error getting permission status:', error);
+        return res.status(500).json({ success: false, message: 'Gagal memeriksa status permission' });
+    }
+});
 //# sourceMappingURL=puskesmas-config.routes.js.map

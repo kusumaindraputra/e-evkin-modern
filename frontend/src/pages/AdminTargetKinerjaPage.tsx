@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 import {
   Card,
   Table,
@@ -13,6 +14,8 @@ import {
   Form,
   InputNumber,
   Input,
+  DatePicker,
+  Switch,
 } from 'antd';
 import { HistoryOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -138,6 +141,10 @@ const AdminTargetKinerjaPage: React.FC = () => {
   const [satuanList, setSatuanList] = useState<SatuanOption[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  // Edit permission config state
+  const [permForm] = Form.useForm();
+  const [savingPerm, setSavingPerm] = useState(false);
+  const [loadingPermStatus, setLoadingPermStatus] = useState(false);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -154,6 +161,12 @@ const AdminTargetKinerjaPage: React.FC = () => {
   useEffect(() => {
     loadTargets();
   }, [filters]);
+
+  // Initial fetch on mount for default tahun/global
+  useEffect(() => {
+    const initialTahun = permForm.getFieldValue('tahun') || new Date().getFullYear();
+    fetchPermissionStatus({ user_id: null, tahun: initialTahun });
+  }, []);
 
   const loadReferenceData = async () => {
     try {
@@ -247,6 +260,64 @@ const AdminTargetKinerjaPage: React.FC = () => {
       message.error('Gagal memuat data target');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSavePermission = async () => {
+    try {
+      const values = await permForm.validateFields();
+      if (!values.tahun) {
+        message.warning('Tahun wajib diisi');
+        return;
+      }
+      setSavingPerm(true);
+      const payload = {
+        user_id: values.user_id || null,
+        scope: 'target_kinerja',
+        bulan: null,
+        tahun: values.tahun,
+        enabled: !!values.enabled,
+        start_at: values.start_at ? values.start_at.toISOString() : null,
+        end_at: values.end_at ? values.end_at.toISOString() : null,
+      };
+      const resp = await axios.post(`${API_BASE_URL}/puskesmas-config/edit-permission`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.data?.success) {
+        message.success('Jadwal edit berhasil disimpan');
+        permForm.resetFields();
+        // Refresh status after saving to reflect actual state
+        fetchPermissionStatus({ user_id: values.user_id || null, tahun: values.tahun });
+      } else {
+        message.warning(resp.data?.message || 'Gagal menyimpan konfigurasi');
+      }
+    } catch (error: any) {
+      console.error('Error saving permission:', error);
+      message.error(error.response?.data?.message || 'Gagal menyimpan konfigurasi');
+    } finally {
+      setSavingPerm(false);
+    }
+  };
+
+  const fetchPermissionStatus = async ({ user_id, tahun }: { user_id?: string | null; tahun: number }) => {
+    try {
+      setLoadingPermStatus(true);
+      const params: any = { scope: 'target_kinerja', tahun };
+      if (user_id) params.user_id = user_id;
+      const resp = await axios.get(`${API_BASE_URL}/puskesmas-config/edit-permission/latest`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
+      const latest = resp.data?.data || null;
+      permForm.setFieldsValue({
+        enabled: latest ? latest.enabled : false,
+        start_at: latest?.start_at ? dayjs(latest.start_at) : null,
+        end_at: latest?.end_at ? dayjs(latest.end_at) : null,
+      });
+    } catch (error) {
+      console.error('Error fetching permission status:', error);
+    } finally {
+      setLoadingPermStatus(false);
     }
   };
 
@@ -440,6 +511,75 @@ const AdminTargetKinerjaPage: React.FC = () => {
 
   return (
     <div style={{ padding: '24px' }}>
+      <Card title="Konfigurasi Jadwal Edit Target Kinerja (Puskesmas)" style={{ marginBottom: 24 }}>
+        <Form
+          layout="vertical"
+          form={permForm}
+          initialValues={{ enabled: false, tahun: new Date().getFullYear() }}
+          onValuesChange={(changedValues, allValues) => {
+            // Only fetch when filter fields change, not when enabled/start_at/end_at change
+            if ('user_id' in changedValues || 'tahun' in changedValues) {
+              const { user_id, tahun } = allValues;
+              if (tahun) {
+                fetchPermissionStatus({ user_id: user_id || null, tahun });
+              }
+            }
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item name="user_id" label="Puskesmas"> 
+                <Select
+                  placeholder="Semua Puskesmas"
+                  style={{ width: '100%' }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                  options={puskesmasList}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="tahun" label="Tahun" rules={[{ required: true, message: 'Tahun wajib diisi' }]}> 
+                <Select
+                  options={[{ value: 2024, label: '2024' }, { value: 2025, label: '2025' }, { value: 2026, label: '2026' }]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="enabled"
+                label="Buka Langsung"
+                valuePropName="checked"
+              > 
+                <Switch loading={loadingPermStatus} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16} align="bottom">
+            <Col span={6}>
+              <Form.Item name="start_at" label="Mulai (opsional)"> 
+                <DatePicker showTime style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="end_at" label="Selesai (opsional)"> 
+                <DatePicker showTime style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label=" " colon={false}>
+                <Button type="primary" block onClick={handleSavePermission} loading={savingPerm}>
+                  Simpan Konfigurasi
+                </Button>
+              </Form.Item>
+            </Col>
+          </Row>
+          <p style={{ color: '#888', fontSize: 12 }}>
+            Catatan: Jika "Buka Langsung" aktif, jadwal waktu akan diabaikan. Jika Puskesmas tidak dipilih, konfigurasi berlaku untuk semua puskesmas.
+          </p>
+        </Form>
+      </Card>
       <Card title="Target Kinerja (K)" style={{ marginBottom: 24 }}>
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>

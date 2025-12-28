@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { SubKegiatanTarget, SubKegiatan, User, PuskesmasSubKegiatan, SumberAnggaran, Satuan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
+import { checkEditPermission } from '../middleware/editPermission';
 import { authorizeAdmin } from '../middleware/authorize';
 
 const router = Router();
@@ -403,7 +404,7 @@ router.post('/bulk', authenticate, async (req, res) => {
 });
 
 // Update target K dan satuan for puskesmas's own target (creates new record for history)
-router.put('/:id/kinerja', authenticate, async (req, res) => {
+router.put('/:id/kinerja', authenticate, checkEditPermission('target_kinerja'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;

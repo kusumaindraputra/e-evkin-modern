@@ -1,0 +1,1 @@
+{"version":3,"file":"create_puskesmas_edit_permission.d.ts","sourceRoot":"","sources":["../../src/migrations/create_puskesmas_edit_permission.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAa,MAAM,WAAW,CAAC;AAEtD,eAAO,MAAM,EAAE,GAAU,gBAAgB,cAAc,KAAG,OAAO,CAAC,IAAI,CA0DrE,CAAC;AAEF,eAAO,MAAM,IAAI,GAAU,gBAAgB,cAAc,KAAG,OAAO,CAAC,IAAI,CAEvE,CAAC"}

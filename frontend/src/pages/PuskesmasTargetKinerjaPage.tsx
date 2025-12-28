@@ -13,6 +13,7 @@ import {
   Form,
   InputNumber,
   Input,
+  Alert,
 } from 'antd';
 import { HistoryOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -131,6 +132,8 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
   const [satuanList, setSatuanList] = useState<SatuanOption[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [editAllowed, setEditAllowed] = useState<boolean>(false);
+  const [permissionInfo, setPermissionInfo] = useState<{ enabled?: boolean; start_at?: string | null; end_at?: string | null }>({});
 
   // Filters
   const [filters, setFilters] = useState({
@@ -145,6 +148,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
 
   useEffect(() => {
     loadTargets();
+    checkPermissionStatus();
   }, [filters]);
 
   const loadReferenceData = async () => {
@@ -243,6 +247,21 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
     }
   };
 
+  const checkPermissionStatus = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/puskesmas-config/edit-permission/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { scope: 'target_kinerja', tahun: filters.tahun },
+      });
+      const data = response.data?.data;
+      setEditAllowed(!!data?.allowed);
+      setPermissionInfo({ enabled: data?.enabled, start_at: data?.start_at || null, end_at: data?.end_at || null });
+    } catch (error) {
+      console.error('Error checking permission status:', error);
+      setEditAllowed(false);
+    }
+  };
+
   // Re-load targets when reference data changes
   useEffect(() => {
     if (satuanList.length > 0 && sumberAnggaranList.length > 0) {
@@ -300,6 +319,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           target_k: values.target_k,
           id_satuan: values.id_satuan || null,
           catatan: values.catatan,
+          tahun: selectedTarget.tahun,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -409,6 +429,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             type="primary"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
+            disabled={!editAllowed}
           >
             Edit
           </Button>
@@ -427,6 +448,30 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
   return (
     <div style={{ padding: '24px' }}>
       <Card title="Target Kinerja Saya" style={{ marginBottom: 24 }}>
+        {!editAllowed && (
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 12 }}
+            message="Pengeditan target kinerja belum dibuka oleh Admin"
+            description={
+              <div>
+                {permissionInfo.enabled ? 'Ditutup oleh Admin.' : (
+                  <div>
+                    {permissionInfo.start_at ? (
+                      <span>Jadwal mulai: {formatDate(permissionInfo.start_at)}</span>
+                    ) : (
+                      <span>Menunggu jadwal dibuka.</span>
+                    )}
+                    {permissionInfo.end_at && (
+                      <div>Jadwal selesai: {formatDate(permissionInfo.end_at)}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            }
+          />
+        )}
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={8}>
             <Select

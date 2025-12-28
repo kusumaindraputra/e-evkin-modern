@@ -1,68 +1,103 @@
-# E-EVKIN Modern - Workspace Instructions
+# E-EVKIN Modern - AI Coding Instructions
 
-## Project Overview
-Full-stack TypeScript application for health center performance evaluation system.
+## Architecture Overview
+Full-stack TypeScript monorepo for health center (Puskesmas) performance evaluation. Two user roles: **admin** (Dinkes) manages master data/reports, **puskesmas** users submit monthly performance reports.
 
-## Checklist
+### Project Structure
+```
+├── backend/         # Express + Sequelize + PostgreSQL
+│   └── src/
+│       ├── routes/  # API endpoints (authenticate middleware required)
+│       ├── models/  # Sequelize models with associations in index.ts
+│       └── middleware/  # auth.ts (JWT), authorize.ts (role guards)
+├── frontend/        # React 18 + Vite + Ant Design + Zustand
+│   └── src/
+│       ├── pages/   # Admin* pages for admin, others for puskesmas
+│       ├── store/   # Zustand (authStore.ts with persist)
+│       └── hooks/   # useLaporanData.ts, useReferenceData.ts
+```
 
-- [x] Verify that the copilot-instructions.md file in the .github directory is created
-- [x] Clarify Project Requirements
-- [x] Scaffold the Project
-- [x] Customize the Project
-- [x] Install Required Extensions
-- [x] Compile the Project
-- [x] Create and Run Task
-- [x] Launch the Project
-- [x] Ensure Documentation is Complete
+## Developer Workflows
 
-## Implementation Status
+### Quick Start
+```bash
+npm install            # Install all workspaces
+npm run dev            # Start both backend (5000) + frontend (5173)
+cd backend && npm run seed  # First-time database setup
+```
 
-### ✅ Completed Features (8/9 HIGH Priority)
+### Key Commands
+- `npm run dev:backend` / `npm run dev:frontend` - Run separately
+- `cd backend && npm test` - Jest tests
+- `npm run build` - Build both for production
 
-1. **Master Data Management**
-   - Backend: `routes/masterdata.routes.ts` (Satuan & Sumber Anggaran CRUD)
-   - Frontend: `pages/AdminMasterDataPage.tsx`
-   - Route: `/admin/master-data`
+## Critical Patterns
 
-2. **Kegiatan & Sub Kegiatan Management**
-   - Backend: `routes/kegiatan.routes.ts` (nested CRUD)
-   - Models: `Kegiatan.ts`, `SubKegiatan.ts` (with relations)
-   - Frontend: `pages/AdminKegiatanPage.tsx`
-   - Route: `/admin/kegiatan`
+### Backend Route Pattern
+All protected routes use: `router.METHOD('/path', authenticate, [authorizeAdmin,] handler)`
+```typescript
+// Admin-only route example (users.routes.ts)
+router.post('/puskesmas', authenticate, authorizeAdmin, async (req, res) => {...})
 
-3. **Daftar Puskesmas Management**
-   - Backend: `routes/users.routes.ts` (CRUD puskesmas users)
-   - Frontend: `pages/AdminPuskesmasPage.tsx`
-   - Route: `/admin/puskesmas`
+// Puskesmas security: always filter by req.user.id for puskesmas role
+if (req.user?.role === 'puskesmas') {
+  where.user_id = req.user.id;  // CRITICAL: prevents data leakage
+}
+```
 
-4. **Laporan Per Sub Kegiatan (Admin Reporting)**
-   - Backend: `routes/report.routes.ts` (aggregation by sub_kegiatan)
-   - Frontend: `pages/AdminLaporanSubKegiatanPage.tsx`
-   - Route: `/admin/laporan-sub-kegiatan`
+### Frontend Route Guards (App.tsx)
+- `<AdminRoute>` - Checks `user.role === 'admin'`
+- `<PuskesmasRoute>` - Checks `user.role === 'puskesmas'`
+- All routes wrapped in `<Layout>` component
 
-5. **Laporan Per Sumber Anggaran (Admin Reporting)**
-   - Backend: `routes/report.routes.ts` (aggregation by sumber_anggaran)
-   - Frontend: `pages/AdminLaporanSumberAnggaranPage.tsx`
-   - Route: `/admin/laporan-sumber-anggaran`
+### Sequelize Associations
+Defined centrally in `backend/src/models/index.ts`. Key relationships:
+- `User` hasMany `Laporan` (user_id) → Always include with alias `as: 'user'` or `as: 'verifier'`
+- `Laporan` belongsTo `SubKegiatan` (id_sub_kegiatan) → Include with `{ model: SubKegiatan, as: 'subKegiatan' }`
+- `Laporan` belongsTo `SumberAnggaran` (id_sumber_anggaran) → Include with `{ model: SumberAnggaran, as: 'sumberAnggaran' }`
+- `SubKegiatan` belongsToMany `SumberAnggaran` through `SubKegiatanSumberAnggaran` → Use `as: 'sumberAnggaranList'`
+- `SubKegiatanTarget` references `SubKegiatan` + `SumberAnggaran` pair → Query via `/target/assigned?tahun=YYYY` to get populated targets
+- **Important**: Always use aliases in includes; omitting aliases breaks serialization
 
-6. **Halaman Cara Pengisian Laporan**
-   - Frontend: `pages/CaraPengisianPage.tsx` (static guidance)
-   - Route: `/cara-pengisian` (puskesmas only)
+### API Configuration
+Frontend auto-detects environment in `frontend/src/config/api.ts`:
+- Production: `/e-evkin/api` (relative path)
+- Development: `http://localhost:5000/api`
 
-7. **Authorization Middleware**
-   - File: `middleware/authorize.ts` (admin-only protection)
+## Performance Patterns
+- **Bulk operations**: Use `POST /api/laporan/bulk-upsert` for batch saves (see `laporan.routes.ts:265`)
+- **Database pool**: 15 max connections configured in `backend/src/config/database.ts`
+- **React optimization**: Use custom hooks (`useLaporanData`) to prevent re-renders
 
-### ⏳ Pending
-- Unit Tests for master data routes
+## Testing Conventions
+- **Backend**: Jest framework (`npm test` in backend/). Test patterns use mocks for database models and JWT tokens.
+- **Frontend**: Vitest with testing-library/react. Mock axios in tests; use `jest.mock('axios')`.
+- **Seeding**: Tests that need DB state should call seed fixtures before test runs.
+- **No extensive test coverage yet** - Focus on new features with unit tests for critical paths (auth, data validation, API endpoints)
 
-### 📊 Metrics
-- **Backend Routes:** 4 new files (~820 lines)
-- **Frontend Pages:** 6 new files (~2,290 lines)
-- **Middleware:** 1 new file (~9 lines)
-- **Documentation:** IMPLEMENTATION_PROGRESS.md (comprehensive)
-- **Total:** ~3,500+ lines production code
+## Domain Terminology (Indonesian → English)
+- **Kegiatan** = Activity/Program (parent level)
+- **Sub Kegiatan** = Sub-Activity/Task (child of Kegiatan, linked to Sumber Anggaran)
+- **Satuan** = Unit of Measurement (Orang=Person, Kegiatan=Activity, Dokumen=Document, etc.)
+- **Sumber Anggaran** = Funding Source (BLUD, DAK Non Fisik, APBD, JKN)
+- **Laporan** = Report (monthly performance data submitted by puskesmas)
+- **Puskesmas** = Community Health Center (local health facility)
+- **Dinkes** = Health Department (admin role, oversees puskesmas)
+- **Target K** = Physical Target (quantity/count)
+- **Target Rp** = Budget Target (in Rupiah)
+- **Realisasi K** = Physical Realization (actual count achieved)
+- **Realisasi Rp** = Budget Realization (actual spending)
+- **Realisasi Fisik** = Physical Achievement % (0-100%)
 
-## Tech Stack
-- Backend: Node.js + Express + TypeScript + PostgreSQL + Sequelize
-- Frontend: React 18 + TypeScript + Vite + Ant Design
-- All dependencies are open source and free
+## Database Seeding
+```bash
+cd backend
+npm run seed           # Main seed (satuan, sumber_anggaran, kegiatan, sub_kegiatan, users)
+npx tsx src/seeders/seed2025.ts  # Year-specific targets
+```
+Default credentials: `dinkes/dinkes123` (admin), `cibinong/cibinong123` (puskesmas)
+
+## Documentation
+- `docs/guides/` - Feature implementation guides
+- `docs/PERFORMANCE_OPTIMIZATION.md` - Query optimization details
+- `docs/security/SECURITY.md` - JWT and security setup

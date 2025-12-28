@@ -71,6 +71,10 @@ SubKegiatanTarget.init({
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,
     },
+    catatan: {
+        type: sequelize_1.DataTypes.TEXT,
+        allowNull: true,
+    },
     created_by: {
         type: sequelize_1.DataTypes.UUID,
         allowNull: false,

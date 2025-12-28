@@ -13,6 +13,7 @@ import {
   TeamOutlined,
   AppstoreOutlined,
   AimOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -45,6 +46,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <FileTextOutlined />,
         label: 'Laporan Kinerja',
         onClick: () => navigate('/laporan'),
+      },
+      {
+        key: '/target-kinerja',
+        icon: <AimOutlined />,
+        label: 'Target Kinerja',
+        onClick: () => navigate('/target-kinerja'),
       },
       {
         key: '/cara-pengisian',
@@ -95,9 +102,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       },
       {
         key: '/admin/target',
-        icon: <AimOutlined />,
-        label: 'Target Tahunan',
+        icon: <DollarOutlined />,
+        label: 'Target Anggaran',
         onClick: () => navigate('/admin/target'),
+      },
+      {
+        key: '/admin/target-kinerja',
+        icon: <AimOutlined />,
+        label: 'Target Kinerja',
+        onClick: () => navigate('/admin/target-kinerja'),
       },
       {
         key: '/admin/master-data',

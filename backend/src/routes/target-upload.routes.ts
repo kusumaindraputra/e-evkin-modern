@@ -113,10 +113,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       successList: [],
     };
 
-    // Get default satuan "Dokumen" (id = 2)
-    const defaultSatuan = await Satuan.findOne({ where: { satuannya: 'Dokumen' } });
-    const defaultSatuanId = defaultSatuan?.id_satuan || 2;
-
     // Group by puskesmas + sub kegiatan + sumber dana + tahun
     const grouped = new Map<string, {
       puskesmas: string;
@@ -337,15 +333,16 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
 
           // INSERT new record for history tracking (instead of UPDATE)
           // This preserves the old value and creates a new entry
+          // Preserve target_k and id_satuan from existing record (only update target_rp)
           await SubKegiatanTarget.create({
             user_id: puskesmas.id,
             id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
             id_sumber_anggaran: sumberAnggaran.id_sumber,
             tahun: group.tahun,
             bulan: null,
-            target_k: 10,
+            target_k: existingTarget.target_k,  // Preserve existing target_k
             target_rp: group.totalPagu,
-            id_satuan: defaultSatuanId,
+            id_satuan: existingTarget.id_satuan,  // Preserve existing satuan
             created_by: adminId,
             catatan: catatan,
           });
@@ -361,15 +358,16 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           });
         } else {
           // INSERT new target (first entry)
+          // Set target_k=0 and id_satuan=null - admin must set via Target Kinerja page
           await SubKegiatanTarget.create({
             user_id: puskesmas.id,
             id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
             id_sumber_anggaran: sumberAnggaran.id_sumber,
             tahun: group.tahun,
             bulan: null,
-            target_k: 10,
+            target_k: 0,  // Default 0, must be set in Target Kinerja page
             target_rp: group.totalPagu,
-            id_satuan: defaultSatuanId,
+            id_satuan: null,  // Null, must be selected in Target Kinerja page
             created_by: adminId,
             catatan: catatan,
           });

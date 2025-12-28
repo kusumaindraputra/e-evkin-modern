@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { SubKegiatanTarget, SubKegiatan, User, PuskesmasSubKegiatan, SumberAnggaran, Satuan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
+import { checkEditPermission } from '../middleware/editPermission';
 import { authorizeAdmin } from '../middleware/authorize';
 
 const router = Router();
@@ -12,10 +13,14 @@ router.get('/', authenticate, async (req, res) => {
     const userId = req.user!.id;
     const { tahun, id_sub_kegiatan, id_sumber_anggaran } = req.query;
 
+    console.log('📊 GET /target - userId:', userId, 'params:', { tahun, id_sub_kegiatan, id_sumber_anggaran });
+
     const whereClause: any = { user_id: userId, bulan: null };
     if (tahun) whereClause.tahun = parseInt(tahun as string);
     if (id_sub_kegiatan) whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan as string);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
+
+    console.log('📊 whereClause:', whereClause);
 
     const allTargets = await SubKegiatanTarget.findAll({
       where: whereClause,
@@ -26,13 +31,25 @@ router.get('/', authenticate, async (req, res) => {
           attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
         },
         {
+          model: SumberAnggaran,
+          as: 'sumberAnggaran',
+          attributes: ['id_sumber', 'sumber'],
+        },
+        {
+          model: Satuan,
+          as: 'satuan',
+          attributes: ['id_satuan', 'satuannya'],
+        },
+        {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'email'],
+          attributes: ['id', 'username', 'nama'],
         },
       ],
       order: [['created_at', 'DESC']],
     });
+
+    console.log('📊 Found targets:', allTargets.length);
 
     // Group by combination and get latest per group
     const groupedTargets = allTargets.reduce((acc: any, target: any) => {
@@ -77,7 +94,14 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
 
     const history = await SubKegiatanTarget.findAll({
       where: whereClause,
-      attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
+      attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'id_satuan', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
+      include: [
+        {
+          model: Satuan,
+          as: 'satuan',
+          attributes: ['id_satuan', 'satuannya'],
+        },
+      ],
       order: [['created_at', 'DESC']],
     });
 
@@ -110,6 +134,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
           user_id: item.getDataValue('user_id'),
           id_sub_kegiatan: item.getDataValue('id_sub_kegiatan'),
           id_sumber_anggaran: item.getDataValue('id_sumber_anggaran'),
+          id_satuan: item.getDataValue('id_satuan'),
           target_k: item.getDataValue('target_k'),
           target_rp: item.getDataValue('target_rp'),
           bulan: item.getDataValue('bulan'),
@@ -119,6 +144,10 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
           created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
           updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
           creator: creator,
+          satuan: item.satuan ? {
+            id_satuan: item.satuan.getDataValue('id_satuan'),
+            satuannya: item.satuan.getDataValue('satuannya'),
+          } : null,
         };
       })
     );
@@ -374,6 +403,101 @@ router.post('/bulk', authenticate, async (req, res) => {
   }
 });
 
+// Update target K dan satuan for puskesmas's own target (creates new record for history)
+router.put('/:id/kinerja', authenticate, checkEditPermission('target_kinerja'), async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { target_k, id_satuan, catatan } = req.body;
+
+    // Validasi input
+    if (target_k === undefined || target_k === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target K harus diisi',
+      });
+    }
+
+    if (!catatan || !catatan.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Catatan perubahan harus diisi',
+      });
+    }
+
+    // Find existing target
+    const existingTarget = await SubKegiatanTarget.findByPk(id);
+
+    if (!existingTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target tidak ditemukan',
+      });
+    }
+
+    // Verify ownership - puskesmas can only update their own target
+    if (existingTarget.user_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Tidak memiliki akses untuk mengubah target ini',
+      });
+    }
+
+    // INSERT new record for history (preserve target_rp, only update target_k and satuan)
+    const newTarget = await SubKegiatanTarget.create({
+      user_id: existingTarget.user_id,
+      id_sub_kegiatan: existingTarget.id_sub_kegiatan,
+      id_sumber_anggaran: existingTarget.id_sumber_anggaran,
+      tahun: existingTarget.tahun,
+      bulan: existingTarget.bulan,
+      target_k: target_k,
+      target_rp: existingTarget.target_rp,  // Preserve existing target_rp
+      id_satuan: id_satuan || null,
+      created_by: userId,
+      catatan: catatan.trim(),
+    });
+
+    // Fetch with relations for response
+    const targetWithRelations = await SubKegiatanTarget.findByPk(newTarget.id, {
+      include: [
+        {
+          model: SubKegiatan,
+          as: 'subKegiatan',
+          attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
+        },
+        {
+          model: SumberAnggaran,
+          as: 'sumberAnggaran',
+          attributes: ['id_sumber', 'sumber'],
+        },
+        {
+          model: Satuan,
+          as: 'satuan',
+          attributes: ['id_satuan', 'satuannya'],
+        },
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'username', 'nama'],
+        },
+      ],
+    });
+
+    return res.json({
+      success: true,
+      message: 'Target kinerja berhasil diperbarui',
+      data: targetWithRelations,
+    });
+  } catch (error) {
+    console.error('Error updating puskesmas target kinerja:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal memperbarui target kinerja',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // Delete target (soft delete dengan membuat record target_k = 0, target_rp = 0)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
@@ -591,6 +715,98 @@ router.post('/admin', authenticate, authorizeAdmin, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal menyimpan target',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Update target K dan satuan only (admin only) - creates new record for history
+router.put('/admin/:id/target-kinerja', authenticate, authorizeAdmin, async (req, res) => {
+  try {
+    const adminId = req.user!.id;
+    const { id } = req.params;
+    const { target_k, id_satuan, catatan } = req.body;
+
+    // Validasi input
+    if (target_k === undefined || target_k === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Target K harus diisi',
+      });
+    }
+
+    if (!catatan || !catatan.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Catatan perubahan harus diisi',
+      });
+    }
+
+    // Find existing target
+    const existingTarget = await SubKegiatanTarget.findByPk(id);
+
+    if (!existingTarget) {
+      return res.status(404).json({
+        success: false,
+        message: 'Target tidak ditemukan',
+      });
+    }
+
+    // INSERT new record for history (preserve target_rp, only update target_k and satuan)
+    const newTarget = await SubKegiatanTarget.create({
+      user_id: existingTarget.user_id,
+      id_sub_kegiatan: existingTarget.id_sub_kegiatan,
+      id_sumber_anggaran: existingTarget.id_sumber_anggaran,
+      tahun: existingTarget.tahun,
+      bulan: existingTarget.bulan,
+      target_k: target_k,
+      target_rp: existingTarget.target_rp,  // Preserve existing target_rp
+      id_satuan: id_satuan || null,
+      created_by: adminId,
+      catatan: catatan.trim(),
+    });
+
+    // Fetch with relations for response
+    const targetWithRelations = await SubKegiatanTarget.findByPk(newTarget.id, {
+      include: [
+        {
+          model: User,
+          as: 'puskesmas',
+          attributes: ['id', 'username', 'nama'],
+        },
+        {
+          model: SubKegiatan,
+          as: 'subKegiatan',
+          attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'indikator_kinerja'],
+        },
+        {
+          model: SumberAnggaran,
+          as: 'sumberAnggaran',
+          attributes: ['id_sumber', 'sumber'],
+        },
+        {
+          model: Satuan,
+          as: 'satuan',
+          attributes: ['id_satuan', 'satuannya'],
+        },
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'username', 'nama'],
+        },
+      ],
+    });
+
+    return res.json({
+      success: true,
+      message: 'Target kinerja berhasil diperbarui',
+      data: targetWithRelations,
+    });
+  } catch (error) {
+    console.error('Error updating target kinerja:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal memperbarui target kinerja',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

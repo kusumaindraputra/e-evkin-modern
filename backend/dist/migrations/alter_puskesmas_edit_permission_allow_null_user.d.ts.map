@@ -1,0 +1,1 @@
+{"version":3,"file":"alter_puskesmas_edit_permission_allow_null_user.d.ts","sourceRoot":"","sources":["../../src/migrations/alter_puskesmas_edit_permission_allow_null_user.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAa,MAAM,WAAW,CAAC;AAEtD,eAAO,MAAM,EAAE,GAAU,gBAAgB,cAAc,KAAG,OAAO,CAAC,IAAI,CAKrE,CAAC;AAEF,eAAO,MAAM,IAAI,GAAU,gBAAgB,cAAc,KAAG,OAAO,CAAC,IAAI,CAKvE,CAAC"}

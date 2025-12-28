@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Spin } from 'antd';
 import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { LaporanPage } from './pages/LaporanPage';
-import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
-import { AdminMasterDataPage } from './pages/AdminMasterDataPage';
-import { AdminKegiatanPage } from './pages/AdminKegiatanPage';
-import { AdminPuskesmasPage } from './pages/AdminPuskesmasPage';
-import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage';
-import { AdminLaporanSumberAnggaranPage } from './pages/AdminLaporanSumberAnggaranPage';
-import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
-import { CaraPengisianPage } from './pages/CaraPengisianPage';
-import AdminTargetPage from './pages/AdminTargetPage';
-import AdminTargetKinerjaPage from './pages/AdminTargetKinerjaPage';
-import AdminAngkasUploadPage from './pages/AdminAngkasUploadPage';
-import { PuskesmasTargetKinerjaPage } from './pages/PuskesmasTargetKinerjaPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
+
+// Lazy load page components for code splitting
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const LaporanPage = lazy(() => import('./pages/LaporanPage').then(m => ({ default: m.LaporanPage })));
+const LaporanBulkInputPage = lazy(() => import('./pages/LaporanBulkInputPage').then(m => ({ default: m.LaporanBulkInputPage })));
+const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage').then(m => ({ default: m.AdminMasterDataPage })));
+const AdminKegiatanPage = lazy(() => import('./pages/AdminKegiatanPage').then(m => ({ default: m.AdminKegiatanPage })));
+const AdminPuskesmasPage = lazy(() => import('./pages/AdminPuskesmasPage').then(m => ({ default: m.AdminPuskesmasPage })));
+const AdminLaporanSubKegiatanPage = lazy(() => import('./pages/AdminLaporanSubKegiatanPage').then(m => ({ default: m.AdminLaporanSubKegiatanPage })));
+const AdminLaporanSumberAnggaranPage = lazy(() => import('./pages/AdminLaporanSumberAnggaranPage').then(m => ({ default: m.AdminLaporanSumberAnggaranPage })));
+const AdminPuskesmasConfigPage = lazy(() => import('./pages/AdminPuskesmasConfigPage').then(m => ({ default: m.AdminPuskesmasConfigPage })));
+const CaraPengisianPage = lazy(() => import('./pages/CaraPengisianPage').then(m => ({ default: m.CaraPengisianPage })));
+const AdminTargetPage = lazy(() => import('./pages/AdminTargetPage'));
+const AdminTargetKinerjaPage = lazy(() => import('./pages/AdminTargetKinerjaPage'));
+const AdminAngkasUploadPage = lazy(() => import('./pages/AdminAngkasUploadPage'));
+const PuskesmasTargetKinerjaPage = lazy(() => import('./pages/PuskesmasTargetKinerjaPage').then(m => ({ default: m.PuskesmasTargetKinerjaPage })));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <Spin size="large" tip="Memuat halaman..." />
+  </div>
+);
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -68,7 +78,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <DashboardPage />
+                <Suspense fallback={<PageLoader />}>
+                  <DashboardPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -78,7 +90,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <LaporanBulkInputPage />
+                <Suspense fallback={<PageLoader />}>
+                  <LaporanBulkInputPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -88,7 +102,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <LaporanPage />
+                <Suspense fallback={<PageLoader />}>
+                  <LaporanPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -98,7 +114,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <CaraPengisianPage />
+                <Suspense fallback={<PageLoader />}>
+                  <CaraPengisianPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -108,7 +126,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <PuskesmasTargetKinerjaPage />
+                <Suspense fallback={<PageLoader />}>
+                  <PuskesmasTargetKinerjaPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -120,7 +140,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminMasterDataPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminMasterDataPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -130,7 +152,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminKegiatanPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminKegiatanPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -140,7 +164,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminPuskesmasPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminPuskesmasPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -150,7 +176,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminPuskesmasConfigPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminPuskesmasConfigPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -160,7 +188,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminLaporanSubKegiatanPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminLaporanSubKegiatanPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -170,7 +200,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminLaporanSumberAnggaranPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminLaporanSumberAnggaranPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -180,7 +212,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminTargetPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminTargetPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -190,7 +224,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminTargetKinerjaPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminTargetKinerjaPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -200,7 +236,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminAngkasUploadPage />
+                <Suspense fallback={<PageLoader />}>
+                  <AdminAngkasUploadPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }

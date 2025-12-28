@@ -146,93 +146,91 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       group.rows.push(index + 2); // +2 karena Excel row 1 = header, index 0 = row 2
     });
 
+    // OPTIMIZATION: Pre-load all reference data to avoid N+1 queries
+    // Load all puskesmas users once
+    const allUsers = await User.findAll({
+      where: { role: 'puskesmas' },
+      attributes: ['id', 'nama', 'username'],
+      raw: true,
+    });
+
+    // Create lookup maps for fast in-memory search
+    const userByUsername = new Map<string, typeof allUsers[0]>();
+    const userByNama = new Map<string, typeof allUsers[0]>();
+    const userByNamaLower = new Map<string, typeof allUsers[0]>();
+    const userByNamaNoSpace = new Map<string, typeof allUsers[0]>();
+    
+    allUsers.forEach(user => {
+      userByUsername.set(user.username.toLowerCase(), user);
+      userByNama.set(user.nama, user);
+      userByNamaLower.set(user.nama.toLowerCase(), user);
+      userByNamaNoSpace.set(user.nama.toLowerCase().replace(/\s+/g, ''), user);
+    });
+
+    // Helper function to find puskesmas from pre-loaded data
+    const findPuskesmasUser = (puskesmasName: string): typeof allUsers[0] | null => {
+      // 1. Special case: Laboratorium Kesehatan Daerah -> labkesda
+      if (puskesmasName === 'Laboratorium Kesehatan Daerah') {
+        return userByUsername.get('labkesda') || null;
+      }
+
+      // 2. Exact match
+      let user = userByNama.get(puskesmasName);
+      if (user) return user;
+
+      // 3. Try without "Puskesmas" or "Puskemas" prefix
+      const withoutPrefix = puskesmasName.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
+      user = userByNama.get(withoutPrefix);
+      if (user) return user;
+
+      // 4. Case-insensitive match
+      user = userByNamaLower.get(withoutPrefix.toLowerCase());
+      if (user) return user;
+
+      // 5. No-space match
+      const noSpace = withoutPrefix.toLowerCase().replace(/\s+/g, '');
+      user = userByNamaNoSpace.get(noSpace);
+      if (user) return user;
+
+      // 6. Partial match (last resort)
+      for (const [key, u] of userByNamaLower) {
+        if (key.includes(noSpace) || noSpace.includes(key)) {
+          return u;
+        }
+      }
+
+      return null;
+    };
+
+    // Pre-load sub kegiatan and sumber anggaran for batch lookups
+    const allSubKegiatan = await SubKegiatan.findAll({
+      attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'id_kegiatan'],
+      raw: true,
+    });
+    const subKegiatanByKode = new Map(
+      allSubKegiatan.map(sk => [sk.kode_sub, sk])
+    );
+
+    const allSumberAnggaran = await SumberAnggaran.findAll({
+      attributes: ['id_sumber', 'sumber'],
+      raw: true,
+    });
+    const sumberAnggaranByNama = new Map<string, typeof allSumberAnggaran[0]>();
+    const sumberAnggaranByNamaLower = new Map<string, typeof allSumberAnggaran[0]>();
+    allSumberAnggaran.forEach(sa => {
+      sumberAnggaranByNama.set(sa.sumber, sa);
+      sumberAnggaranByNamaLower.set(sa.sumber.toLowerCase(), sa);
+    });
+
     // Process each grouped target
     for (const [key, group] of grouped) {
       try {
-        // Find puskesmas by nama
-        // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
-        let puskesmas: User | null = null;
+        // Find puskesmas from pre-loaded data (no database queries!)
+        const puskesmasData = findPuskesmasUser(group.puskesmas);
         
-        if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
-          puskesmas = await User.findOne({
-            where: { 
-              username: 'labkesda',
-              role: 'puskesmas',
-            },
-          });
-        }
+        if (!puskesmasData) {
 
-        // Handle prefix "Puskesmas" in Excel vs DB without prefix
-        if (!puskesmas) {
-          puskesmas = await User.findOne({
-            where: { 
-              nama: group.puskesmas,
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // If not found, try without "Puskesmas" prefix
-        if (!puskesmas && group.puskesmas.startsWith('Puskesmas ')) {
-          const namaWithoutPrefix = group.puskesmas.replace('Puskesmas ', '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: namaWithoutPrefix,
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Handle typo "Puskemas" instead of "Puskesmas"
-        if (!puskesmas && group.puskesmas.startsWith('Puskemas ')) {
-          const namaWithoutPrefix = group.puskesmas.replace('Puskemas ', '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: namaWithoutPrefix,
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Handle case differences like "Kota batu" vs "Kota Batu"
-        if (!puskesmas) {
-          const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: { [Op.iLike]: searchName }, // Case-insensitive search
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Handle space differences like "Karya Mekar" vs "Karyamekar"
-        if (!puskesmas) {
-          const searchName = group.puskesmas
-            .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-            .replace(/\s+/g, ''); // Remove all spaces
-          puskesmas = await User.findOne({
-            where: { 
-              nama: { [Op.iLike]: searchName },
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Last resort: try to match DB names that contain the search term
-        if (!puskesmas) {
-          const searchName = group.puskesmas
-            .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-            .replace(/\s+/g, '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: { [Op.iLike]: `%${searchName}%` },
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        if (!puskesmas) {
-          // Check if this is a non-Puskesmas entity that should be excluded
+        // Check if this is a non-Puskesmas entity that should be excluded
           if (isExcludedEntity(group.puskesmas)) {
             result.excludedNonPuskesmas++;
             continue;
@@ -248,95 +246,92 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           continue;
         }
 
-        // Find sub kegiatan by kode
-        let subKegiatan = await SubKegiatan.findOne({
-          where: { kode_sub: group.subKegiatanKode },
-        });
+        // Find sub kegiatan from pre-loaded data
+        let subKegiatanData = subKegiatanByKode.get(group.subKegiatanKode);
 
-        if (!subKegiatan) {
-          // Insert new sub kegiatan if not found
-          // First, find or create a default parent kegiatan
+        if (!subKegiatanData) {
+          // Need to create new sub kegiatan - do database query only for new ones
           let parentKegiatan = await Kegiatan.findOne({
-            where: { kode: '99' }, // Default parent kegiatan
+            where: { kode: '99' },
+            raw: true,
           });
 
           if (!parentKegiatan) {
-            // Create default parent kegiatan
             parentKegiatan = await Kegiatan.create({
               kode: '99',
               kegiatan: 'Kegiatan Lainnya (Auto-generated)',
-              id_uraian: 1, // Default uraian
+              id_uraian: 1,
             });
           }
 
-          // Create new sub kegiatan
-          subKegiatan = await SubKegiatan.create({
+          const newSubKegiatan = await SubKegiatan.create({
             kode_sub: group.subKegiatanKode,
             kegiatan: group.subKegiatanNama,
             id_kegiatan: parentKegiatan.id_kegiatan,
             indikator_kinerja: 'Auto-generated dari upload Excel',
           });
 
+          // Add to cache for subsequent iterations
+          subKegiatanData = {
+            id_sub_kegiatan: newSubKegiatan.id_sub_kegiatan,
+            kode_sub: newSubKegiatan.kode_sub,
+            kegiatan: newSubKegiatan.kegiatan,
+            id_kegiatan: newSubKegiatan.id_kegiatan,
+          };
+          subKegiatanByKode.set(group.subKegiatanKode, subKegiatanData);
           result.createdSubKegiatan++;
         }
 
-        // Find sumber anggaran - need to map KODE SUMBER DANA to our table
-        // Trim whitespace and try to match by nama
+        // Find sumber anggaran from pre-loaded data
         const sumberDanaNamaTrimmed = group.sumberDanaNama.trim();
-        let sumberAnggaran = await SumberAnggaran.findOne({
-          where: { sumber: sumberDanaNamaTrimmed },
-        });
+        let sumberAnggaranData = 
+          sumberAnggaranByNama.get(sumberDanaNamaTrimmed) ||
+          sumberAnggaranByNamaLower.get(sumberDanaNamaTrimmed.toLowerCase());
 
-        // If not found, try case-insensitive search
-        if (!sumberAnggaran) {
-          sumberAnggaran = await SumberAnggaran.findOne({
-            where: { sumber: { [Op.iLike]: sumberDanaNamaTrimmed } },
-          });
-        }
-
-        // If still not found, create new sumber anggaran
-        if (!sumberAnggaran) {
-          sumberAnggaran = await SumberAnggaran.create({
+        if (!sumberAnggaranData) {
+          // Create new sumber anggaran
+          const newSumber = await SumberAnggaran.create({
             sumber: sumberDanaNamaTrimmed,
           });
+          
+          // Add to cache
+          sumberAnggaranData = {
+            id_sumber: newSumber.id_sumber,
+            sumber: newSumber.sumber,
+          };
+          sumberAnggaranByNama.set(sumberDanaNamaTrimmed, sumberAnggaranData);
+          sumberAnggaranByNamaLower.set(sumberDanaNamaTrimmed.toLowerCase(), sumberAnggaranData);
           result.createdSumberAnggaran++;
         }
 
-        // Check if target already exists
-        const existingTarget = await SubKegiatanTarget.findOne({
-          where: {
-            user_id: puskesmas.id,
-            id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaran.id_sumber,
+        // Check if target alrData.id,
+            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData.id_sumber,
             tahun: group.tahun,
             bulan: null,
           },
-          order: [['created_at', 'DESC']], // Get the latest record
+          order: [['created_at', 'DESC']],
         });
 
         if (existingTarget) {
-          // Check if target_rp is the same, skip if no change needed
-          // Note: BIGINT dari database dikembalikan sebagai string oleh Sequelize
           const existingTargetRp = Number(existingTarget.target_rp);
           const newTargetRp = Number(group.totalPagu);
           
           if (existingTargetRp === newTargetRp) {
             result.skipped++;
-            continue; // Skip this iteration
+            continue;
           }
 
-          // INSERT new record for history tracking (instead of UPDATE)
-          // This preserves the old value and creates a new entry
-          // Preserve target_k and id_satuan from existing record (only update target_rp)
+          // INSERT new record for history tracking
           await SubKegiatanTarget.create({
-            user_id: puskesmas.id,
-            id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaran.id_sumber,
+            user_id: puskesmasData.id,
+            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData.id_sumber,
             tahun: group.tahun,
             bulan: null,
-            target_k: existingTarget.target_k,  // Preserve existing target_k
+            target_k: existingTarget.target_k,
             target_rp: group.totalPagu,
-            id_satuan: existingTarget.id_satuan,  // Preserve existing satuan
+            id_satuan: existingTarget.id_satuan,
             created_by: adminId,
             catatan: catatan,
           });
@@ -350,14 +345,16 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             target_rp: group.totalPagu,
           });
         } else {
-          // INSERT new target (first entry)
-          // Set target_k=0 and id_satuan=null - admin must set via Target Kinerja page
+          // INSERT new target
           await SubKegiatanTarget.create({
-            user_id: puskesmas.id,
-            id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaran.id_sumber,
+            user_id: puskesmasData.id,
+            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData.id_sumber,
             tahun: group.tahun,
             bulan: null,
+            target_k: 0,
+            target_rp: group.totalPagu,
+            id_satuan: null,
             target_k: 0,  // Default 0, must be set in Target Kinerja page
             target_rp: group.totalPagu,
             id_satuan: null,  // Null, must be selected in Target Kinerja page

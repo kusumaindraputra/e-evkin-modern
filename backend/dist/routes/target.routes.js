@@ -12,7 +12,6 @@ router.get('/', auth_1.authenticate, async (req, res) => {
     try {
         const userId = req.user.id;
         const { tahun, id_sub_kegiatan, id_sumber_anggaran } = req.query;
-        console.log('📊 GET /target - userId:', userId, 'params:', { tahun, id_sub_kegiatan, id_sumber_anggaran });
         const whereClause = { user_id: userId, bulan: null };
         if (tahun)
             whereClause.tahun = parseInt(tahun);
@@ -20,7 +19,6 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan);
         if (id_sumber_anggaran)
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
-        console.log('📊 whereClause:', whereClause);
         const allTargets = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
             include: [
@@ -47,7 +45,6 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             ],
             order: [['created_at', 'DESC']],
         });
-        console.log('📊 Found targets:', allTargets.length);
         // Group by combination and get latest per group
         const groupedTargets = allTargets.reduce((acc, target) => {
             const key = `${target.user_id}_${target.id_sub_kegiatan}_${target.id_sumber_anggaran}_${target.tahun}`;
@@ -525,7 +522,6 @@ router.get('/admin', auth_1.authenticate, authorize_1.authorizeAdmin, async (req
                 whereClause.tahun = parsed;
             }
         }
-        console.log('Admin targets whereClause:', whereClause);
         // Get all targets
         const allTargets = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
@@ -757,12 +753,6 @@ router.get('/admin/history', auth_1.authenticate, authorize_1.authorizeAdmin, as
                 message: 'Parameter id_sub_kegiatan, id_sumber_anggaran, dan tahun harus berupa angka yang valid',
             });
         }
-        console.log('Fetching history for:', {
-            user_id,
-            id_sub_kegiatan: parsedIdSubKegiatan,
-            id_sumber_anggaran: parsedIdSumberAnggaran,
-            tahun: parsedTahun,
-        });
         const history = await models_1.SubKegiatanTarget.findAll({
             where: {
                 user_id: user_id, // Keep as string UUID
@@ -793,7 +783,6 @@ router.get('/admin/history', auth_1.authenticate, authorize_1.authorizeAdmin, as
                 updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
             };
         });
-        console.log('Formatted history sample:', JSON.stringify(formattedHistory[0], null, 2));
         return res.json({
             success: true,
             data: formattedHistory,

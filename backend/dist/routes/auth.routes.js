@@ -12,23 +12,17 @@ const router = (0, express_1.Router)();
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log('🔑 Login attempt:', { username, password: '***' });
         // Validate input
         if (!username || !password) {
             return res.status(400).json({ error: 'Username and password are required' });
         }
         // Find user
         const user = await User_1.default.findOne({ where: { username } });
-        console.log('👤 User found:', user ? 'Yes' : 'No');
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        // Log password hash for debugging
-        console.log('🔐 Stored hash starts with:', user.password?.substring(0, 10));
-        console.log('🔑 Input password:', password);
         // Verify password
         const isValidPassword = await user.comparePassword(password);
-        console.log('✅ Password valid:', isValidPassword);
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget } from '../models';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas } from '../models';
+import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -134,23 +135,51 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       req.body.user_id = req.user.id;
     }
     
-    // VALIDATION: Check if sumber anggaran is valid for sub kegiatan
-    const { id_sub_kegiatan, id_sumber_anggaran } = req.body;
+    const userId = req.body.user_id;
+    const { id_sub_kegiatan, id_sumber_anggaran, tahun, realisasi_k, realisasi_rp } = req.body;
     
-    if (id_sub_kegiatan && id_sumber_anggaran) {
-      const isValid = await SubKegiatanSumberAnggaran.findOne({
+    // VALIDATION: Check if target exists for this combination (using SubKegiatanTarget)
+    if (id_sub_kegiatan && id_sumber_anggaran && tahun) {
+      const target = await SubKegiatanTarget.findOne({
         where: {
+          user_id: userId,
           id_sub_kegiatan,
           id_sumber_anggaran,
-          is_active: true,
+          bulan: null,
+          tahun,
         },
+        order: [['created_at', 'DESC']],
       });
 
-      if (!isValid) {
+      if (!target) {
         return res.status(400).json({
-          error: 'Invalid sumber anggaran',
-          message: 'Sumber anggaran tidak valid untuk sub kegiatan ini. Hubungi admin untuk mengatur sumber dana yang tersedia.',
+          error: 'Target belum diset',
+          message: `Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahun}. Hubungi admin.`,
         });
+      }
+
+      // VALIDATION: Check realisasi vs target
+      if (realisasi_k !== undefined && realisasi_k > target.target_k) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: `Realisasi kinerja (${realisasi_k}) tidak boleh melebihi target (${target.target_k})`,
+        });
+      }
+
+      if (realisasi_rp !== undefined && realisasi_rp > target.target_rp) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: `Realisasi anggaran tidak boleh melebihi target pagu`,
+        });
+      }
+
+      // Auto-fill id_kegiatan and id_satuan from target/sub_kegiatan
+      if (!req.body.id_kegiatan) {
+        const subKegiatan = await SubKegiatan.findByPk(id_sub_kegiatan, { attributes: ['id_kegiatan'] });
+        req.body.id_kegiatan = subKegiatan?.id_kegiatan || 0;
+      }
+      if (!req.body.id_satuan) {
+        req.body.id_satuan = target.id_satuan;
       }
     }
     
@@ -179,7 +208,7 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
     // SECURITY: Puskesmas hanya bisa create laporan untuk diri sendiri
     const userId = req.user?.role === 'puskesmas' ? req.user.id : laporanArray[0].user_id;
     
-    // VALIDATION: Validate each laporan and check sumber anggaran
+    // VALIDATION: Validate each laporan using SubKegiatanTarget
     for (const data of laporanArray) {
       if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
         return res.status(400).json({ 
@@ -188,22 +217,7 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
         });
       }
 
-      const isValid = await SubKegiatanSumberAnggaran.findOne({
-        where: {
-          id_sub_kegiatan: data.id_sub_kegiatan,
-          id_sumber_anggaran: data.id_sumber_anggaran,
-          is_active: true,
-        },
-      });
-
-      if (!isValid) {
-        return res.status(400).json({
-          error: 'Invalid sumber anggaran',
-          message: `Sumber anggaran ${data.id_sumber_anggaran} tidak valid untuk sub kegiatan ini`,
-        });
-      }
-
-      // VALIDATION: Check realisasi vs target (STRICT)
+      // VALIDATION: Check if target exists (using SubKegiatanTarget instead of SubKegiatanSumberAnggaran)
       const target = await SubKegiatanTarget.findOne({
         where: {
           user_id: userId,
@@ -229,10 +243,12 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
         });
       }
 
-      if (data.realisasi_rp > target.target_rp) {
+      // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+      // Realisasi anggaran tidak boleh melebihi realisasi angkas yang diinput user
+      if (data.angkas !== undefined && data.realisasi_rp > data.angkas) {
         return res.status(400).json({
           error: 'Validation error',
-          message: `Realisasi anggaran (Rp ${data.realisasi_rp.toLocaleString('id-ID')}) tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`,
+          message: `Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`,
         });
       }
     }
@@ -292,9 +308,50 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
           continue;
         }
 
+        // VALIDATION: Check if target exists for this combination (using SubKegiatanTarget)
+        const target = await SubKegiatanTarget.findOne({
+          where: {
+            user_id: userId,
+            id_sub_kegiatan: data.id_sub_kegiatan,
+            id_sumber_anggaran: data.id_sumber_anggaran,
+            bulan: null, // yearly target
+            tahun: data.tahun,
+          },
+          order: [['created_at', 'DESC']],
+          transaction,
+        });
+
+        if (!target) {
+          results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
+          results.skipped++;
+          continue;
+        }
+
+        // VALIDATION: Check realisasi vs target (STRICT)
+        if (data.realisasi_k !== undefined && data.realisasi_k > target.target_k) {
+          results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi kinerja (${data.realisasi_k}) melebihi target (${target.target_k})`);
+          results.skipped++;
+          continue;
+        }
+
+        // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+        if (data.angkas !== undefined && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
+          results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
+          results.skipped++;
+          continue;
+        }
+
+        // Get id_kegiatan from SubKegiatan relationship
+        const subKegiatan = await SubKegiatan.findByPk(data.id_sub_kegiatan, {
+          attributes: ['id_sub_kegiatan', 'id_kegiatan'],
+          transaction,
+        });
+
         const laporanData = {
           ...data,
           user_id: userId,
+          id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
+          id_satuan: data.id_satuan || target.id_satuan, // Use target satuan if not provided
           status: data.status || 'tersimpan',
         };
 
@@ -371,56 +428,36 @@ router.put('/:id', authenticate, async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // VALIDATION: If updating sumber anggaran, check if valid for sub kegiatan
     const { id_sub_kegiatan, id_sumber_anggaran, realisasi_k, realisasi_rp, tahun } = req.body;
-    
-    if (id_sumber_anggaran && (id_sub_kegiatan || laporan.id_sub_kegiatan)) {
-      const subKegiatanId = id_sub_kegiatan || laporan.id_sub_kegiatan;
-      
-      const isValid = await SubKegiatanSumberAnggaran.findOne({
-        where: {
-          id_sub_kegiatan: subKegiatanId,
-          id_sumber_anggaran,
-          is_active: true,
-        },
-      });
+    const subKegiatanId = id_sub_kegiatan || laporan.id_sub_kegiatan;
+    const sumberAnggaranId = id_sumber_anggaran || laporan.id_sumber_anggaran;
+    const tahunValue = tahun || laporan.tahun;
 
-      if (!isValid) {
-        res.status(400).json({
-          error: 'Invalid sumber anggaran',
-          message: 'Sumber anggaran tidak valid untuk sub kegiatan ini.',
-        });
-        return;
-      }
+    // VALIDATION: Check if target exists (using SubKegiatanTarget)
+    const target = await SubKegiatanTarget.findOne({
+      where: {
+        user_id: laporan.user_id,
+        id_sub_kegiatan: subKegiatanId,
+        id_sumber_anggaran: sumberAnggaranId,
+        bulan: null,
+        tahun: tahunValue,
+      },
+      order: [['created_at', 'DESC']],
+    });
+
+    if (!target) {
+      res.status(400).json({
+        error: 'Target belum diset',
+        message: `Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahunValue}. Hubungi admin.`,
+      });
+      return;
     }
 
     // VALIDATION: Check realisasi vs target (STRICT)
     if (realisasi_k !== undefined || realisasi_rp !== undefined) {
-      const subKegiatanId = id_sub_kegiatan || laporan.id_sub_kegiatan;
-      const sumberAnggaranId = id_sumber_anggaran || laporan.id_sumber_anggaran;
-      const tahunValue = tahun || laporan.tahun;
-
-      const target = await SubKegiatanTarget.findOne({
-        where: {
-          user_id: laporan.user_id,
-          id_sub_kegiatan: subKegiatanId,
-          id_sumber_anggaran: sumberAnggaranId,
-          bulan: null,
-          tahun: tahunValue,
-        },
-        order: [['created_at', 'DESC']],
-      });
-
-      if (!target) {
-        res.status(400).json({
-          error: 'Target belum diset',
-          message: `Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahunValue}. Hubungi admin.`,
-        });
-        return;
-      }
-
       const newRealisasiK = realisasi_k !== undefined ? realisasi_k : laporan.realisasi_k;
       const newRealisasiRp = realisasi_rp !== undefined ? realisasi_rp : laporan.realisasi_rp;
+      const angkasValue = req.body.angkas !== undefined ? req.body.angkas : laporan.angkas;
 
       if (newRealisasiK > target.target_k) {
         res.status(400).json({
@@ -430,10 +467,11 @@ router.put('/:id', authenticate, async (req: Request, res: Response): Promise<vo
         return;
       }
 
-      if (newRealisasiRp > target.target_rp) {
+      // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+      if (angkasValue !== undefined && newRealisasiRp > angkasValue) {
         res.status(400).json({
           error: 'Validation error',
-          message: `Realisasi anggaran (Rp ${newRealisasiRp.toLocaleString('id-ID')}) tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`,
+          message: `Realisasi anggaran (Rp ${newRealisasiRp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${angkasValue?.toLocaleString('id-ID')})`,
         });
         return;
       }

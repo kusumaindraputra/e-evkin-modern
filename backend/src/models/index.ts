@@ -7,6 +7,7 @@ import SubKegiatan from './SubKegiatan';
 import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
+import AnggaranKas from './AnggaranKas';
 
 // Define associations
 User.hasMany(Laporan, {
@@ -93,6 +94,42 @@ SumberAnggaran.hasMany(SubKegiatanSumberAnggaran, {
   as: 'subKegiatanLinks',
 });
 
+// AnggaranKas associations
+AnggaranKas.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'puskesmas',
+});
+
+AnggaranKas.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'creator',
+});
+
+AnggaranKas.belongsTo(SubKegiatan, {
+  foreignKey: 'id_sub_kegiatan',
+  as: 'subKegiatan',
+});
+
+AnggaranKas.belongsTo(SumberAnggaran, {
+  foreignKey: 'id_sumber_anggaran',
+  as: 'sumberAnggaran',
+});
+
+User.hasMany(AnggaranKas, {
+  foreignKey: 'user_id',
+  as: 'anggaranKas',
+});
+
+SubKegiatan.hasMany(AnggaranKas, {
+  foreignKey: 'id_sub_kegiatan',
+  as: 'anggaranKas',
+});
+
+SumberAnggaran.hasMany(AnggaranKas, {
+  foreignKey: 'id_sumber_anggaran',
+  as: 'anggaranKas',
+});
+
 export { 
   User, 
   Laporan, 
@@ -103,4 +140,5 @@ export {
   PuskesmasSubKegiatan,
   SubKegiatanSumberAnggaran,
   SubKegiatanTarget,
+  AnggaranKas,
 };

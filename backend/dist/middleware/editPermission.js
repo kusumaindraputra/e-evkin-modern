@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkEditPermission = void 0;
 const PuskesmasEditPermission_1 = __importDefault(require("../models/PuskesmasEditPermission"));
-const sequelize_1 = require("sequelize");
+const SubKegiatanTarget_1 = __importDefault(require("../models/SubKegiatanTarget"));
 const checkEditPermission = (scope) => {
     return async (req, res, next) => {
         try {
@@ -16,21 +16,41 @@ const checkEditPermission = (scope) => {
             }
             // Determine period
             const bulan = req.body?.bulan || req.query?.bulan;
-            const tahunRaw = req.body?.tahun || req.query?.tahun;
-            const tahun = tahunRaw ? parseInt(tahunRaw) : undefined;
+            let tahunRaw = req.body?.tahun || req.query?.tahun;
+            let tahun = tahunRaw ? parseInt(tahunRaw) : undefined;
+            // If tahun not provided, try to get it from the target being edited (for PUT /:id/kinerja)
+            if (!tahun && req.params?.id) {
+                const target = await SubKegiatanTarget_1.default.findByPk(req.params.id);
+                if (target) {
+                    tahun = target.tahun;
+                }
+            }
             if (!tahun) {
                 return res.status(400).json({ success: false, message: 'Tahun harus disertakan untuk validasi permission' });
             }
-            // Get latest permission config for user/scope/period
-            const permission = await PuskesmasEditPermission_1.default.findOne({
+            // Get permission config: prefer user-specific over global, then latest
+            // First try user-specific permission
+            let permission = await PuskesmasEditPermission_1.default.findOne({
                 where: {
                     scope,
                     bulan: bulan || null,
                     tahun,
-                    [sequelize_1.Op.or]: [{ user_id: user.id }, { user_id: null }],
+                    user_id: user.id,
                 },
                 order: [['created_at', 'DESC']],
             });
+            // If no user-specific, fall back to global permission (user_id is null)
+            if (!permission) {
+                permission = await PuskesmasEditPermission_1.default.findOne({
+                    where: {
+                        scope,
+                        bulan: bulan || null,
+                        tahun,
+                        user_id: null,
+                    },
+                    order: [['created_at', 'DESC']],
+                });
+            }
             if (!permission) {
                 return res.status(403).json({ success: false, message: 'Pengeditan belum dibuka oleh admin untuk periode ini' });
             }

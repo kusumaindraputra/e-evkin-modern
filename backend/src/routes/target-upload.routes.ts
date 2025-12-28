@@ -146,8 +146,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       group.rows.push(index + 2); // +2 karena Excel row 1 = header, index 0 = row 2
     });
 
-    console.log(`📊 Found ${grouped.size} unique targets to process from ${data.length} rows`);
-
     // Process each grouped target
     for (const [key, group] of grouped) {
       try {
@@ -237,7 +235,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           // Check if this is a non-Puskesmas entity that should be excluded
           if (isExcludedEntity(group.puskesmas)) {
             result.excludedNonPuskesmas++;
-            console.log(`⏭️  Excluded non-Puskesmas entity: ${group.puskesmas}`);
             continue;
           }
           
@@ -281,7 +278,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           });
 
           result.createdSubKegiatan++;
-          console.log(`✅ Created new sub kegiatan: ${group.subKegiatanKode} - ${group.subKegiatanNama}`);
         }
 
         // Find sumber anggaran - need to map KODE SUMBER DANA to our table
@@ -304,7 +300,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             sumber: sumberDanaNamaTrimmed,
           });
           result.createdSumberAnggaran++;
-          console.log(`✅ Created new sumber anggaran: ${sumberDanaNamaTrimmed}`);
         }
 
         // Check if target already exists
@@ -327,7 +322,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           
           if (existingTargetRp === newTargetRp) {
             result.skipped++;
-            console.log(`⏭️  Skipped (same value) ${group.puskesmas} - ${group.subKegiatanKode}: ${newTargetRp}`);
             continue; // Skip this iteration
           }
 
@@ -347,7 +341,6 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             catatan: catatan,
           });
           result.updated++;
-          console.log(`✏️  New version ${group.puskesmas} - ${group.subKegiatanKode}: ${existingTargetRp} → ${newTargetRp}`);
           result.successList.push({
             type: 'updated',
             puskesmas: group.puskesmas,

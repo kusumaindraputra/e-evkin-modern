@@ -84,10 +84,18 @@ Frontend auto-detects environment in `frontend/src/config/api.ts`:
 - **Puskesmas** = Community Health Center (local health facility)
 - **Dinkes** = Health Department (admin role, oversees puskesmas)
 - **Target K** = Physical Target (quantity/count)
-- **Target Rp** = Budget Target (in Rupiah)
+- **Target Rp** = Budget Target (in Rupiah, yearly total from Excel)
+- **Target Angkas** = Cumulative Monthly Budget (from PDF Anggaran Kas, sum Jan to selected month)
 - **Realisasi K** = Physical Realization (actual count achieved)
 - **Realisasi Rp** = Budget Realization (actual spending)
 - **Realisasi Fisik** = Physical Achievement % (0-100%)
+- **Angkas** = Anggaran Kas (monthly budget allocation from government)
+
+## Key Models
+- **SubKegiatanTarget** - Yearly budget targets (target_k, target_rp) uploaded via Excel
+- **AnggaranKas** - Monthly cumulative budget from PDF, stored per user/sub_kegiatan/sumber_anggaran/month
+  - Query: `/api/angkas/by-sub-kegiatan?tahun=YYYY&bulan=N` returns cumulative sum from Jan to month N
+  - Upload: `/api/angkas/upload` with PDF file + id_sumber_anggaran
 
 ## Database Seeding
 ```bash

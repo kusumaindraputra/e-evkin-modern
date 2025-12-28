@@ -39,6 +39,7 @@ interface LaporanRow {
   id_satuan?: number; // Read-only dari admin target
   target_k?: number; // Read-only dari admin
   target_rp?: number; // Read-only dari admin
+  target_angkas?: number; // Read-only dari admin - kumulatif angkas
   angkas?: number;
   realisasi_k?: number;
   realisasi_rp?: number;
@@ -125,25 +126,42 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
+      // Get bulan index for angkas query (1-12)
+      const bulanIndex = bulanOptions.findIndex(b => b.value === filterBulan) + 1;
+
       // Load sub kegiatan yang punya target di tahun ini
-      const assignmentsRes = await axios.get(
-        `${API_BASE_URL}/target/assigned?tahun=${filterTahun}`,
-        config
-      );
+      const [assignmentsRes, laporanRes, angkasRes] = await Promise.all([
+        axios.get(
+          `${API_BASE_URL}/target/assigned?tahun=${filterTahun}`,
+          config
+        ),
+        axios.get(`${API_BASE_URL}/laporan`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { bulan: filterBulan, tahun: filterTahun, limit: 1000 },
+        }),
+        axios.get(`${API_BASE_URL}/angkas/by-sub-kegiatan`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { tahun: filterTahun, bulan: bulanIndex },
+        }).catch(() => ({ data: { data: [] } })), // Fallback jika belum ada data angkas
+      ]);
 
       console.log('🔍 Target assigned response:', assignmentsRes.data);
-
-      // Load existing laporan for this month
-      const laporanRes = await axios.get(`${API_BASE_URL}/laporan`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { bulan: filterBulan, tahun: filterTahun, limit: 1000 },
-      });
+      console.log('📊 Angkas response:', angkasRes.data);
 
       const existingLaporan = Array.isArray(laporanRes.data.data)
         ? laporanRes.data.data
         : Array.isArray(laporanRes.data)
         ? laporanRes.data
         : [];
+
+      // Create map of angkas by sub_kegiatan ONLY (not sumber_anggaran)
+      // PDF angkas may have different sumber_anggaran than targets
+      const angkasMap = new Map<number, number>();
+      if (angkasRes.data.data) {
+        for (const item of angkasRes.data.data) {
+          angkasMap.set(item.id_sub_kegiatan, item.target_angkas || 0);
+        }
+      }
 
       // Map target data to rows (NEW FORMAT)
       const targetData = assignmentsRes.data.data || [];
@@ -171,6 +189,9 @@ export const LaporanBulkInputPage: React.FC = () => {
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
+          // Get target_angkas from map (by sub_kegiatan only, not sumber_anggaran)
+          const targetAngkas = angkasMap.get(subKegiatanId) || 0;
+
           mappedRows.push({
             id_sub_kegiatan: subKegiatanId,
             kode_sub: subKegiatan.kode_sub,
@@ -184,6 +205,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             // Target dan satuan dari admin (READ-ONLY)
             target_k: target.target_k,
             target_rp: target.target_rp,
+            target_angkas: targetAngkas,
             id_satuan: target.id_satuan,
             
             // Populate with existing data if available
@@ -387,7 +409,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       },
     },
     {
-      title: 'Target Angkas (Rp)',
+      title: 'Realisasi Angkas (Rp)',
       key: 'angkas',
       width: 150,
       sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
@@ -399,6 +421,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
           }
           min={0}
+          max={record.target_angkas || undefined} // Cannot exceed target_angkas
           step={1}
           controls={false}
           formatter={(value) => {
@@ -421,6 +444,17 @@ export const LaporanBulkInputPage: React.FC = () => {
       render: (_: any, record: LaporanRow) => (
         <div style={{ textAlign: 'right' }}>
           {(record.target_rp || 0).toLocaleString('id-ID')}
+        </div>
+      ),
+    },
+    {
+      title: 'Target Angkas (Rp)',
+      key: 'target_angkas',
+      width: 150,
+      sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
+      render: (_: any, record: LaporanRow) => (
+        <div style={{ textAlign: 'right', color: record.target_angkas ? '#1890ff' : '#999' }}>
+          {(record.target_angkas || 0).toLocaleString('id-ID')}
         </div>
       ),
     },
@@ -464,6 +498,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
           }
           min={0}
+          max={record.angkas || undefined} // Cannot exceed angkas (realisasi angkas)
           step={1}
           controls={false}
           formatter={(value) => {

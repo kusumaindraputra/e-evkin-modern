@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../app';
-import { Laporan, User } from '../../models';
+import { Laporan, User, SubKegiatanTarget, SubKegiatan } from '../../models';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
 
@@ -396,6 +396,265 @@ describe('Laporan Routes Security Tests', () => {
 
       // The endpoint should ignore user_id from body for puskesmas
       expect([200, 400, 404]).toContain(response.status);
+    });
+  });
+
+  describe('Validation Tests - Realisasi vs Target', () => {
+    let testTarget: any;
+    const testSubKegiatanId = 1;
+    const testSumberAnggaranId = 1;
+    const testTahun = 2025;
+
+    beforeAll(async () => {
+      // Find or create a test target for validation tests
+      testTarget = await SubKegiatanTarget.findOne({
+        where: {
+          user_id: puskesmasUser.id,
+          id_sub_kegiatan: testSubKegiatanId,
+          id_sumber_anggaran: testSumberAnggaranId,
+          bulan: null,
+          tahun: testTahun,
+        },
+      });
+
+      if (!testTarget) {
+        testTarget = await SubKegiatanTarget.create({
+          user_id: puskesmasUser.id,
+          id_sub_kegiatan: testSubKegiatanId,
+          id_sumber_anggaran: testSumberAnggaranId,
+          id_satuan: 1,
+          target_k: 100,
+          target_rp: 10000000, // 10 juta
+          bulan: null,
+          tahun: testTahun,
+          created_by: adminUser.id,
+        });
+      }
+    });
+
+    describe('POST /api/laporan/bulk-upsert - Validation', () => {
+      it('should reject if realisasi_k exceeds target_k', async () => {
+        const response = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testSubKegiatanId,
+              id_sumber_anggaran: testSumberAnggaranId,
+              id_satuan: 1,
+              target_k: testTarget.target_k,
+              target_rp: testTarget.target_rp,
+              realisasi_k: testTarget.target_k + 50, // Exceeds target!
+              realisasi_rp: 5000000,
+              realisasi_fisik: 50,
+              permasalahan: '',
+              upaya: '',
+              bulan: 'Februari',
+              tahun: testTahun,
+            }]
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.results.skipped).toBeGreaterThan(0);
+        expect(response.body.results.errors.length).toBeGreaterThan(0);
+        expect(response.body.results.errors[0]).toContain('melebihi target');
+      });
+
+      it('should reject if realisasi_rp exceeds target_rp', async () => {
+        const response = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testSubKegiatanId,
+              id_sumber_anggaran: testSumberAnggaranId,
+              id_satuan: 1,
+              target_k: testTarget.target_k,
+              target_rp: testTarget.target_rp,
+              realisasi_k: 50,
+              realisasi_rp: testTarget.target_rp + 1000000, // Exceeds target!
+              realisasi_fisik: 50,
+              permasalahan: '',
+              upaya: '',
+              bulan: 'Februari',
+              tahun: testTahun,
+            }]
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.results.skipped).toBeGreaterThan(0);
+        expect(response.body.results.errors.length).toBeGreaterThan(0);
+        expect(response.body.results.errors[0]).toContain('melebihi target');
+      });
+
+      it('should reject if no target exists for the combination', async () => {
+        const response = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: 99999, // Non-existent
+              id_sumber_anggaran: testSumberAnggaranId,
+              id_satuan: 1,
+              target_k: 100,
+              target_rp: 10000000,
+              realisasi_k: 50,
+              realisasi_rp: 5000000,
+              realisasi_fisik: 50,
+              permasalahan: '',
+              upaya: '',
+              bulan: 'Februari',
+              tahun: testTahun,
+            }]
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.results.skipped).toBeGreaterThan(0);
+        expect(response.body.results.errors.length).toBeGreaterThan(0);
+        expect(response.body.results.errors[0]).toContain('Target belum diset');
+      });
+
+      it('should accept valid realisasi within target limits', async () => {
+        const response = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testSubKegiatanId,
+              id_sumber_anggaran: testSumberAnggaranId,
+              id_satuan: 1,
+              target_k: testTarget.target_k,
+              target_rp: testTarget.target_rp,
+              realisasi_k: Math.floor(testTarget.target_k * 0.5), // 50% of target
+              realisasi_rp: Math.floor(testTarget.target_rp * 0.5), // 50% of target
+              realisasi_fisik: 50,
+              permasalahan: 'Test valid',
+              upaya: 'Test upaya',
+              bulan: 'Maret',
+              tahun: testTahun,
+            }]
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.results.created + response.body.results.updated).toBeGreaterThanOrEqual(1);
+        
+        // Cleanup
+        await Laporan.destroy({
+          where: {
+            user_id: puskesmasUser.id,
+            id_sub_kegiatan: testSubKegiatanId,
+            id_sumber_anggaran: testSumberAnggaranId,
+            bulan: 'Maret',
+            tahun: testTahun,
+          }
+        });
+      });
+
+      it('should auto-fill id_kegiatan from SubKegiatan', async () => {
+        const subKegiatan = await SubKegiatan.findByPk(testSubKegiatanId);
+        
+        const response = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testSubKegiatanId,
+              id_sumber_anggaran: testSumberAnggaranId,
+              id_kegiatan: 0, // Should be auto-filled
+              id_satuan: 1,
+              target_k: testTarget.target_k,
+              target_rp: testTarget.target_rp,
+              realisasi_k: 10,
+              realisasi_rp: 1000000,
+              realisasi_fisik: 10,
+              permasalahan: '',
+              upaya: '',
+              bulan: 'April',
+              tahun: testTahun,
+            }]
+          });
+
+        expect(response.status).toBe(200);
+        
+        // Verify the created laporan has correct id_kegiatan
+        const createdLaporan = await Laporan.findOne({
+          where: {
+            user_id: puskesmasUser.id,
+            id_sub_kegiatan: testSubKegiatanId,
+            bulan: 'April',
+            tahun: testTahun,
+          }
+        });
+
+        if (createdLaporan && subKegiatan) {
+          expect(createdLaporan.id_kegiatan).toBe(subKegiatan.id_kegiatan);
+        }
+
+        // Cleanup
+        await Laporan.destroy({
+          where: {
+            user_id: puskesmasUser.id,
+            id_sub_kegiatan: testSubKegiatanId,
+            bulan: 'April',
+            tahun: testTahun,
+          }
+        });
+      });
+    });
+
+    describe('PUT /api/laporan/:id - Validation', () => {
+      let testUpdateLaporan: any;
+
+      beforeEach(async () => {
+        testUpdateLaporan = await Laporan.create({
+          user_id: puskesmasUser.id,
+          id_kegiatan: 1,
+          id_sub_kegiatan: testSubKegiatanId,
+          id_sumber_anggaran: testSumberAnggaranId,
+          id_satuan: 1,
+          target_k: testTarget.target_k,
+          angkas: 5000000,
+          target_rp: testTarget.target_rp,
+          realisasi_k: 50,
+          realisasi_rp: 5000000,
+          realisasi_fisik: 50,
+          permasalahan: 'Test',
+          upaya: 'Test',
+          bulan: 'Mei',
+          tahun: testTahun,
+        });
+      });
+
+      afterEach(async () => {
+        if (testUpdateLaporan) {
+          await Laporan.destroy({ where: { id: testUpdateLaporan.id } });
+        }
+      });
+
+      it('should reject update if realisasi_k exceeds target', async () => {
+        const response = await request(app)
+          .put(`/api/laporan/${testUpdateLaporan.id}`)
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            realisasi_k: testTarget.target_k + 100, // Exceeds target!
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Validation error');
+      });
+
+      it('should reject update if target not found', async () => {
+        // Update to a non-existent combination
+        const response = await request(app)
+          .put(`/api/laporan/${testUpdateLaporan.id}`)
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            id_sumber_anggaran: 99999, // Non-existent sumber anggaran
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe('Target belum diset');
+      });
     });
   });
 });

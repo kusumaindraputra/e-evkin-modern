@@ -345,13 +345,6 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
     }
   };
 
-  // Find satuan name from id
-  const getSatuanName = (idSatuan: number | null) => {
-    if (!idSatuan) return null;
-    const satuan = satuanList.find(s => s.value === idSatuan);
-    return satuan?.label || null;
-  };
-
   const columns = [
     {
       title: 'No',

@@ -13,14 +13,10 @@ router.get('/', authenticate, async (req, res) => {
     const userId = req.user!.id;
     const { tahun, id_sub_kegiatan, id_sumber_anggaran } = req.query;
 
-    console.log('📊 GET /target - userId:', userId, 'params:', { tahun, id_sub_kegiatan, id_sumber_anggaran });
-
     const whereClause: any = { user_id: userId, bulan: null };
     if (tahun) whereClause.tahun = parseInt(tahun as string);
     if (id_sub_kegiatan) whereClause.id_sub_kegiatan = parseInt(id_sub_kegiatan as string);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
-
-    console.log('📊 whereClause:', whereClause);
 
     const allTargets = await SubKegiatanTarget.findAll({
       where: whereClause,
@@ -48,8 +44,6 @@ router.get('/', authenticate, async (req, res) => {
       ],
       order: [['created_at', 'DESC']],
     });
-
-    console.log('📊 Found targets:', allTargets.length);
 
     // Group by combination and get latest per group
     const groupedTargets = allTargets.reduce((acc: any, target: any) => {
@@ -584,8 +578,6 @@ router.get('/admin', authenticate, authorizeAdmin, async (req, res) => {
       }
     }
 
-    console.log('Admin targets whereClause:', whereClause);
-
     // Get all targets
     const allTargets = await SubKegiatanTarget.findAll({
       where: whereClause,
@@ -836,13 +828,6 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
       });
     }
 
-    console.log('Fetching history for:', {
-      user_id,
-      id_sub_kegiatan: parsedIdSubKegiatan,
-      id_sumber_anggaran: parsedIdSumberAnggaran,
-      tahun: parsedTahun,
-    });
-
     const history = await SubKegiatanTarget.findAll({
       where: {
         user_id: user_id as string, // Keep as string UUID
@@ -876,8 +861,6 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
         updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
       };
     });
-
-    console.log('Formatted history sample:', JSON.stringify(formattedHistory[0], null, 2));
 
     return res.json({
       success: true,

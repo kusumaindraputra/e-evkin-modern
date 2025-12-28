@@ -22,6 +22,7 @@ import subKegiatanSumberAnggaranRoutes from './routes/sub-kegiatan-sumber-anggar
 import chatRoutes from './routes/chat.routes';
 import targetRoutes from './routes/target.routes';
 import targetUploadRoutes from './routes/target-upload.routes';
+import angkasRoutes from './routes/angkas.routes';
 
 const app: Application = express();
 
@@ -60,6 +61,7 @@ app.use('/api/sub-kegiatan-sumber-anggaran', subKegiatanSumberAnggaranRoutes);
 app.use('/api/admin', chatRoutes);
 app.use('/api/target', targetRoutes);
 app.use('/api/target', targetUploadRoutes);
+app.use('/api/angkas', angkasRoutes);
 
 // Error handling
 app.use(errorHandler);

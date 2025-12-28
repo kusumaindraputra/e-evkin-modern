@@ -11,7 +11,6 @@ const Kegiatan_1 = __importDefault(require("../models/Kegiatan"));
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
 const PuskesmasEditPermission_1 = __importDefault(require("../models/PuskesmasEditPermission"));
-const sequelize_1 = require("sequelize");
 const router = (0, express_1.Router)();
 // GET all sub kegiatan assigned to a specific puskesmas
 router.get('/puskesmas/:userId/sub-kegiatan', auth_1.authenticate, async (req, res) => {
@@ -254,23 +253,44 @@ router.get('/edit-permission/status', auth_1.authenticate, async (req, res) => {
         if (!scope || !tahun) {
             return res.status(400).json({ success: false, message: 'scope dan tahun wajib diisi' });
         }
-        const record = await PuskesmasEditPermission_1.default.findOne({
+        // First try user-specific permission, then fall back to global
+        let record = await PuskesmasEditPermission_1.default.findOne({
             where: {
                 scope: String(scope),
                 bulan: bulan || null,
                 tahun: parseInt(String(tahun)),
-                [sequelize_1.Op.or]: [{ user_id: userId }, { user_id: null }],
+                user_id: userId,
             },
             order: [['created_at', 'DESC']],
         });
+        if (!record) {
+            record = await PuskesmasEditPermission_1.default.findOne({
+                where: {
+                    scope: String(scope),
+                    bulan: bulan || null,
+                    tahun: parseInt(String(tahun)),
+                    user_id: null,
+                },
+                order: [['created_at', 'DESC']],
+            });
+        }
         if (!record)
             return res.json({ success: true, data: { allowed: false } });
+        // If enabled is true, always allow
+        if (record.enabled) {
+            return res.json({ success: true, data: { allowed: true, enabled: record.enabled, start_at: record.start_at, end_at: record.end_at } });
+        }
+        // If enabled is false, check time window
         const now = new Date();
         const start = record.start_at ? new Date(record.start_at) : null;
         const end = record.end_at ? new Date(record.end_at) : null;
+        // If no time window and not enabled, deny
+        if (!start && !end) {
+            return res.json({ success: true, data: { allowed: false, enabled: record.enabled, start_at: record.start_at, end_at: record.end_at } });
+        }
+        // Check if within time window
         const withinWindow = (start ? now >= start : true) && (end ? now <= end : true);
-        const allowed = record.enabled || withinWindow;
-        return res.json({ success: true, data: { allowed, enabled: record.enabled, start_at: record.start_at, end_at: record.end_at } });
+        return res.json({ success: true, data: { allowed: withinWindow, enabled: record.enabled, start_at: record.start_at, end_at: record.end_at } });
     }
     catch (error) {
         console.error('Error getting permission status:', error);

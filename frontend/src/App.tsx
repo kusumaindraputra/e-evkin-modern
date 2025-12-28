@@ -13,6 +13,7 @@ import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
 import { CaraPengisianPage } from './pages/CaraPengisianPage';
 import AdminTargetPage from './pages/AdminTargetPage';
 import AdminTargetKinerjaPage from './pages/AdminTargetKinerjaPage';
+import AdminAngkasUploadPage from './pages/AdminAngkasUploadPage';
 import { PuskesmasTargetKinerjaPage } from './pages/PuskesmasTargetKinerjaPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
@@ -190,6 +191,16 @@ function App() {
             <AdminRoute>
               <Layout>
                 <AdminTargetKinerjaPage />
+              </Layout>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/angkas"
+          element={
+            <AdminRoute>
+              <Layout>
+                <AdminAngkasUploadPage />
               </Layout>
             </AdminRoute>
           }

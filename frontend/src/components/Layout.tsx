@@ -14,6 +14,7 @@ import {
   AppstoreOutlined,
   AimOutlined,
   DollarOutlined,
+  FilePdfOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -111,6 +112,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         icon: <AimOutlined />,
         label: 'Target Kinerja',
         onClick: () => navigate('/admin/target-kinerja'),
+      },
+      {
+        key: '/admin/angkas',
+        icon: <FilePdfOutlined />,
+        label: 'Target Angkas',
+        onClick: () => navigate('/admin/angkas'),
       },
       {
         key: '/admin/master-data',

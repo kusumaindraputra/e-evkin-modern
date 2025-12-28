@@ -27,6 +27,7 @@ const sub_kegiatan_sumber_anggaran_routes_1 = __importDefault(require("./routes/
 const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const target_upload_routes_1 = __importDefault(require("./routes/target-upload.routes"));
+const angkas_routes_1 = __importDefault(require("./routes/angkas.routes"));
 const app = (0, express_1.default)();
 // Security middleware
 app.use((0, helmet_1.default)());
@@ -60,6 +61,7 @@ app.use('/api/sub-kegiatan-sumber-anggaran', sub_kegiatan_sumber_anggaran_routes
 app.use('/api/admin', chat_routes_1.default);
 app.use('/api/target', target_routes_1.default);
 app.use('/api/target', target_upload_routes_1.default);
+app.use('/api/angkas', angkas_routes_1.default);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 exports.default = app;

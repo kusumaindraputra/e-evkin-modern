@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SubKegiatanTarget = exports.SubKegiatanSumberAnggaran = exports.PuskesmasSubKegiatan = exports.SubKegiatan = exports.Kegiatan = exports.Satuan = exports.SumberAnggaran = exports.Laporan = exports.User = void 0;
+exports.AnggaranKas = exports.SubKegiatanTarget = exports.SubKegiatanSumberAnggaran = exports.PuskesmasSubKegiatan = exports.SubKegiatan = exports.Kegiatan = exports.Satuan = exports.SumberAnggaran = exports.Laporan = exports.User = void 0;
 const User_1 = __importDefault(require("./User"));
 exports.User = User_1.default;
 const Laporan_1 = __importDefault(require("./Laporan"));
@@ -22,6 +22,8 @@ const SubKegiatanSumberAnggaran_1 = __importDefault(require("./SubKegiatanSumber
 exports.SubKegiatanSumberAnggaran = SubKegiatanSumberAnggaran_1.default;
 const SubKegiatanTarget_1 = __importDefault(require("./SubKegiatanTarget"));
 exports.SubKegiatanTarget = SubKegiatanTarget_1.default;
+const AnggaranKas_1 = __importDefault(require("./AnggaranKas"));
+exports.AnggaranKas = AnggaranKas_1.default;
 // Define associations
 User_1.default.hasMany(Laporan_1.default, {
     foreignKey: 'user_id',
@@ -91,5 +93,34 @@ SubKegiatan_1.default.hasMany(SubKegiatanSumberAnggaran_1.default, {
 SumberAnggaran_1.default.hasMany(SubKegiatanSumberAnggaran_1.default, {
     foreignKey: 'id_sumber_anggaran',
     as: 'subKegiatanLinks',
+});
+// AnggaranKas associations
+AnggaranKas_1.default.belongsTo(User_1.default, {
+    foreignKey: 'user_id',
+    as: 'puskesmas',
+});
+AnggaranKas_1.default.belongsTo(User_1.default, {
+    foreignKey: 'created_by',
+    as: 'creator',
+});
+AnggaranKas_1.default.belongsTo(SubKegiatan_1.default, {
+    foreignKey: 'id_sub_kegiatan',
+    as: 'subKegiatan',
+});
+AnggaranKas_1.default.belongsTo(SumberAnggaran_1.default, {
+    foreignKey: 'id_sumber_anggaran',
+    as: 'sumberAnggaran',
+});
+User_1.default.hasMany(AnggaranKas_1.default, {
+    foreignKey: 'user_id',
+    as: 'anggaranKas',
+});
+SubKegiatan_1.default.hasMany(AnggaranKas_1.default, {
+    foreignKey: 'id_sub_kegiatan',
+    as: 'anggaranKas',
+});
+SumberAnggaran_1.default.hasMany(AnggaranKas_1.default, {
+    foreignKey: 'id_sumber_anggaran',
+    as: 'anggaranKas',
 });
 //# sourceMappingURL=index.js.map

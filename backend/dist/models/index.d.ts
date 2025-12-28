@@ -7,5 +7,6 @@ import SubKegiatan from './SubKegiatan';
 import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
-export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, };
+import AnggaranKas from './AnggaranKas';
+export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas, };
 //# sourceMappingURL=index.d.ts.map

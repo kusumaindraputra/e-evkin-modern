@@ -1,0 +1,25 @@
+/* Utility for numeric columns with thousand separator formatting */
+.thousand-sep {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	/* Use with JS .toLocaleString for value formatting */
+}
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.p-24 { padding: 24px; }
+.p-12 { padding: 12px; }
+.text-center { text-align: center; }
+.text-gray { color: #888; }
+.text-danger { color: #ff4d4f; }
+.text-warning { color: #faad14; }
+.text-primary { color: #1890ff; }
+.text-success { color: #52c41a; }
+.text-secondary { color: #8c8c8c; }
+.bg-light { background: #f5f5f5; }
+.rounded { border-radius: 6px; }
+.font-bold { font-weight: bold; }
+.font-12 { font-size: 12px; }
+.font-14 { font-size: 14px; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -3,7 +3,6 @@ import {
   Card,
   Table,
   Button,
-  Modal,
   Select,
   message,
   Tag,
@@ -18,6 +17,8 @@ import {
   InputNumber,
   Alert,
   Statistic,
+} from 'antd';
+import AppModal from '../components/AppModal';
   Timeline,
 } from 'antd';
 import { UploadOutlined, LoadingOutlined, DeleteOutlined, LinkOutlined, InfoCircleOutlined, HistoryOutlined } from '@ant-design/icons';
@@ -642,12 +643,12 @@ const AdminAngkasUploadPage: React.FC = () => {
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
-          <Card size="small">
+          <Card size="small" bodyStyle={{ padding: 16 }} style={{ marginBottom: 16 }}>
             <Statistic title="Total Kombinasi" value={stats.total} />
           </Card>
         </Col>
         <Col span={8}>
-          <Card size="small">
+          <Card size="small" bodyStyle={{ padding: 16 }} style={{ marginBottom: 16 }}>
             <Statistic 
               title="Sudah Upload Angkas" 
               value={stats.withAngkas} 
@@ -656,7 +657,7 @@ const AdminAngkasUploadPage: React.FC = () => {
           </Card>
         </Col>
         <Col span={8}>
-          <Card size="small">
+          <Card size="small" bodyStyle={{ padding: 16 }} style={{ marginBottom: 16 }}>
             <Statistic 
               title="Belum Upload Angkas" 
               value={stats.withoutAngkas} 
@@ -666,7 +667,7 @@ const AdminAngkasUploadPage: React.FC = () => {
         </Col>
       </Row>
 
-      <Card style={{ marginBottom: 16 }}>
+      <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
         <Row gutter={16} align="middle">
           <Col>
             <span>Tahun: </span>
@@ -741,7 +742,7 @@ const AdminAngkasUploadPage: React.FC = () => {
             key: 'data',
             label: 'Data Angkas',
             children: (
-              <Card>
+              <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
                 <Table
                   columns={columns}
                   dataSource={angkasData.filter(record => {
@@ -773,7 +774,7 @@ const AdminAngkasUploadPage: React.FC = () => {
               </span>
             ),
             children: (
-              <Card>
+              <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
                 <Alert
                   message="Data yang belum terhubung ke Sub Kegiatan"
                   description="Data ini akan di-skip saat perhitungan target angkas per sub kegiatan. Klik 'Match' untuk menghubungkan ke sub kegiatan."
@@ -798,7 +799,7 @@ const AdminAngkasUploadPage: React.FC = () => {
       />
 
       {/* Upload Modal */}
-      <Modal
+      <AppModal
         title="Upload File PDF Angkas"
         open={uploadModalVisible}
         onCancel={() => !uploading && setUploadModalVisible(false)}
@@ -810,7 +811,6 @@ const AdminAngkasUploadPage: React.FC = () => {
           <div>
             <Text>Tahun: <strong>{filters.tahun}</strong></Text>
           </div>
-
           <Alert
             message="Format File & Deteksi Sumber Anggaran"
             description={
@@ -824,7 +824,6 @@ const AdminAngkasUploadPage: React.FC = () => {
             type="info"
             showIcon
           />
-
           {uploading ? (
             <div style={{ textAlign: 'center', padding: 20 }}>
               <Progress
@@ -862,10 +861,10 @@ const AdminAngkasUploadPage: React.FC = () => {
             </Upload.Dragger>
           )}
         </Space>
-      </Modal>
+      </AppModal>
 
       {/* Match Modal */}
-      <Modal
+      <AppModal
         title="Hubungkan ke Sub Kegiatan"
         open={matchModalVisible}
         onCancel={() => {
@@ -905,10 +904,10 @@ const AdminAngkasUploadPage: React.FC = () => {
             </div>
           </Space>
         )}
-      </Modal>
+      </AppModal>
 
       {/* History Modal */}
-      <Modal
+      <AppModal
         title="History Angkas & Target"
         open={historyModalVisible}
         onCancel={() => {
@@ -937,7 +936,6 @@ const AdminAngkasUploadPage: React.FC = () => {
             </Row>
           </div>
         )}
-
         {historyLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <LoadingOutlined style={{ fontSize: 32 }} />
@@ -1054,7 +1052,7 @@ const AdminAngkasUploadPage: React.FC = () => {
         ) : (
           <Alert message="Tidak ada data history" type="warning" showIcon />
         )}
-      </Modal>
+      </AppModal>
     </div>
   );
 };

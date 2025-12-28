@@ -3,7 +3,6 @@ import {
   Card,
   Table,
   Button,
-  Modal,
   Select,
   message,
   Tag,
@@ -15,6 +14,8 @@ import {
   Input,
   Alert,
 } from 'antd';
+import '../styles/global.css';
+import AppModal from '../components/AppModal';
 import { HistoryOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
@@ -403,12 +404,12 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       },
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'target_rp',
       key: 'target_rp',
       width: 150,
       align: 'right' as const,
-      render: (value: number) => `Rp ${value?.toLocaleString('id-ID')}`,
+      render: (value: number) => <span className="thousand-sep">{value?.toLocaleString('id-ID')}</span>,
     },
     {
       title: 'Aksi',
@@ -529,17 +530,24 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       </Card>
 
       {/* Edit Modal */}
-      <Modal
+      <AppModal
         title="Edit Target Kinerja"
         open={editModalVisible}
         onCancel={() => {
           setEditModalVisible(false);
           form.resetFields();
         }}
-        onOk={handleSave}
-        okText="Simpan"
-        cancelText="Batal"
-        confirmLoading={saving}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setEditModalVisible(false);
+            form.resetFields();
+          }}>
+            Batal
+          </Button>,
+          <Button key="ok" type="primary" onClick={handleSave} loading={saving}>
+            Simpan
+          </Button>,
+        ]}
         width={500}
       >
         {selectedTarget && (
@@ -602,10 +610,10 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
       {/* History Modal */}
-      <Modal
+      <AppModal
         title="History Target Kinerja"
         open={historyModalVisible}
         onCancel={() => setHistoryModalVisible(false)}
@@ -661,7 +669,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             ),
           }))}
         />
-      </Modal>
+      </AppModal>
     </div>
   );
 };

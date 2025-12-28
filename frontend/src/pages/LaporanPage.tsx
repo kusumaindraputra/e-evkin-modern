@@ -9,10 +9,11 @@ import {
   Col,
   Card,
   Select,
-  Modal,
   message,
   Popconfirm,
 } from 'antd';
+import AppModal from '../components/AppModal';
+import '../styles/global.css';
 import {
   PlusOutlined,
   EyeOutlined,
@@ -412,7 +413,7 @@ export const LaporanPage: React.FC = () => {
       key: 'target_k',
       width: 100,
       align: 'center',
-      render: (val) => formatNumber(val),
+      render: (val) => <span className="thousand-sep">{formatNumber(val)}</span>,
       sorter: (a, b) => a.target_k - b.target_k,
     },
     {
@@ -596,7 +597,7 @@ export const LaporanPage: React.FC = () => {
       </Row>
 
       {/* Filter Section */}
-      <Card style={{ marginBottom: 16 }}>
+      <Card className="mb-24 p-24">
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={8} md={6}>
             <Select
@@ -630,7 +631,7 @@ export const LaporanPage: React.FC = () => {
       </Card>
 
       {/* Table */}
-      <Card>
+      <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
         <Table
           columns={columns}
           dataSource={laporanData}
@@ -652,7 +653,7 @@ export const LaporanPage: React.FC = () => {
       </Card>
 
       {/* Modal Form */}
-      <Modal
+      <AppModal
         title={modalMode === 'create' ? 'Tambah Laporan Baru' : 'Edit Laporan'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
@@ -665,7 +666,7 @@ export const LaporanPage: React.FC = () => {
           onSubmit={handleSubmit}
           onCancel={() => setModalVisible(false)}
         />
-      </Modal>
+      </AppModal>
 
       {/* Modal Detail */}
       <Modal

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/global.css';
 import { Layout as AntLayout, Menu, Button, Dropdown, Avatar, Typography } from 'antd';
 import {
   DashboardOutlined,
@@ -145,38 +146,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   return (
-    <AntLayout style={{ minHeight: '100vh' }}>
+    <AntLayout className="minh-100vh">
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-        }}
+        className="overflow-auto minh-100vh fixed left-0 top-0 bottom-0"
       >
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-          }}
-        >
+        <div className="h-64 flex items-center justify-center p-16">
           <Text
             strong
-            style={{
-              color: '#fff',
-              fontSize: collapsed ? 16 : 20,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
+            className={`text-white ${collapsed ? 'fs-16' : 'fs-20'} nowrap overflow-hidden ellipsis`}
           >
             {collapsed ? 'E-EV' : 'E-EVKIN'}
           </Text>
@@ -188,26 +168,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           items={menuItems}
         />
       </Sider>
-      <AntLayout style={{ marginLeft: collapsed ? 80 : 200 }}>
-        <Header
-          style={{
-            padding: '0 24px',
-            background: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 1px 4px rgba(0,21,41,.08)',
-          }}
-        >
+      <AntLayout className={collapsed ? 'ml-80' : 'ml-200'}>
+        <Header className="px-24 bg-white flex items-center justify-between shadow-header">
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
+            className="fs-16 w-64 h-64"
           />
           <Dropdown
             menu={{
@@ -215,26 +182,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             }}
             placement="bottomRight"
           >
-            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <Avatar icon={<UserOutlined />} style={{ marginRight: 8 }} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="flex items-center pointer">
+              <Avatar icon={<UserOutlined />} className="mr-8" />
+              <div className="flex flex-col">
                 <Text strong>{user?.nama}</Text>
-                <Text type="secondary" style={{ fontSize: 12 }}>
+                <Text type="secondary" className="fs-12">
                   {user?.role === 'admin' ? 'Administrator' : user?.kode_puskesmas}
                 </Text>
               </div>
             </div>
           </Dropdown>
         </Header>
-        <Content
-          style={{
-            margin: '24px 16px',
-            padding: 24,
-            minHeight: 280,
-            background: '#fff',
-            borderRadius: 8,
-          }}
-        >
+        <Content className="m-24-16 p-24 minh-280 bg-white br-8">
           {children}
         </Content>
       </AntLayout>

@@ -611,7 +611,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       </Row>
 
       {/* Filter Section */}
-      <Card style={{ marginBottom: 16 }}>
+      <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={8} md={6}>
             <Text strong>Periode Laporan:</Text>
@@ -647,7 +647,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       {filterBulan && filterTahun && (
         <>
           {/* Action Buttons */}
-          <Card style={{ marginBottom: 16 }}>
+          <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
             <Space>
               <Button
                 type="primary"
@@ -692,7 +692,7 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Card>
 
           {/* Table */}
-          <Card>
+          <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
             <Table
               columns={columns}
               dataSource={rows}
@@ -708,7 +708,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       )}
 
       {!filterBulan || !filterTahun ? (
-        <Card>
+        <Card bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <Text type="secondary" style={{ fontSize: 16 }}>
               Pilih bulan dan tahun untuk mulai input laporan

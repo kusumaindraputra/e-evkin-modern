@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Transfer, message, Spin } from 'antd';
+import '../styles/global.css';
+import { Transfer, message, Spin } from 'antd';
+import AppModal from './AppModal';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
@@ -100,18 +102,25 @@ export const SubKegiatanSumberAnggaranModal: React.FC<SubKegiatanSumberAnggaranM
   };
 
   return (
-    <Modal
+    <AppModal
       title={`Kelola sumber anggaran: ${subKegiatanName}`}
       open={visible}
-      onOk={handleSave}
       onCancel={onClose}
-      confirmLoading={saving}
       width={700}
-      okText="Simpan"
-      cancelText="Batal"
+      footer={[
+        <button key="cancel" onClick={onClose} className="ant-btn ant-btn-default">Batal</button>,
+        <button
+          key="ok"
+          onClick={handleSave}
+          className="ant-btn ant-btn-primary"
+          disabled={saving}
+        >
+          {saving ? 'Menyimpan...' : 'Simpan'}
+        </button>,
+      ]}
     >
       <Spin spinning={loading}>
-        <div style={{ marginBottom: 16 }}>
+        <div className="mb-16">
           <p>
             Pilih sumber anggaran yang tersedia untuk sub kegiatan ini. Puskesmas hanya bisa
             memilih dari sumber anggaran yang telah Anda assign di sini.
@@ -128,16 +137,13 @@ export const SubKegiatanSumberAnggaranModal: React.FC<SubKegiatanSumberAnggaranM
           targetKeys={selectedKeys.filter((key) => key).map((key) => key.toString())}
           onChange={handleChange}
           render={(item) => item.title}
-          listStyle={{
-            width: 300,
-            height: 400,
-          }}
+          className="w-300 h-400"
           showSearch
           filterOption={(inputValue, item) =>
             item.title?.toLowerCase().includes(inputValue.toLowerCase()) || false
           }
         />
       </Spin>
-    </Modal>
+    </AppModal>
   );
 };

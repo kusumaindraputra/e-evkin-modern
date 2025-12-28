@@ -3,7 +3,6 @@ import {
   Card,
   Table,
   Button,
-  Modal,
   Select,
   message,
   Tag,
@@ -12,7 +11,10 @@ import {
   Col,
   Upload,
   Progress,
+  Modal,
 } from 'antd';
+import AppModal from '../components/AppModal';
+import '../styles/global.css';
 import { HistoryOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
@@ -284,62 +286,55 @@ const AdminTargetPage: React.FC = () => {
           content: (
             <div>
               <p><strong>Total Berhasil:</strong> {result.success} target</p>
-              <p style={{ marginLeft: 20, color: '#52c41a' }}>
+              <p className="ml-20 text-green">
                 • Inserted (Baru): {result.inserted}
               </p>
-              <p style={{ marginLeft: 20, color: '#1890ff' }}>
+              <p className="ml-20 text-blue">
                 • Updated (Existing): {result.updated}
               </p>
-              <p style={{ marginLeft: 20, color: '#faad14' }}>
+              <p className="ml-20 text-yellow">
                 • Skipped (Same Value): {result.skipped || 0}
               </p>
-              <p style={{ marginLeft: 20, color: '#722ed1' }}>
+              <p className="ml-20 text-purple">
                 • Sub Kegiatan Baru: {result.createdSubKegiatan || 0}
               </p>
-              <p style={{ marginLeft: 20, color: '#13c2c2' }}>
+              <p className="ml-20 text-cyan">
                 • Sumber Dana Baru: {result.createdSumberAnggaran || 0}
               </p>
               <p><strong>Gagal:</strong> {result.failed} target</p>
               {result.excludedNonPuskesmas > 0 && (
-                <p style={{ color: '#8c8c8c' }}>
+                <p className="text-gray">
                   <strong>Excluded (bukan Puskesmas):</strong> {result.excludedNonPuskesmas} data
                 </p>
               )}
               
               {/* Success List */}
               {result.successList && result.successList.length > 0 && (
-                <div style={{ marginTop: 16 }}>
+                <div className="mt-16">
                   <p><strong>Data Berhasil Diproses:</strong></p>
-                  <div style={{ maxHeight: 250, overflow: 'auto', border: '1px solid #d9d9d9', borderRadius: 4 }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                      <thead style={{ position: 'sticky', top: 0, background: '#fafafa' }}>
+                  <div className="maxh-250 overflow-auto border-gray br-4">
+                    <table className="w-100 border-collapse fs-12">
+                      <thead className="sticky-top bg-light">
                         <tr>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Status</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Puskesmas</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Sub Kegiatan</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'left' }}>Sumber Dana</th>
-                          <th style={{ padding: '8px', borderBottom: '1px solid #d9d9d9', textAlign: 'right' }}>Target Rp</th>
+                          <th className="p-8 borderb-gray text-left">Status</th>
+                          <th className="p-8 borderb-gray text-left">Puskesmas</th>
+                          <th className="p-8 borderb-gray text-left">Sub Kegiatan</th>
+                          <th className="p-8 borderb-gray text-left">Sumber Dana</th>
+                          <th className="p-8 borderb-gray text-right">Target (Rp)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.successList.map((item: any, idx: number) => (
-                          <tr key={idx} style={{ background: idx % 2 === 0 ? '#fff' : '#fafafa' }}>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>
-                              <span style={{ 
-                                padding: '2px 8px', 
-                                borderRadius: 4, 
-                                fontSize: 11,
-                                background: item.type === 'inserted' ? '#f6ffed' : '#e6f7ff',
-                                color: item.type === 'inserted' ? '#52c41a' : '#1890ff',
-                                border: `1px solid ${item.type === 'inserted' ? '#b7eb8f' : '#91d5ff'}`
-                              }}>
+                          <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-light'}>
+                            <td className="p-6-8 borderb-light">
+                              <span className={item.type === 'inserted' ? 'badge-inserted' : 'badge-updated'}>
                                 {item.type === 'inserted' ? 'INSERT' : 'UPDATE'}
                               </span>
                             </td>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.puskesmas}</td>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.subKegiatan}>{item.subKegiatan}</td>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.sumberDana}</td>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>Rp {item.target_rp?.toLocaleString('id-ID')}</td>
+                            <td className="p-6-8 borderb-light">{item.puskesmas}</td>
+                            <td className="p-6-8 borderb-light maxw-200 ellipsis" title={item.subKegiatan}>{item.subKegiatan}</td>
+                            <td className="p-6-8 borderb-light">{item.sumberDana}</td>
+                            <td className="p-6-8 borderb-light thousand-sep">{item.target_rp?.toLocaleString('id-ID')}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -350,19 +345,19 @@ const AdminTargetPage: React.FC = () => {
               
               {/* Error List */}
               {result.errors.length > 0 && (
-                <div style={{ marginTop: 16 }}>
+                <div className="mt-16">
                   <p><strong>Detail Error (10 pertama):</strong></p>
-                  <ul style={{ maxHeight: 150, overflow: 'auto' }}>
+                  <ul className="maxh-150 overflow-auto">
                     {result.errors.slice(0, 10).map((err: any, idx: number) => (
                       <li key={idx}>
                         Row {err.row}: {err.puskesmas} - {err.subKegiatan}
                         <br />
-                        <small style={{ color: 'red' }}>{err.error}</small>
+                        <small className="text-red">{err.error}</small>
                       </li>
                     ))}
                   </ul>
                   {result.errors.length > 10 && (
-                    <p style={{ color: 'gray' }}>... dan {result.errors.length - 10} error lainnya</p>
+                    <p className="text-gray">... dan {result.errors.length - 10} error lainnya</p>
                   )}
                 </div>
               )}
@@ -486,8 +481,8 @@ const AdminTargetPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Card title="Target Anggaran (Rp)" style={{ marginBottom: 24 }}>
+    <div style={{ padding: 24 }}>
+      <Card title="Target Anggaran (Rp)" bodyStyle={{ padding: 24 }} style={{ marginBottom: 24 }}>
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>
             <Select
@@ -571,7 +566,7 @@ const AdminTargetPage: React.FC = () => {
       </Card>
 
       {/* History Modal */}
-      <Modal
+      <AppModal
         title="History Target"
         open={historyModalVisible}
         onCancel={() => setHistoryModalVisible(false)}
@@ -624,10 +619,10 @@ const AdminTargetPage: React.FC = () => {
             ),
           }))}
         />
-      </Modal>
+      </AppModal>
 
       {/* Upload Modal */}
-      <Modal
+      <AppModal
         title="Upload File Excel Target Anggaran"
         open={uploadModalVisible}
         onCancel={() => setUploadModalVisible(false)}
@@ -719,7 +714,7 @@ const AdminTargetPage: React.FC = () => {
             )}
           </Upload.Dragger>
         </div>
-      </Modal>
+      </AppModal>
     </div>
   );
 };

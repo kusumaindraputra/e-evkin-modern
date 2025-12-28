@@ -7,7 +7,6 @@ import {
   Row,
   Col,
   Select,
-  Modal,
   message,
   Form,
   InputNumber,
@@ -16,6 +15,7 @@ import {
   Tag,
   Timeline,
 } from 'antd';
+import AppModal from '../components/AppModal';
 import {
   SaveOutlined,
   HistoryOutlined,
@@ -24,6 +24,7 @@ import {
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import '../styles/global.css';
 
 const { Title, Text } = Typography;
 
@@ -38,7 +39,7 @@ interface SumberAnggaranData {
   value: number;
   label: string;
 }
-
+      <Card className="mb-24">
 interface TargetHistory {
   id: number;
   id_sumber_anggaran: number;
@@ -104,7 +105,7 @@ export const TargetPuskesmasPage: React.FC = () => {
         .map((item: any) => ({
           value: item.subKegiatan.id_sub_kegiatan,
           label: item.subKegiatan.kegiatan,
-          kegiatan: item.subKegiatan.kegiatan,
+          <div className="text-center py-40">
           indikator_kinerja: item.subKegiatan.indikator_kinerja,
         }));
 
@@ -114,7 +115,7 @@ export const TargetPuskesmasPage: React.FC = () => {
       } else {
         message.warning('Belum ada sub kegiatan dengan target yang diset untuk tahun ini');
       }
-    } catch (error: any) {
+          <div className="text-center py-40">
       console.error('Error loading sub kegiatan:', error);
       message.error('Gagal memuat sub kegiatan');
     }
@@ -127,7 +128,7 @@ export const TargetPuskesmasPage: React.FC = () => {
         {
           headers: { Authorization: `Bearer ${token}` },
         }
-      );
+            <Card title={`${currentSubKegiatan.kegiatan}`} className="mb-16">
 
       const sumberAnggaran = response.data.data.map((item: any) => ({
         value: item.sumberAnggaran.id_sumber,
@@ -138,7 +139,7 @@ export const TargetPuskesmasPage: React.FC = () => {
     } catch (error: any) {
       console.error('Error loading sumber anggaran:', error);
       setAssignedSumberAnggaran([]);
-    }
+                className="mb-16"
   };
 
   const loadTargetData = async () => {
@@ -439,7 +440,7 @@ export const TargetPuskesmasPage: React.FC = () => {
       )}
 
       {/* History Modal */}
-      <Modal
+      <AppModal
         title={
           <Space>
             <HistoryOutlined />
@@ -470,8 +471,8 @@ export const TargetPuskesmasPage: React.FC = () => {
                     <Text strong>{formatDateTime(item.created_at)}</Text>
                     <Text type="secondary">oleh {item.creator?.username || 'Unknown User'}</Text>
                     <Space style={{ marginTop: 8 }}>
-                      <Tag color="blue">Target (K): {item.target_k.toLocaleString('id-ID')}</Tag>
-                      <Tag color="green">Target (Rp): {formatRupiah(item.target_rp)}</Tag>
+                      <Tag color="blue"><span className="thousand-sep">Target (K): {item.target_k.toLocaleString('id-ID')}</span></Tag>
+                      <Tag color="green"><span className="thousand-sep">Target (Rp): {item.target_rp.toLocaleString('id-ID')}</span></Tag>
                     </Space>
                     {item.target_k === 0 && item.target_rp === 0 && (
                       <Text type="danger" style={{ fontSize: '12px' }}>Target dihapus</Text>
@@ -482,7 +483,7 @@ export const TargetPuskesmasPage: React.FC = () => {
             }))}
           />
         )}
-      </Modal>
+      </AppModal>
     </div>
   );
 };

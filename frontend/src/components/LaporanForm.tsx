@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Form, Select, InputNumber, Input, Button, Space, Typography, Card, Row, Col, message, Alert } from 'antd';
 import axios from 'axios';
+import '../styles/global.css';
 import API_BASE_URL from '../config/api';
 
 const { Text } = Typography;
@@ -347,7 +348,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
             <Text strong>Sub Kegiatan: </Text>
             <Text>{selectedSubKegiatan}</Text>
             <br />
-            <Text strong style={{ marginTop: 8, display: 'inline-block' }}>Indikator Kinerja:</Text>
+            <Text strong className="mt-8 d-ib">Indikator Kinerja:</Text>
             <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>
               <Text>{selectedIndikator}</Text>
             </div>
@@ -404,12 +405,12 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                     )}
                   </div>
                 </div>
-              </Col>
+                          className="mb-16"
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
+                                <Text strong className="d-b mb-8">Satuan Kinerja</Text>
                   label="Realisasi Kinerja (K)"
                   name={['sumberAnggaranData', sa.value, 'realisasi_k']}
                   rules={[
@@ -423,10 +424,10 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                         if (value > target.target_k) {
                           return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (${target.target_k})`));
                         }
-                        return Promise.resolve();
+                                <Text strong className="d-b mb-8">Target Kinerja (K)</Text>
                       },
                     }),
-                  ]}
+                                    <Text strong className="fs-16 text-blue">
                 >
                   <InputNumber
                     style={{ width: '100%' }}
@@ -469,7 +470,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                         }
                         return Promise.resolve();
                       },
-                    }),
+                                    <Text strong className="fs-16 text-blue">
                   ]}
                 >
                   <InputNumber

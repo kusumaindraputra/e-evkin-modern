@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Spin } from 'antd';
+import { Spin, ConfigProvider } from 'antd';
+import theme from './theme';
 import { LoginPage } from './pages/LoginPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
@@ -59,8 +60,9 @@ const RootRedirect = () => {
 
 function App() {
   return (
-    <BrowserRouter basename="/e-evkin">
-      <Routes>
+    <ConfigProvider theme={theme}>
+      <BrowserRouter basename="/e-evkin">
+        <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
 
@@ -246,8 +248,9 @@ function App() {
 
         {/* Catch all - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 

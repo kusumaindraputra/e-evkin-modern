@@ -295,11 +295,14 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             }
           } catch (error: any) {
             result.failed++;
+            // Log detailed error for debugging
+            const errorDetails = error.errors ? error.errors.map((e: any) => `${e.path}: ${e.message}`).join(', ') : error.message;
+            console.error(`❌ Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
             result.errors.push({
               puskesmas: puskesmasData.namaPuskesmas,
               kodeRekening: row.kodeRekening,
               uraian: row.uraian,
-              error: error.message,
+              error: errorDetails,
             });
           }
         }

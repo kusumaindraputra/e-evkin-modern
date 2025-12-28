@@ -143,8 +143,9 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
  * Main function to parse Angkas PDF buffer
  */
 async function parseAngkasPdf(pdfBuffer) {
-    // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+    // Load the PDF document - convert Buffer to Uint8Array for pdfjs-dist v3+
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
     let fullText = '';
@@ -224,7 +225,9 @@ async function parseAngkasPdf(pdfBuffer) {
  * More reliable for PDFs with complex layouts
  */
 async function parseAngkasPdfSimple(pdfBuffer) {
-    const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+    // Convert Buffer to Uint8Array for pdfjs-dist v3+
+    const uint8Array = new Uint8Array(pdfBuffer);
+    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
     let fullText = '';

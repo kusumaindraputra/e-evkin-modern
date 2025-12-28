@@ -21,7 +21,7 @@ import { useAuthStore } from '../store/authStore';
 
 interface Target {
   id: number;
-  user_id: number;
+  user_id: string;  // UUID string
   id_sub_kegiatan: number;
   id_sumber_anggaran: number;
   target_k: number;

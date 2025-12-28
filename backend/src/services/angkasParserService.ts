@@ -35,8 +35,9 @@ export interface ParsedAngkas {
 }
 
 // Pattern to match Puskesmas header line
-// Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga"
-const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(Puskesmas\s+.+)$/i;
+// Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga   5.975.916.762,00..."
+// We capture only the name part (text before numbers)
+const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(Puskesmas\s+[A-Za-z\s]+)/i;
 
 // Pattern to match sub-kegiatan lines (budget items)
 // Example: "1.02.02.2.02.0033   Operasional Pelayanan Puskesmas   476.605.756,00   476.605.756,00   ..."
@@ -48,7 +49,9 @@ const KEGIATAN_PATTERN = /^(1\.\d+\.\d+\.\d+\.\d+\.\d+)\s+(.+?)(\d{1,3}(?:\.\d{3
 const SUMBER_ANGGARAN_PATTERN = /^(\d\.\d)\s+(.+?)(?:\s+\d{1,3}(?:\.\d{3})*(?:,\d{2})?|$)/;
 
 // Pattern to parse currency values (Indonesian format: 1.234.567,89)
-const CURRENCY_PATTERN = /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)/g;
+// MUST end with ,XX (decimal) to avoid matching kode rekening like 1.02.01.2.10.0001
+// Also matches 0,00 for zero values
+const CURRENCY_PATTERN = /(\d{1,3}(?:\.\d{3})*,\d{2})/g;
 
 /**
  * Parse Indonesian currency format to number
@@ -63,9 +66,12 @@ function parseCurrency(value: string): number {
 
 /**
  * Extract all currency values from a line
+ * First removes the kode rekening part, then extracts currency values
  */
 function extractCurrencyValues(line: string): number[] {
-  const matches = line.match(CURRENCY_PATTERN);
+  // Remove kode rekening at the start (e.g., "1.02.01.2.10.0001")
+  const withoutKode = line.replace(/^[\d.]+\s+/, '');
+  const matches = withoutKode.match(CURRENCY_PATTERN);
   if (!matches) return [];
   return matches.map(parseCurrency);
 }
@@ -181,8 +187,9 @@ function parsePage(
  * Main function to parse Angkas PDF buffer
  */
 export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
-  // Load the PDF document
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+  // Load the PDF document - convert Buffer to Uint8Array for pdfjs-dist v3+
+  const uint8Array = new Uint8Array(pdfBuffer);
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
   const pdf = await loadingTask.promise;
 
   const numPages = pdf.numPages;
@@ -279,7 +286,9 @@ export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
  * More reliable for PDFs with complex layouts
  */
 export async function parseAngkasPdfSimple(pdfBuffer: Buffer): Promise<ParsedAngkas> {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+  // Convert Buffer to Uint8Array for pdfjs-dist v3+
+  const uint8Array = new Uint8Array(pdfBuffer);
+  const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
   const pdf = await loadingTask.promise;
 
   const numPages = pdf.numPages;
@@ -359,23 +368,105 @@ export function findBestMatch(uraian: string, subKegiatanList: Array<{ id: numbe
 }
 
 /**
- * Match puskesmas name to user
+ * Normalize puskesmas name by removing "puskesmas", numbers, and extra spaces
+ * Example: "Puskesmas Lebak Wangi   123,456" -> "lebakwangi"
+ */
+function normalizePuskesmasName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/puskesmas/gi, '')  // Remove "puskesmas"
+    .replace(/[\d.,]+/g, '')     // Remove numbers, dots, commas (budget values)
+    .replace(/\s+/g, '')         // Remove ALL spaces (handles "Lebak Wangi" vs "Lebakwangi")
+    .trim();
+}
+
+/**
+ * Calculate similarity between two strings (Levenshtein distance based)
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  
+  if (len1 === 0) return len2 === 0 ? 1 : 0;
+  if (len2 === 0) return 0;
+  
+  // Quick exact match
+  if (str1 === str2) return 1;
+  
+  // Quick contains check
+  if (str1.includes(str2) || str2.includes(str1)) return 0.9;
+  
+  // Levenshtein distance
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // deletion
+        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  
+  const distance = matrix[len1][len2];
+  const maxLen = Math.max(len1, len2);
+  return 1 - (distance / maxLen);
+}
+
+/**
+ * Known aliases for puskesmas names (typos, variations)
+ * Key = normalized PDF name, Value = normalized DB name
+ */
+const PUSKESMAS_ALIASES: Record<string, string> = {
+  // Add known typos/variations here
+  // Example: 'lebakwangii': 'lebakwangi',
+};
+
+/**
+ * Match puskesmas name to user with fuzzy matching
  */
 export function findPuskesmasUser(
   namaPuskesmas: string, 
   users: Array<{ id: string; nama: string; username: string }>
 ): string | null {
-  const normalizedName = namaPuskesmas.toLowerCase().replace('puskesmas', '').trim();
+  const normalizedName = normalizePuskesmasName(namaPuskesmas);
   
-  // Try to find matching user by nama or username
-  const match = users.find(user => {
-    const userName = user.nama.toLowerCase().replace('puskesmas', '').trim();
-    const userUsername = user.username.toLowerCase();
-    return userName.includes(normalizedName) || 
-           normalizedName.includes(userName) ||
-           userUsername.includes(normalizedName) ||
-           normalizedName.includes(userUsername);
-  });
+  // Check alias table first
+  const aliasedName = PUSKESMAS_ALIASES[normalizedName] || normalizedName;
+  
+  let bestMatch: { user: typeof users[0]; score: number } | null = null;
+  
+  for (const user of users) {
+    const userName = normalizePuskesmasName(user.nama);
+    const userUsername = user.username.toLowerCase().replace(/\s+/g, '');
+    
+    // Calculate similarity scores
+    const nameScore = calculateSimilarity(aliasedName, userName);
+    const usernameScore = calculateSimilarity(aliasedName, userUsername);
+    const maxScore = Math.max(nameScore, usernameScore);
+    
+    if (maxScore > 0.85 && (!bestMatch || maxScore > bestMatch.score)) {
+      bestMatch = { user, score: maxScore };
+    }
+  }
 
-  return match?.id || null;
+  if (bestMatch) {
+    // Log low-confidence matches for debugging
+    if (bestMatch.score < 0.95) {
+      console.log(`🔍 Fuzzy match: "${namaPuskesmas}" → "${bestMatch.user.nama}" (score: ${bestMatch.score.toFixed(2)})`);
+    }
+    return bestMatch.user.id;
+  }
+  
+  console.log(`❌ No match for: "${namaPuskesmas}" (normalized: "${normalizedName}")`);
+  return null;
 }

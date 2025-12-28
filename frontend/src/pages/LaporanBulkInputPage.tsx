@@ -410,7 +410,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       },
     },
     {
-      title: 'Target Angkas (Rp)',
+      title: 'Realisasi Angkas (Rp)',
       key: 'angkas',
       width: 150,
       sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
@@ -422,6 +422,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
           }
           min={0}
+          max={record.target_angkas || undefined} // Cannot exceed target_angkas
           step={1}
           controls={false}
           formatter={(value) => {

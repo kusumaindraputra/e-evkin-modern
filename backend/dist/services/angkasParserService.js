@@ -17,8 +17,10 @@ exports.findPuskesmasUser = findPuskesmasUser;
 // Use legacy build for Node.js compatibility
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 // Pattern to match Puskesmas header line
-// Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga"
-const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(Puskesmas\s+.+)$/i;
+// Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga   5.975.916.762,00..."
+// Example: "1.02.0.00.0.00.01.0050   Labkesda   ..." (no "Puskesmas" prefix)
+// We capture the code and name (text before numbers)
+const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(?:(Puskesmas|Puskemas)\s+)?([A-Za-z][A-Za-z\s]*?)(?:\s+\d|$)/i;
 // Pattern to match sub-kegiatan lines (budget items)
 // Example: "1.02.02.2.02.0033   Operasional Pelayanan Puskesmas   476.605.756,00   476.605.756,00   ..."
 const KEGIATAN_PATTERN = /^(1\.\d+\.\d+\.\d+\.\d+\.\d+)\s+(.+?)(\d{1,3}(?:\.\d{3})*(?:,\d{2})?(?:\s+|$))/;
@@ -27,7 +29,9 @@ const KEGIATAN_PATTERN = /^(1\.\d+\.\d+\.\d+\.\d+\.\d+)\s+(.+?)(\d{1,3}(?:\.\d{3
 // Example: "4.2   Transfer"
 const SUMBER_ANGGARAN_PATTERN = /^(\d\.\d)\s+(.+?)(?:\s+\d{1,3}(?:\.\d{3})*(?:,\d{2})?|$)/;
 // Pattern to parse currency values (Indonesian format: 1.234.567,89)
-const CURRENCY_PATTERN = /(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)/g;
+// MUST end with ,XX (decimal) to avoid matching kode rekening like 1.02.01.2.10.0001
+// Also matches 0,00 for zero values
+const CURRENCY_PATTERN = /(\d{1,3}(?:\.\d{3})*,\d{2})/g;
 /**
  * Parse Indonesian currency format to number
  * Example: "476.605.756,00" -> 476605756.00
@@ -41,9 +45,12 @@ function parseCurrency(value) {
 }
 /**
  * Extract all currency values from a line
+ * First removes the kode rekening part, then extracts currency values
  */
 function extractCurrencyValues(line) {
-    const matches = line.match(CURRENCY_PATTERN);
+    // Remove kode rekening at the start (e.g., "1.02.01.2.10.0001")
+    const withoutKode = line.replace(/^[\d.]+\s+/, '');
+    const matches = withoutKode.match(CURRENCY_PATTERN);
     if (!matches)
         return [];
     return matches.map(parseCurrency);
@@ -74,22 +81,28 @@ function cleanText(text) {
 /**
  * Parse a single page's text content
  * Tracks current sumber anggaran from short code headers
+ * Returns ALL puskesmas found on this page (may be multiple)
  */
 function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
     const lines = pageText.split('\n').map(l => l.trim()).filter(l => l);
-    const rows = [];
+    const puskesmasList = [];
     let puskesmas = currentPuskesmas;
     let sumberAnggaran = currentSumberAnggaran;
     const detectedSumberAnggaran = [];
+    const rowsForPuskesmas = new Map();
     for (const line of lines) {
         // Check if this is a Puskesmas header
         const puskesmasMatch = line.match(PUSKESMAS_PATTERN);
         if (puskesmasMatch) {
+            // Group 1: kode, Group 2: "Puskesmas" or "Puskemas" or undefined, Group 3: nama
+            const namaPuskesmas = puskesmasMatch[3].trim();
             puskesmas = {
                 kodePuskesmas: puskesmasMatch[1],
-                namaPuskesmas: puskesmasMatch[2].trim(),
+                namaPuskesmas: puskesmasMatch[2] ? `${puskesmasMatch[2]} ${namaPuskesmas}` : namaPuskesmas,
                 rows: [],
             };
+            puskesmasList.push(puskesmas);
+            rowsForPuskesmas.set(puskesmas.kodePuskesmas, []);
             continue;
         }
         // Check if this is a Sumber Anggaran header (short code like "4.1")
@@ -99,7 +112,6 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
             const nama = sumberMatch[2].trim();
             sumberAnggaran = { kode, nama };
             detectedSumberAnggaran.push({ kode, nama });
-            console.log(`📋 Detected Sumber Anggaran: ${kode} - ${nama}`);
             continue;
         }
         // Check if this is a kegiatan/sub-kegiatan line
@@ -120,7 +132,10 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
                     sumberAnggaranKode: sumberAnggaran?.kode || null,
                     sumberAnggaranNama: sumberAnggaran?.nama || null,
                 };
+                // Add to current puskesmas rows
+                const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
                 rows.push(row);
+                rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
             }
             else if (values.length >= 2) {
                 // Sometimes monthly values may be on next lines, store partial data
@@ -133,11 +148,28 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
                     sumberAnggaranKode: sumberAnggaran?.kode || null,
                     sumberAnggaranNama: sumberAnggaran?.nama || null,
                 };
+                const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
                 rows.push(row);
+                rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
             }
         }
     }
-    return { puskesmas, rows, sumberAnggaran, detectedSumberAnggaran };
+    // Assign rows to puskesmas
+    for (const p of puskesmasList) {
+        p.rows = rowsForPuskesmas.get(p.kodePuskesmas) || [];
+    }
+    // Collect all rows for backward compatibility
+    const allRows = [];
+    for (const rows of rowsForPuskesmas.values()) {
+        allRows.push(...rows);
+    }
+    return {
+        puskesmasList,
+        lastPuskesmas: puskesmas,
+        rows: allRows,
+        sumberAnggaran,
+        detectedSumberAnggaran,
+    };
 }
 /**
  * Main function to parse Angkas PDF buffer
@@ -189,7 +221,7 @@ async function parseAngkasPdf(pdfBuffer) {
         const pageText = lines.map(line => line.join(' ')).join('\n');
         fullText += pageText + '\n';
         // Parse this page
-        const { puskesmas, rows, sumberAnggaran, detectedSumberAnggaran } = parsePage(pageText, currentPuskesmas, currentSumberAnggaran);
+        const { puskesmasList: pagePuskesmasList, lastPuskesmas, rows, sumberAnggaran, detectedSumberAnggaran } = parsePage(pageText, currentPuskesmas, currentSumberAnggaran);
         // Track detected sumber anggaran
         for (const sa of detectedSumberAnggaran) {
             allDetectedSumberAnggaran.set(sa.kode, sa);
@@ -198,18 +230,20 @@ async function parseAngkasPdf(pdfBuffer) {
         if (sumberAnggaran) {
             currentSumberAnggaran = sumberAnggaran;
         }
-        if (puskesmas && puskesmas !== currentPuskesmas) {
-            currentPuskesmas = puskesmas;
+        // Add all puskesmas found on this page to the map
+        for (const puskesmas of pagePuskesmasList) {
             if (!puskesmasMap.has(puskesmas.kodePuskesmas)) {
                 puskesmasMap.set(puskesmas.kodePuskesmas, puskesmas);
             }
-        }
-        // Add rows to current puskesmas
-        if (currentPuskesmas && rows.length > 0) {
-            const existing = puskesmasMap.get(currentPuskesmas.kodePuskesmas);
-            if (existing) {
-                existing.rows.push(...rows);
+            else {
+                // Merge rows if puskesmas already exists
+                const existing = puskesmasMap.get(puskesmas.kodePuskesmas);
+                existing.rows.push(...puskesmas.rows);
             }
+        }
+        // Update current puskesmas for continuity to next page
+        if (lastPuskesmas) {
+            currentPuskesmas = lastPuskesmas;
         }
     }
     // Extract year from full text
@@ -245,7 +279,8 @@ async function parseAngkasPdfSimple(pdfBuffer) {
     const puskesmasMatches = cleanedText.matchAll(new RegExp(PUSKESMAS_PATTERN, 'gi'));
     for (const match of puskesmasMatches) {
         const kodePuskesmas = match[1];
-        const namaPuskesmas = match[2].trim();
+        // Group 2: "Puskesmas" or "Puskemas" or undefined, Group 3: nama
+        const namaPuskesmas = match[2] ? `${match[2]} ${match[3]}`.trim() : match[3].trim();
         if (!puskesmasMap.has(kodePuskesmas)) {
             puskesmasMap.set(kodePuskesmas, {
                 kodePuskesmas,
@@ -288,19 +323,85 @@ function findBestMatch(uraian, subKegiatanList) {
     return bestMatch?.id || null;
 }
 /**
- * Match puskesmas name to user
+ * Normalize puskesmas name by removing "puskesmas"/"puskemas", numbers, and extra spaces
+ * Example: "Puskesmas Lebak Wangi   123,456" -> "lebakwangi"
+ * Example: "Puskemas Cibeuteung Udik" -> "cibeuteungudik"
+ */
+function normalizePuskesmasName(name) {
+    return name
+        .toLowerCase()
+        .replace(/puskesmas|puskemas/gi, '') // Remove "puskesmas" or "puskemas" (typo)
+        .replace(/[\d.,]+/g, '') // Remove numbers, dots, commas (budget values)
+        .replace(/\s+/g, '') // Remove ALL spaces (handles "Lebak Wangi" vs "Lebakwangi")
+        .trim();
+}
+/**
+ * Calculate similarity between two strings (Levenshtein distance based)
+ */
+function calculateSimilarity(str1, str2) {
+    const len1 = str1.length;
+    const len2 = str2.length;
+    if (len1 === 0)
+        return len2 === 0 ? 1 : 0;
+    if (len2 === 0)
+        return 0;
+    // Quick exact match
+    if (str1 === str2)
+        return 1;
+    // Quick contains check
+    if (str1.includes(str2) || str2.includes(str1))
+        return 0.9;
+    // Levenshtein distance
+    const matrix = [];
+    for (let i = 0; i <= len1; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= len2; j++) {
+        matrix[0][j] = j;
+    }
+    for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+            const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+            matrix[i][j] = Math.min(matrix[i - 1][j] + 1, // deletion
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j - 1] + cost // substitution
+            );
+        }
+    }
+    const distance = matrix[len1][len2];
+    const maxLen = Math.max(len1, len2);
+    return 1 - (distance / maxLen);
+}
+/**
+ * Known aliases for puskesmas names (typos, variations)
+ * Key = normalized PDF name, Value = normalized DB name
+ */
+const PUSKESMAS_ALIASES = {
+    // Labkesda doesn't have "Puskesmas" prefix in PDF
+    'labkesda': 'labkesda',
+};
+/**
+ * Match puskesmas name to user with fuzzy matching
  */
 function findPuskesmasUser(namaPuskesmas, users) {
-    const normalizedName = namaPuskesmas.toLowerCase().replace('puskesmas', '').trim();
-    // Try to find matching user by nama or username
-    const match = users.find(user => {
-        const userName = user.nama.toLowerCase().replace('puskesmas', '').trim();
-        const userUsername = user.username.toLowerCase();
-        return userName.includes(normalizedName) ||
-            normalizedName.includes(userName) ||
-            userUsername.includes(normalizedName) ||
-            normalizedName.includes(userUsername);
-    });
-    return match?.id || null;
+    const normalizedName = normalizePuskesmasName(namaPuskesmas);
+    // Check alias table first
+    const aliasedName = PUSKESMAS_ALIASES[normalizedName] || normalizedName;
+    let bestMatch = null;
+    for (const user of users) {
+        const userName = normalizePuskesmasName(user.nama);
+        const userUsername = user.username.toLowerCase().replace(/\s+/g, '');
+        // Calculate similarity scores
+        const nameScore = calculateSimilarity(aliasedName, userName);
+        const usernameScore = calculateSimilarity(aliasedName, userUsername);
+        const maxScore = Math.max(nameScore, usernameScore);
+        if (maxScore > 0.85 && (!bestMatch || maxScore > bestMatch.score)) {
+            bestMatch = { user, score: maxScore };
+        }
+    }
+    if (bestMatch) {
+        return bestMatch.user.id;
+    }
+    return null;
 }
 //# sourceMappingURL=angkasParserService.js.map

@@ -67,7 +67,6 @@ async function findOrCreateSumberAnggaran(kode, nama) {
     // If not found and we have a name, create new sumber anggaran
     if (nama) {
         const newSumber = await models_1.SumberAnggaran.create({ sumber: nama });
-        console.log(`✅ Created new sumber anggaran: ${nama}`);
         return { id: newSumber.id_sumber, nama: newSumber.sumber };
     }
     return null;
@@ -89,8 +88,6 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         // Parse PDF
         const parsed = await (0, angkasParserService_1.parseAngkasPdf)(req.file.buffer);
         const tahun = tahunOverride ? parseInt(tahunOverride) : parsed.tahun;
-        console.log(`📄 Parsed PDF: ${parsed.puskesmasList.length} puskesmas found`);
-        console.log(`📋 Detected sumber anggaran: ${parsed.detectedSumberAnggaran.map(s => `${s.kode} - ${s.nama}`).join(', ')}`);
         // Get all puskesmas users
         const puskesmasUsers = await models_1.User.findAll({
             where: { role: 'puskesmas' },
@@ -229,11 +226,14 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     }
                     catch (error) {
                         result.failed++;
+                        // Log detailed error for debugging
+                        const errorDetails = error.errors ? error.errors.map((e) => `${e.path}: ${e.message}`).join(', ') : error.message;
+                        console.error(`❌ Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
                         result.errors.push({
                             puskesmas: puskesmasData.namaPuskesmas,
                             kodeRekening: row.kodeRekening,
                             uraian: row.uraian,
-                            error: error.message,
+                            error: errorDetails,
                         });
                     }
                 }
@@ -322,26 +322,36 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             where: angkasWhere,
             order: [['created_at', 'DESC']],
         });
-        // Get latest angkas per combination (user_id + id_sub_kegiatan + id_sumber_anggaran + bulan)
+        // Get latest angkas per combination (user_id + id_sub_kegiatan + bulan)
+        // NOTE: We ignore id_sumber_anggaran because PDF angkas uses different sumber than targets
         const latestAngkas = new Map();
         for (const angkas of allAngkas) {
-            const key = `${angkas.user_id}-${angkas.id_sub_kegiatan}-${angkas.id_sumber_anggaran}-${angkas.bulan}`;
+            // Use getDataValue to get actual values (avoid Sequelize getter issues with public class fields)
+            const userId = angkas.getDataValue('user_id');
+            const subKegId = angkas.getDataValue('id_sub_kegiatan');
+            const bulan = angkas.getDataValue('bulan');
+            // Key without id_sumber_anggaran - match by user + subkegiatan + bulan only
+            const key = `${userId}-${subKegId}-${bulan}`;
             if (!latestAngkas.has(key)) {
                 latestAngkas.set(key, angkas);
             }
         }
         // Step 3: Build result - all targets with angkas values (or zeros)
+        // NOTE: Angkas matching is based on user_id + id_sub_kegiatan only (NOT id_sumber_anggaran)
+        // This is because PDF angkas may have different sumber_anggaran than targets
         const result = [];
         for (const target of latestTargets.values()) {
             const bulanan = Array(12).fill(0);
             let total = 0;
             let hasAngkas = false;
             // Fill in angkas values for each month
+            // Match by user_id + id_sub_kegiatan + bulan (ignore id_sumber_anggaran)
             for (let bulan = 1; bulan <= 12; bulan++) {
-                const angkasKey = `${target.user_id}-${target.id_sub_kegiatan}-${target.id_sumber_anggaran}-${bulan}`;
-                const angkas = latestAngkas.get(angkasKey);
-                if (angkas) {
-                    const nilai = Number(angkas.nilai) || 0;
+                // Direct lookup using the same key format
+                const key = `${target.user_id}-${target.id_sub_kegiatan}-${bulan}`;
+                const foundAngkas = latestAngkas.get(key);
+                if (foundAngkas) {
+                    const nilai = Number(foundAngkas.getDataValue('nilai')) || 0;
                     bulanan[bulan - 1] = nilai;
                     total += nilai;
                     hasAngkas = true;
@@ -385,10 +395,12 @@ router.get('/', auth_1.authenticate, async (req, res) => {
  * GET /api/angkas/by-sub-kegiatan
  * Get cumulative angkas grouped by sub kegiatan for a specific user/puskesmas
  * Always returns the latest record for each combination (history support)
+ * NOTE: Groups by id_sub_kegiatan ONLY (not id_sumber_anggaran) because PDF angkas
+ * may have different sumber_anggaran than what targets use
  */
 router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
     try {
-        const { tahun, bulan, user_id, id_sumber_anggaran } = req.query;
+        const { tahun, bulan, user_id } = req.query;
         const currentUser = req.user;
         const targetTahun = tahun ? parseInt(tahun) : new Date().getFullYear();
         const targetBulan = bulan ? parseInt(bulan) : new Date().getMonth() + 1;
@@ -410,9 +422,6 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
             bulan: { [sequelize_1.Op.lte]: targetBulan },
             id_sub_kegiatan: { [sequelize_1.Op.ne]: null }, // Only records with matched sub_kegiatan
         };
-        if (id_sumber_anggaran) {
-            where.id_sumber_anggaran = parseInt(id_sumber_anggaran);
-        }
         // Get all data first, ordered by created_at DESC to get latest first
         const allData = await models_1.AnggaranKas.findAll({
             where,
@@ -422,10 +431,14 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
             ],
             order: [['created_at', 'DESC']],
         });
-        // Filter to get only the latest record for each combination (kode_rekening, id_sumber_anggaran, bulan)
+        // Filter to get only the latest record for each combination (kode_rekening, bulan)
+        // NOTE: Ignoring id_sumber_anggaran for history dedup because PDF may have different sumber
         const latestMap = new Map();
         for (const record of allData) {
-            const key = `${record.kode_rekening}-${record.id_sumber_anggaran}-${record.bulan}`;
+            // Use getDataValue to avoid Sequelize public class field issue
+            const kodeRekening = record.getDataValue('kode_rekening');
+            const bulan = record.getDataValue('bulan');
+            const key = `${kodeRekening}-${bulan}`;
             // Due to ordering by created_at DESC, first occurrence is latest
             if (!latestMap.has(key)) {
                 latestMap.set(key, record);
@@ -433,20 +446,21 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
         }
         // Use only latest records for grouping
         const data = Array.from(latestMap.values());
-        // Group by sub_kegiatan + sumber_anggaran and sum
+        // Group by sub_kegiatan ONLY (NOT id_sumber_anggaran) and sum
+        // This allows angkas to match with any target regardless of sumber_anggaran
         const grouped = new Map();
         for (const record of data) {
-            const key = `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`;
-            if (!grouped.has(key)) {
-                grouped.set(key, {
-                    id_sub_kegiatan: record.id_sub_kegiatan,
+            // Use getDataValue to avoid Sequelize public class field issue
+            const subKegiatanId = record.getDataValue('id_sub_kegiatan');
+            const nilai = Number(record.getDataValue('nilai')) || 0;
+            if (!grouped.has(subKegiatanId)) {
+                grouped.set(subKegiatanId, {
+                    id_sub_kegiatan: subKegiatanId,
                     subKegiatan: record.subKegiatan,
-                    id_sumber_anggaran: record.id_sumber_anggaran,
-                    sumberAnggaran: record.sumberAnggaran,
                     target_angkas: 0,
                 });
             }
-            grouped.get(key).target_angkas += Number(record.nilai) || 0;
+            grouped.get(subKegiatanId).target_angkas += nilai;
         }
         res.json({
             tahun: targetTahun,
@@ -572,6 +586,193 @@ router.delete('/bulk', auth_1.authenticate, authorize_1.authorizeAdmin, async (r
     catch (error) {
         console.error('Error deleting angkas:', error);
         res.status(500).json({ error: 'Failed to delete records', details: error.message });
+    }
+});
+/**
+ * GET /api/angkas/history
+ * Get history of angkas values for a specific combination (user + sub_kegiatan + bulan)
+ * Shows all historical values for tracking changes over time
+ */
+router.get('/history', auth_1.authenticate, async (req, res) => {
+    try {
+        const { user_id, id_sub_kegiatan, bulan, tahun } = req.query;
+        const currentUser = req.user;
+        // Admin can view any user's history, puskesmas can only view their own
+        let targetUserId;
+        if (currentUser.role === 'puskesmas') {
+            targetUserId = currentUser.id;
+        }
+        else if (user_id) {
+            targetUserId = user_id;
+        }
+        else {
+            res.status(400).json({ error: 'user_id is required for admin' });
+            return;
+        }
+        if (!id_sub_kegiatan) {
+            res.status(400).json({ error: 'id_sub_kegiatan is required' });
+            return;
+        }
+        if (!bulan) {
+            res.status(400).json({ error: 'bulan is required' });
+            return;
+        }
+        const targetTahun = tahun ? parseInt(tahun) : new Date().getFullYear();
+        const targetBulan = parseInt(bulan);
+        const targetSubKegiatan = parseInt(id_sub_kegiatan);
+        // Get all historical records for this combination
+        const history = await models_1.AnggaranKas.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: targetSubKegiatan,
+                bulan: targetBulan,
+                tahun: targetTahun,
+            },
+            include: [
+                { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
+                { model: models_1.SubKegiatan, as: 'subKegiatan', attributes: ['id_sub_kegiatan', 'kegiatan', 'kode_sub'] },
+                { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+        res.json({
+            user_id: targetUserId,
+            id_sub_kegiatan: targetSubKegiatan,
+            bulan: targetBulan,
+            tahun: targetTahun,
+            count: history.length,
+            data: history.map((record) => ({
+                id: record.id,
+                kode_rekening: record.kode_rekening,
+                uraian: record.uraian,
+                nilai: Number(record.nilai),
+                sumberAnggaran: record.sumberAnggaran,
+                subKegiatan: record.subKegiatan,
+                created_by: record.created_by,
+                creator: record.creator,
+                created_at: record.created_at,
+            })),
+        });
+    }
+    catch (error) {
+        console.error('Error fetching angkas history:', error);
+        res.status(500).json({ error: 'Failed to fetch history', details: error.message });
+    }
+});
+/**
+ * GET /api/angkas/history/all
+ * Get comprehensive history of angkas for a specific user + sub_kegiatan (all months)
+ * This shows the complete upload history connected with target data
+ */
+router.get('/history/all', auth_1.authenticate, async (req, res) => {
+    try {
+        const { user_id, id_sub_kegiatan, tahun } = req.query;
+        const currentUser = req.user;
+        // Admin can view any user's history, puskesmas can only view their own
+        let targetUserId;
+        if (currentUser.role === 'puskesmas') {
+            targetUserId = currentUser.id;
+        }
+        else if (user_id) {
+            targetUserId = user_id;
+        }
+        else {
+            res.status(400).json({ error: 'user_id is required for admin' });
+            return;
+        }
+        if (!id_sub_kegiatan) {
+            res.status(400).json({ error: 'id_sub_kegiatan is required' });
+            return;
+        }
+        const targetTahun = tahun ? parseInt(tahun) : new Date().getFullYear();
+        const targetSubKegiatan = parseInt(id_sub_kegiatan);
+        // Get all historical angkas records for this user + sub_kegiatan
+        const angkasHistory = await models_1.AnggaranKas.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: targetSubKegiatan,
+                tahun: targetTahun,
+            },
+            include: [
+                { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
+                { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+        // Get Target Anggaran (target_rp) - where bulan is NULL
+        const targetAnggaran = await models_1.SubKegiatanTarget.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: targetSubKegiatan,
+                tahun: targetTahun,
+                bulan: null,
+            },
+            include: [
+                { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
+                { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+        // Get Target Kinerja (target_k) - where bulan is NOT NULL (monthly targets)
+        const targetKinerja = await models_1.SubKegiatanTarget.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: targetSubKegiatan,
+                tahun: targetTahun,
+                bulan: { [sequelize_1.Op.not]: null },
+            },
+            include: [
+                { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
+                { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
+                { model: models_1.Satuan, as: 'satuan', attributes: ['id_satuan', 'satuan'] },
+            ],
+            order: [['created_at', 'DESC']],
+        });
+        // Group angkas by bulan for easier display
+        const angkasByBulan = new Map();
+        for (const record of angkasHistory) {
+            const bulan = record.bulan;
+            if (!angkasByBulan.has(bulan)) {
+                angkasByBulan.set(bulan, []);
+            }
+            angkasByBulan.get(bulan).push({
+                id: record.id,
+                bulan: record.bulan,
+                nilai: Number(record.nilai),
+                creator: record.creator,
+                created_at: record.created_at,
+            });
+        }
+        // Convert Map to array format for frontend
+        const angkasHistoryArray = Array.from(angkasByBulan.entries())
+            .sort((a, b) => a[0] - b[0])
+            .map(([bulan, values]) => ({
+            bulan,
+            values,
+        }));
+        res.json({
+            success: true,
+            data: {
+                angkasHistory: angkasHistoryArray,
+                targetAnggaran: targetAnggaran.map((t) => ({
+                    id: t.id,
+                    target_rp: Number(t.target_rp),
+                    creator: t.creator,
+                    created_at: t.created_at,
+                })),
+                targetKinerja: targetKinerja.map((t) => ({
+                    id: t.id,
+                    target_k: t.target_k,
+                    satuan: t.satuan?.satuan || null,
+                    creator: t.creator,
+                    created_at: t.created_at,
+                })),
+            },
+        });
+    }
+    catch (error) {
+        console.error('Error fetching comprehensive angkas history:', error);
+        res.status(500).json({ error: 'Failed to fetch history', details: error.message });
     }
 });
 exports.default = router;

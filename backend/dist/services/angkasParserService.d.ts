@@ -47,7 +47,7 @@ export declare function findBestMatch(uraian: string, subKegiatanList: Array<{
     nama: string;
 }>): number | null;
 /**
- * Match puskesmas name to user
+ * Match puskesmas name to user with fuzzy matching
  */
 export declare function findPuskesmasUser(namaPuskesmas: string, users: Array<{
     id: string;

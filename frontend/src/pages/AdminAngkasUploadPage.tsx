@@ -18,8 +18,9 @@ import {
   InputNumber,
   Alert,
   Statistic,
+  Timeline,
 } from 'antd';
-import { UploadOutlined, LoadingOutlined, DeleteOutlined, LinkOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { UploadOutlined, LoadingOutlined, DeleteOutlined, LinkOutlined, InfoCircleOutlined, HistoryOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
@@ -77,6 +78,46 @@ interface SubKegiatan {
   label: string;
 }
 
+interface HistoryRecord {
+  id: number;
+  bulan: number;
+  nilai: number;
+  created_at: string;
+  creator: {
+    id: number;
+    username: string;
+    nama: string;
+  };
+}
+
+interface HistoryAllResponse {
+  angkasHistory: {
+    bulan: number;
+    values: HistoryRecord[];
+  }[];
+  targetAnggaran: {
+    id: number;
+    target_rp: number;
+    created_at: string;
+    creator: {
+      id: number;
+      username: string;
+      nama: string;
+    };
+  }[];
+  targetKinerja: {
+    id: number;
+    target_k: number;
+    satuan: string;
+    created_at: string;
+    creator: {
+      id: number;
+      username: string;
+      nama: string;
+    };
+  }[];
+}
+
 const AdminAngkasUploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuthStore();
@@ -106,6 +147,12 @@ const AdminAngkasUploadPage: React.FC = () => {
   const [selectedUnmatched, setSelectedUnmatched] = useState<UnmatchedRecord | null>(null);
   const [selectedSubKegiatan, setSelectedSubKegiatan] = useState<number | undefined>();
 
+  // History modal
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [selectedAngkasRecord, setSelectedAngkasRecord] = useState<AngkasRecord | null>(null);
+  const [historyAllData, setHistoryAllData] = useState<HistoryAllResponse | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -113,6 +160,23 @@ const AdminAngkasUploadPage: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    try {
+      if (!dateString) return 'No Date';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Format Error';
+    }
   };
 
   const bulanNames = [
@@ -391,6 +455,38 @@ const AdminAngkasUploadPage: React.FC = () => {
     }
   };
 
+  const handleViewHistory = async (record: AngkasRecord) => {
+    setSelectedAngkasRecord(record);
+    setHistoryModalVisible(true);
+    setHistoryLoading(true);
+    setHistoryAllData(null);
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/angkas/history/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          user_id: record.user_id,
+          id_sub_kegiatan: record.id_sub_kegiatan,
+          tahun: filters.tahun,
+        },
+      });
+
+      if (response.data.success) {
+        setHistoryAllData(response.data.data);
+      }
+    } catch (error: any) {
+      console.error('Error loading history:', error);
+      if (error.response?.status === 401) {
+        message.error('Session expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+      message.error('Gagal memuat history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Generate monthly columns
   const monthlyColumns = bulanNames.map((name, idx) => ({
     title: name.substring(0, 3), // Short name: Jan, Feb, etc.
@@ -467,6 +563,21 @@ const AdminAngkasUploadPage: React.FC = () => {
         </strong>
       ),
       align: 'right' as const,
+    },
+    {
+      title: 'Aksi',
+      key: 'action',
+      width: 90,
+      fixed: 'right' as const,
+      render: (_: any, record: AngkasRecord) => (
+        <Button
+          size="small"
+          icon={<HistoryOutlined />}
+          onClick={() => handleViewHistory(record)}
+        >
+          History
+        </Button>
+      ),
     },
   ];
 
@@ -640,7 +751,7 @@ const AdminAngkasUploadPage: React.FC = () => {
                   })}
                   rowKey={(record) => `${record.user_id}-${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
                   loading={loading}
-                  scroll={{ x: 2200 }}
+                  scroll={{ x: 2400 }}
                   pagination={{
                     showSizeChanger: true,
                     showTotal: (total) => `Total ${total} data`,
@@ -793,6 +904,155 @@ const AdminAngkasUploadPage: React.FC = () => {
               />
             </div>
           </Space>
+        )}
+      </Modal>
+
+      {/* History Modal */}
+      <Modal
+        title="History Angkas & Target"
+        open={historyModalVisible}
+        onCancel={() => {
+          setHistoryModalVisible(false);
+          setSelectedAngkasRecord(null);
+          setHistoryAllData(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => setHistoryModalVisible(false)}>
+            Tutup
+          </Button>,
+        ]}
+        width={900}
+      >
+        {selectedAngkasRecord && (
+          <div style={{ marginBottom: 16 }}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <p><strong>Puskesmas:</strong> {selectedAngkasRecord.puskesmas?.nama || 'N/A'}</p>
+                <p><strong>Sub Kegiatan:</strong> {selectedAngkasRecord.subKegiatan?.kode_sub || 'N/A'} - {selectedAngkasRecord.subKegiatan?.kegiatan || 'N/A'}</p>
+              </Col>
+              <Col span={12}>
+                <p><strong>Sumber Anggaran:</strong> {selectedAngkasRecord.sumberAnggaran?.sumber || 'N/A'}</p>
+                <p><strong>Tahun:</strong> {filters.tahun}</p>
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        {historyLoading ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <LoadingOutlined style={{ fontSize: 32 }} />
+            <p>Memuat history...</p>
+          </div>
+        ) : historyAllData ? (
+          <Tabs
+            defaultActiveKey="angkas"
+            items={[
+              {
+                key: 'angkas',
+                label: `Angkas Bulanan`,
+                children: (
+                  <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                    {historyAllData.angkasHistory.length > 0 ? (
+                      historyAllData.angkasHistory.map((bulanData) => (
+                        <Card
+                          key={bulanData.bulan}
+                          size="small"
+                          title={<Tag color="blue">{bulanNames[bulanData.bulan - 1]}</Tag>}
+                          style={{ marginBottom: 12 }}
+                        >
+                          <Timeline
+                            mode="left"
+                            items={bulanData.values.map((record) => ({
+                              color: 'green',
+                              children: (
+                                <div>
+                                  <div style={{ fontWeight: 'bold' }}>
+                                    {formatDate(record.created_at)}
+                                  </div>
+                                  <div style={{ marginTop: 4 }}>
+                                    Nilai: <strong>{formatCurrency(record.nilai)}</strong>
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#888' }}>
+                                    Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
+                                  </div>
+                                </div>
+                              ),
+                            }))}
+                          />
+                        </Card>
+                      ))
+                    ) : (
+                      <Alert message="Belum ada history angkas untuk kombinasi ini" type="info" showIcon />
+                    )}
+                  </div>
+                ),
+              },
+              {
+                key: 'target_anggaran',
+                label: `Target Anggaran (${historyAllData.targetAnggaran.length})`,
+                children: (
+                  <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                    {historyAllData.targetAnggaran.length > 0 ? (
+                      <Timeline
+                        mode="left"
+                        items={historyAllData.targetAnggaran.map((record) => ({
+                          color: 'blue',
+                          children: (
+                            <div>
+                              <div style={{ fontWeight: 'bold' }}>
+                                {formatDate(record.created_at)}
+                              </div>
+                              <div style={{ marginTop: 4 }}>
+                                Target Rp: <strong>{formatCurrency(record.target_rp)}</strong>
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#888' }}>
+                                Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
+                              </div>
+                            </div>
+                          ),
+                        }))}
+                      />
+                    ) : (
+                      <Alert message="Belum ada history target anggaran" type="info" showIcon />
+                    )}
+                  </div>
+                ),
+              },
+              {
+                key: 'target_kinerja',
+                label: `Target Kinerja (${historyAllData.targetKinerja.length})`,
+                children: (
+                  <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                    {historyAllData.targetKinerja.length > 0 ? (
+                      <Timeline
+                        mode="left"
+                        items={historyAllData.targetKinerja.map((record) => ({
+                          color: 'orange',
+                          children: (
+                            <div>
+                              <div style={{ fontWeight: 'bold' }}>
+                                {formatDate(record.created_at)}
+                              </div>
+                              <div style={{ marginTop: 4 }}>
+                                Target K: <strong>{record.target_k}</strong> {record.satuan || '-'}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#888' }}>
+                                Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
+                              </div>
+                            </div>
+                          ),
+                        }))}
+                      />
+                    ) : (
+                      <Alert message="Belum ada history target kinerja" type="info" showIcon />
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <Alert message="Tidak ada data history" type="warning" showIcon />
         )}
       </Modal>
     </div>

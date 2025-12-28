@@ -36,8 +36,9 @@ export interface ParsedAngkas {
 
 // Pattern to match Puskesmas header line
 // Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga   5.975.916.762,00..."
-// We capture only the name part (text before numbers)
-const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(Puskesmas\s+[A-Za-z\s]+)/i;
+// Example: "1.02.0.00.0.00.01.0050   Labkesda   ..." (no "Puskesmas" prefix)
+// We capture the code and name (text before numbers)
+const PUSKESMAS_PATTERN = /^(1\.02\.0\.00\.0\.00\.\d+\.\d+)\s+(?:(Puskesmas|Puskemas)\s+)?([A-Za-z][A-Za-z\s]*?)(?:\s+\d|$)/i;
 
 // Pattern to match sub-kegiatan lines (budget items)
 // Example: "1.02.02.2.02.0033   Operasional Pelayanan Puskesmas   476.605.756,00   476.605.756,00   ..."
@@ -104,32 +105,39 @@ function cleanText(text: string): string {
 /**
  * Parse a single page's text content
  * Tracks current sumber anggaran from short code headers
+ * Returns ALL puskesmas found on this page (may be multiple)
  */
 function parsePage(
   pageText: string, 
   currentPuskesmas: PuskesmasAngkas | null,
   currentSumberAnggaran: { kode: string; nama: string } | null
 ): {
-  puskesmas: PuskesmasAngkas | null;
+  puskesmasList: PuskesmasAngkas[];
+  lastPuskesmas: PuskesmasAngkas | null;
   rows: AngkasRow[];
   sumberAnggaran: { kode: string; nama: string } | null;
   detectedSumberAnggaran: Array<{ kode: string; nama: string }>;
 } {
   const lines = pageText.split('\n').map(l => l.trim()).filter(l => l);
-  const rows: AngkasRow[] = [];
+  const puskesmasList: PuskesmasAngkas[] = [];
   let puskesmas = currentPuskesmas;
   let sumberAnggaran = currentSumberAnggaran;
   const detectedSumberAnggaran: Array<{ kode: string; nama: string }> = [];
+  const rowsForPuskesmas = new Map<string, AngkasRow[]>();
 
   for (const line of lines) {
     // Check if this is a Puskesmas header
     const puskesmasMatch = line.match(PUSKESMAS_PATTERN);
     if (puskesmasMatch) {
+      // Group 1: kode, Group 2: "Puskesmas" or "Puskemas" or undefined, Group 3: nama
+      const namaPuskesmas = puskesmasMatch[3].trim();
       puskesmas = {
         kodePuskesmas: puskesmasMatch[1],
-        namaPuskesmas: puskesmasMatch[2].trim(),
+        namaPuskesmas: puskesmasMatch[2] ? `${puskesmasMatch[2]} ${namaPuskesmas}` : namaPuskesmas,
         rows: [],
       };
+      puskesmasList.push(puskesmas);
+      rowsForPuskesmas.set(puskesmas.kodePuskesmas, []);
       continue;
     }
 
@@ -140,7 +148,6 @@ function parsePage(
       const nama = sumberMatch[2].trim();
       sumberAnggaran = { kode, nama };
       detectedSumberAnggaran.push({ kode, nama });
-      console.log(`📋 Detected Sumber Anggaran: ${kode} - ${nama}`);
       continue;
     }
 
@@ -163,7 +170,10 @@ function parsePage(
           sumberAnggaranKode: sumberAnggaran?.kode || null,
           sumberAnggaranNama: sumberAnggaran?.nama || null,
         };
+        // Add to current puskesmas rows
+        const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
         rows.push(row);
+        rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
       } else if (values.length >= 2) {
         // Sometimes monthly values may be on next lines, store partial data
         const row: AngkasRow = {
@@ -175,12 +185,31 @@ function parsePage(
           sumberAnggaranKode: sumberAnggaran?.kode || null,
           sumberAnggaranNama: sumberAnggaran?.nama || null,
         };
+        const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
         rows.push(row);
+        rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
       }
     }
   }
 
-  return { puskesmas, rows, sumberAnggaran, detectedSumberAnggaran };
+  // Assign rows to puskesmas
+  for (const p of puskesmasList) {
+    p.rows = rowsForPuskesmas.get(p.kodePuskesmas) || [];
+  }
+
+  // Collect all rows for backward compatibility
+  const allRows: AngkasRow[] = [];
+  for (const rows of rowsForPuskesmas.values()) {
+    allRows.push(...rows);
+  }
+
+  return {
+    puskesmasList,
+    lastPuskesmas: puskesmas,
+    rows: allRows,
+    sumberAnggaran,
+    detectedSumberAnggaran,
+  };
 }
 
 /**
@@ -239,7 +268,7 @@ export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
     fullText += pageText + '\n';
 
     // Parse this page
-    const { puskesmas, rows, sumberAnggaran, detectedSumberAnggaran } = parsePage(
+    const { puskesmasList: pagePuskesmasList, lastPuskesmas, rows, sumberAnggaran, detectedSumberAnggaran } = parsePage(
       pageText, 
       currentPuskesmas,
       currentSumberAnggaran
@@ -255,19 +284,20 @@ export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
       currentSumberAnggaran = sumberAnggaran;
     }
     
-    if (puskesmas && puskesmas !== currentPuskesmas) {
-      currentPuskesmas = puskesmas;
+    // Add all puskesmas found on this page to the map
+    for (const puskesmas of pagePuskesmasList) {
       if (!puskesmasMap.has(puskesmas.kodePuskesmas)) {
         puskesmasMap.set(puskesmas.kodePuskesmas, puskesmas);
+      } else {
+        // Merge rows if puskesmas already exists
+        const existing = puskesmasMap.get(puskesmas.kodePuskesmas)!;
+        existing.rows.push(...puskesmas.rows);
       }
     }
-
-    // Add rows to current puskesmas
-    if (currentPuskesmas && rows.length > 0) {
-      const existing = puskesmasMap.get(currentPuskesmas.kodePuskesmas);
-      if (existing) {
-        existing.rows.push(...rows);
-      }
+    
+    // Update current puskesmas for continuity to next page
+    if (lastPuskesmas) {
+      currentPuskesmas = lastPuskesmas;
     }
   }
 
@@ -311,7 +341,8 @@ export async function parseAngkasPdfSimple(pdfBuffer: Buffer): Promise<ParsedAng
 
   for (const match of puskesmasMatches) {
     const kodePuskesmas = match[1];
-    const namaPuskesmas = match[2].trim();
+    // Group 2: "Puskesmas" or "Puskemas" or undefined, Group 3: nama
+    const namaPuskesmas = match[2] ? `${match[2]} ${match[3]}`.trim() : match[3].trim();
 
     if (!puskesmasMap.has(kodePuskesmas)) {
       puskesmasMap.set(kodePuskesmas, {
@@ -368,13 +399,14 @@ export function findBestMatch(uraian: string, subKegiatanList: Array<{ id: numbe
 }
 
 /**
- * Normalize puskesmas name by removing "puskesmas", numbers, and extra spaces
+ * Normalize puskesmas name by removing "puskesmas"/"puskemas", numbers, and extra spaces
  * Example: "Puskesmas Lebak Wangi   123,456" -> "lebakwangi"
+ * Example: "Puskemas Cibeuteung Udik" -> "cibeuteungudik"
  */
 function normalizePuskesmasName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/puskesmas/gi, '')  // Remove "puskesmas"
+    .replace(/puskesmas|puskemas/gi, '')  // Remove "puskesmas" or "puskemas" (typo)
     .replace(/[\d.,]+/g, '')     // Remove numbers, dots, commas (budget values)
     .replace(/\s+/g, '')         // Remove ALL spaces (handles "Lebak Wangi" vs "Lebakwangi")
     .trim();
@@ -427,8 +459,8 @@ function calculateSimilarity(str1: string, str2: string): number {
  * Key = normalized PDF name, Value = normalized DB name
  */
 const PUSKESMAS_ALIASES: Record<string, string> = {
-  // Add known typos/variations here
-  // Example: 'lebakwangii': 'lebakwangi',
+  // Labkesda doesn't have "Puskesmas" prefix in PDF
+  'labkesda': 'labkesda',
 };
 
 /**
@@ -460,13 +492,8 @@ export function findPuskesmasUser(
   }
 
   if (bestMatch) {
-    // Log low-confidence matches for debugging
-    if (bestMatch.score < 0.95) {
-      console.log(`🔍 Fuzzy match: "${namaPuskesmas}" → "${bestMatch.user.nama}" (score: ${bestMatch.score.toFixed(2)})`);
-    }
     return bestMatch.user.id;
   }
   
-  console.log(`❌ No match for: "${namaPuskesmas}" (normalized: "${normalizedName}")`);
   return null;
 }

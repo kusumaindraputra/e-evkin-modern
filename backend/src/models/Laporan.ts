@@ -147,7 +147,7 @@ Laporan.init(
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('menunggu', 'terkirim', 'diverifikasi', 'ditolak'),
+      type: DataTypes.ENUM('menunggu', 'terkirim', 'diverifikasi', 'ditolak', 'tersimpan'),
       allowNull: false,
       defaultValue: 'menunggu',
     },

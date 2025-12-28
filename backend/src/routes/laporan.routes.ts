@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget } from '../models';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas } from '../models';
+import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -242,10 +243,12 @@ router.post('/bulk', authenticate, async (req: Request, res: Response) => {
         });
       }
 
-      if (data.realisasi_rp > target.target_rp) {
+      // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+      // Realisasi anggaran tidak boleh melebihi realisasi angkas yang diinput user
+      if (data.angkas !== undefined && data.realisasi_rp > data.angkas) {
         return res.status(400).json({
           error: 'Validation error',
-          message: `Realisasi anggaran (Rp ${data.realisasi_rp.toLocaleString('id-ID')}) tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`,
+          message: `Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`,
         });
       }
     }
@@ -331,8 +334,9 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
           continue;
         }
 
-        if (data.realisasi_rp !== undefined && data.realisasi_rp > target.target_rp) {
-          results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran melebihi target pagu`);
+        // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+        if (data.angkas !== undefined && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
+          results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
           results.skipped++;
           continue;
         }
@@ -453,6 +457,7 @@ router.put('/:id', authenticate, async (req: Request, res: Response): Promise<vo
     if (realisasi_k !== undefined || realisasi_rp !== undefined) {
       const newRealisasiK = realisasi_k !== undefined ? realisasi_k : laporan.realisasi_k;
       const newRealisasiRp = realisasi_rp !== undefined ? realisasi_rp : laporan.realisasi_rp;
+      const angkasValue = req.body.angkas !== undefined ? req.body.angkas : laporan.angkas;
 
       if (newRealisasiK > target.target_k) {
         res.status(400).json({
@@ -462,10 +467,11 @@ router.put('/:id', authenticate, async (req: Request, res: Response): Promise<vo
         return;
       }
 
-      if (newRealisasiRp > target.target_rp) {
+      // Validasi realisasi_rp terhadap angkas (monthly budget input), bukan target_rp (yearly)
+      if (angkasValue !== undefined && newRealisasiRp > angkasValue) {
         res.status(400).json({
           error: 'Validation error',
-          message: `Realisasi anggaran (Rp ${newRealisasiRp.toLocaleString('id-ID')}) tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`,
+          message: `Realisasi anggaran (Rp ${newRealisasiRp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${angkasValue?.toLocaleString('id-ID')})`,
         });
         return;
       }

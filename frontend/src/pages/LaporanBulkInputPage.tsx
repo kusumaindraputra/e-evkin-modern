@@ -154,12 +154,12 @@ export const LaporanBulkInputPage: React.FC = () => {
         ? laporanRes.data
         : [];
 
-      // Create map of angkas by sub_kegiatan + sumber_anggaran
-      const angkasMap = new Map<string, number>();
+      // Create map of angkas by sub_kegiatan ONLY (not sumber_anggaran)
+      // PDF angkas may have different sumber_anggaran than targets
+      const angkasMap = new Map<number, number>();
       if (angkasRes.data.data) {
         for (const item of angkasRes.data.data) {
-          const key = `${item.id_sub_kegiatan}-${item.id_sumber_anggaran}`;
-          angkasMap.set(key, item.target_angkas || 0);
+          angkasMap.set(item.id_sub_kegiatan, item.target_angkas || 0);
         }
       }
 
@@ -189,9 +189,8 @@ export const LaporanBulkInputPage: React.FC = () => {
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
-          // Get target_angkas from map
-          const angkasKey = `${subKegiatanId}-${idSumberAnggaran}`;
-          const targetAngkas = angkasMap.get(angkasKey) || 0;
+          // Get target_angkas from map (by sub_kegiatan only, not sumber_anggaran)
+          const targetAngkas = angkasMap.get(subKegiatanId) || 0;
 
           mappedRows.push({
             id_sub_kegiatan: subKegiatanId,
@@ -499,6 +498,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
           }
           min={0}
+          max={record.angkas || undefined} // Cannot exceed angkas (realisasi angkas)
           step={1}
           controls={false}
           formatter={(value) => {

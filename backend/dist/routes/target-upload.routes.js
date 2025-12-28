@@ -40,7 +40,6 @@ const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
 const XLSX = __importStar(require("xlsx"));
 const models_1 = require("../models");
-const sequelize_1 = require("sequelize");
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
 const router = (0, express_1.Router)();
@@ -122,89 +121,81 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
             group.totalPagu += row.PAGU || 0;
             group.rows.push(index + 2); // +2 karena Excel row 1 = header, index 0 = row 2
         });
-        console.log(`📊 Found ${grouped.size} unique targets to process from ${data.length} rows`);
+        // OPTIMIZATION: Pre-load all reference data to avoid N+1 queries
+        // Load all puskesmas users once
+        const allUsers = await models_1.User.findAll({
+            where: { role: 'puskesmas' },
+            attributes: ['id', 'nama', 'username'],
+            raw: true,
+        });
+        // Create lookup maps for fast in-memory search
+        const userByUsername = new Map();
+        const userByNama = new Map();
+        const userByNamaLower = new Map();
+        const userByNamaNoSpace = new Map();
+        allUsers.forEach(user => {
+            userByUsername.set(user.username.toLowerCase(), user);
+            userByNama.set(user.nama, user);
+            userByNamaLower.set(user.nama.toLowerCase(), user);
+            userByNamaNoSpace.set(user.nama.toLowerCase().replace(/\s+/g, ''), user);
+        });
+        // Helper function to find puskesmas from pre-loaded data
+        const findPuskesmasUser = (puskesmasName) => {
+            // 1. Special case: Laboratorium Kesehatan Daerah -> labkesda
+            if (puskesmasName === 'Laboratorium Kesehatan Daerah') {
+                return userByUsername.get('labkesda') || null;
+            }
+            // 2. Exact match
+            let user = userByNama.get(puskesmasName);
+            if (user)
+                return user;
+            // 3. Try without "Puskesmas" or "Puskemas" prefix
+            const withoutPrefix = puskesmasName.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
+            user = userByNama.get(withoutPrefix);
+            if (user)
+                return user;
+            // 4. Case-insensitive match
+            user = userByNamaLower.get(withoutPrefix.toLowerCase());
+            if (user)
+                return user;
+            // 5. No-space match
+            const noSpace = withoutPrefix.toLowerCase().replace(/\s+/g, '');
+            user = userByNamaNoSpace.get(noSpace);
+            if (user)
+                return user;
+            // 6. Partial match (last resort)
+            for (const [key, u] of userByNamaLower) {
+                if (key.includes(noSpace) || noSpace.includes(key)) {
+                    return u;
+                }
+            }
+            return null;
+        };
+        // Pre-load sub kegiatan and sumber anggaran for batch lookups
+        const allSubKegiatan = await models_1.SubKegiatan.findAll({
+            attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan', 'id_kegiatan'],
+            raw: true,
+        });
+        const subKegiatanByKode = new Map(allSubKegiatan.map(sk => [sk.kode_sub, sk]));
+        const allSumberAnggaran = await models_1.SumberAnggaran.findAll({
+            attributes: ['id_sumber', 'sumber'],
+            raw: true,
+        });
+        const sumberAnggaranByNama = new Map();
+        const sumberAnggaranByNamaLower = new Map();
+        allSumberAnggaran.forEach(sa => {
+            sumberAnggaranByNama.set(sa.sumber, sa);
+            sumberAnggaranByNamaLower.set(sa.sumber.toLowerCase(), sa);
+        });
         // Process each grouped target
         for (const [key, group] of grouped) {
             try {
-                // Find puskesmas by nama
-                // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
-                let puskesmas = null;
-                if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            username: 'labkesda',
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Handle prefix "Puskesmas" in Excel vs DB without prefix
-                if (!puskesmas) {
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: group.puskesmas,
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // If not found, try without "Puskesmas" prefix
-                if (!puskesmas && group.puskesmas.startsWith('Puskesmas ')) {
-                    const namaWithoutPrefix = group.puskesmas.replace('Puskesmas ', '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: namaWithoutPrefix,
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Handle typo "Puskemas" instead of "Puskesmas"
-                if (!puskesmas && group.puskesmas.startsWith('Puskemas ')) {
-                    const namaWithoutPrefix = group.puskesmas.replace('Puskemas ', '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: namaWithoutPrefix,
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Handle case differences like "Kota batu" vs "Kota Batu"
-                if (!puskesmas) {
-                    const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: { [sequelize_1.Op.iLike]: searchName }, // Case-insensitive search
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Handle space differences like "Karya Mekar" vs "Karyamekar"
-                if (!puskesmas) {
-                    const searchName = group.puskesmas
-                        .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-                        .replace(/\s+/g, ''); // Remove all spaces
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: { [sequelize_1.Op.iLike]: searchName },
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Last resort: try to match DB names that contain the search term
-                if (!puskesmas) {
-                    const searchName = group.puskesmas
-                        .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-                        .replace(/\s+/g, '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: { [sequelize_1.Op.iLike]: `%${searchName}%` },
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                if (!puskesmas) {
+                // Find puskesmas from pre-loaded data (no database queries!)
+                const puskesmasData = findPuskesmasUser(group.puskesmas);
+                if (!puskesmasData) {
                     // Check if this is a non-Puskesmas entity that should be excluded
                     if (isExcludedEntity(group.puskesmas)) {
                         result.excludedNonPuskesmas++;
-                        console.log(`⏭️  Excluded non-Puskesmas entity: ${group.puskesmas}`);
                         continue;
                     }
                     result.failed++;
@@ -216,92 +207,87 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     });
                     continue;
                 }
-                // Find sub kegiatan by kode
-                let subKegiatan = await models_1.SubKegiatan.findOne({
-                    where: { kode_sub: group.subKegiatanKode },
-                });
-                if (!subKegiatan) {
-                    // Insert new sub kegiatan if not found
-                    // First, find or create a default parent kegiatan
+                // Find sub kegiatan from pre-loaded data
+                let subKegiatanData = subKegiatanByKode.get(group.subKegiatanKode);
+                if (!subKegiatanData) {
+                    // Need to create new sub kegiatan - do database query only for new ones
                     let parentKegiatan = await models_1.Kegiatan.findOne({
-                        where: { kode: '99' }, // Default parent kegiatan
+                        where: { kode: '99' },
+                        raw: true,
                     });
                     if (!parentKegiatan) {
-                        // Create default parent kegiatan
                         parentKegiatan = await models_1.Kegiatan.create({
                             kode: '99',
                             kegiatan: 'Kegiatan Lainnya (Auto-generated)',
-                            id_uraian: 1, // Default uraian
+                            id_uraian: 1,
                         });
                     }
-                    // Create new sub kegiatan
-                    subKegiatan = await models_1.SubKegiatan.create({
+                    const newSubKegiatan = await models_1.SubKegiatan.create({
                         kode_sub: group.subKegiatanKode,
                         kegiatan: group.subKegiatanNama,
                         id_kegiatan: parentKegiatan.id_kegiatan,
                         indikator_kinerja: 'Auto-generated dari upload Excel',
                     });
+                    // Add to cache for subsequent iterations (use raw data)
+                    subKegiatanData = {
+                        id_sub_kegiatan: newSubKegiatan.id_sub_kegiatan,
+                        kode_sub: newSubKegiatan.kode_sub,
+                        kegiatan: newSubKegiatan.kegiatan,
+                        id_kegiatan: newSubKegiatan.id_kegiatan,
+                    };
+                    subKegiatanByKode.set(group.subKegiatanKode, subKegiatanData);
                     result.createdSubKegiatan++;
-                    console.log(`✅ Created new sub kegiatan: ${group.subKegiatanKode} - ${group.subKegiatanNama}`);
                 }
-                // Find sumber anggaran - need to map KODE SUMBER DANA to our table
-                // Trim whitespace and try to match by nama
+                // Find sumber anggaran from pre-loaded data
                 const sumberDanaNamaTrimmed = group.sumberDanaNama.trim();
-                let sumberAnggaran = await models_1.SumberAnggaran.findOne({
-                    where: { sumber: sumberDanaNamaTrimmed },
-                });
-                // If not found, try case-insensitive search
-                if (!sumberAnggaran) {
-                    sumberAnggaran = await models_1.SumberAnggaran.findOne({
-                        where: { sumber: { [sequelize_1.Op.iLike]: sumberDanaNamaTrimmed } },
-                    });
-                }
-                // If still not found, create new sumber anggaran
-                if (!sumberAnggaran) {
-                    sumberAnggaran = await models_1.SumberAnggaran.create({
+                let sumberAnggaranData = sumberAnggaranByNama.get(sumberDanaNamaTrimmed) ||
+                    sumberAnggaranByNamaLower.get(sumberDanaNamaTrimmed.toLowerCase());
+                if (!sumberAnggaranData) {
+                    // Create new sumber anggaran
+                    const newSumber = await models_1.SumberAnggaran.create({
                         sumber: sumberDanaNamaTrimmed,
                     });
+                    // Add to cache (use raw data)
+                    sumberAnggaranData = {
+                        id_sumber: newSumber.id_sumber,
+                        sumber: newSumber.sumber,
+                    };
+                    sumberAnggaranByNama.set(sumberDanaNamaTrimmed, sumberAnggaranData);
+                    sumberAnggaranByNamaLower.set(sumberDanaNamaTrimmed.toLowerCase(), sumberAnggaranData);
                     result.createdSumberAnggaran++;
-                    console.log(`✅ Created new sumber anggaran: ${sumberDanaNamaTrimmed}`);
                 }
                 // Check if target already exists
                 const existingTarget = await models_1.SubKegiatanTarget.findOne({
                     where: {
-                        user_id: puskesmas.id,
-                        id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-                        id_sumber_anggaran: sumberAnggaran.id_sumber,
+                        user_id: puskesmasData.id,
+                        id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+                        id_sumber_anggaran: sumberAnggaranData.id_sumber,
                         tahun: group.tahun,
                         bulan: null,
                     },
-                    order: [['created_at', 'DESC']], // Get the latest record
+                    order: [['created_at', 'DESC']],
                 });
                 if (existingTarget) {
-                    // Check if target_rp is the same, skip if no change needed
-                    // Note: BIGINT dari database dikembalikan sebagai string oleh Sequelize
                     const existingTargetRp = Number(existingTarget.target_rp);
                     const newTargetRp = Number(group.totalPagu);
                     if (existingTargetRp === newTargetRp) {
                         result.skipped++;
-                        console.log(`⏭️  Skipped (same value) ${group.puskesmas} - ${group.subKegiatanKode}: ${newTargetRp}`);
-                        continue; // Skip this iteration
+                        continue;
                     }
-                    // INSERT new record for history tracking (instead of UPDATE)
-                    // This preserves the old value and creates a new entry
-                    // Preserve target_k and id_satuan from existing record (only update target_rp)
+                    // INSERT new record for history tracking
                     await models_1.SubKegiatanTarget.create({
-                        user_id: puskesmas.id,
-                        id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-                        id_sumber_anggaran: sumberAnggaran.id_sumber,
+                        user_id: puskesmasData.id,
+                        id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+                        id_sumber_anggaran: sumberAnggaranData.id_sumber,
                         tahun: group.tahun,
                         bulan: null,
-                        target_k: existingTarget.target_k, // Preserve existing target_k
+                        target_k: existingTarget.target_k,
                         target_rp: group.totalPagu,
-                        id_satuan: existingTarget.id_satuan, // Preserve existing satuan
+                        id_satuan: existingTarget.id_satuan,
                         created_by: adminId,
                         catatan: catatan,
                     });
                     result.updated++;
-                    console.log(`✏️  New version ${group.puskesmas} - ${group.subKegiatanKode}: ${existingTargetRp} → ${newTargetRp}`);
                     result.successList.push({
                         type: 'updated',
                         puskesmas: group.puskesmas,
@@ -312,12 +298,11 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     });
                 }
                 else {
-                    // INSERT new target (first entry)
-                    // Set target_k=0 and id_satuan=null - admin must set via Target Kinerja page
+                    // INSERT new target
                     await models_1.SubKegiatanTarget.create({
-                        user_id: puskesmas.id,
-                        id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-                        id_sumber_anggaran: sumberAnggaran.id_sumber,
+                        user_id: puskesmasData.id,
+                        id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
+                        id_sumber_anggaran: sumberAnggaranData.id_sumber,
                         tahun: group.tahun,
                         bulan: null,
                         target_k: 0, // Default 0, must be set in Target Kinerja page

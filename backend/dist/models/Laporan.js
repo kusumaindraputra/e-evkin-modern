@@ -96,7 +96,7 @@ Laporan.init({
         allowNull: false,
     },
     status: {
-        type: sequelize_1.DataTypes.ENUM('menunggu', 'terkirim', 'diverifikasi', 'ditolak'),
+        type: sequelize_1.DataTypes.ENUM('menunggu', 'terkirim', 'diverifikasi', 'ditolak', 'tersimpan'),
         allowNull: false,
         defaultValue: 'menunggu',
     },

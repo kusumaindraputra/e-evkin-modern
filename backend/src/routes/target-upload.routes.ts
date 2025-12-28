@@ -271,14 +271,14 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             indikator_kinerja: 'Auto-generated dari upload Excel',
           });
 
-          // Add to cache for subsequent iterations
+          // Add to cache for subsequent iterations (use raw data)
           subKegiatanData = {
             id_sub_kegiatan: newSubKegiatan.id_sub_kegiatan,
             kode_sub: newSubKegiatan.kode_sub,
             kegiatan: newSubKegiatan.kegiatan,
             id_kegiatan: newSubKegiatan.id_kegiatan,
-          };
-          subKegiatanByKode.set(group.subKegiatanKode, subKegiatanData);
+          } as any;
+          subKegiatanByKode.set(group.subKegiatanKode, subKegiatanData!);
           result.createdSubKegiatan++;
         }
 
@@ -294,19 +294,22 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             sumber: sumberDanaNamaTrimmed,
           });
           
-          // Add to cache
+          // Add to cache (use raw data)
           sumberAnggaranData = {
             id_sumber: newSumber.id_sumber,
             sumber: newSumber.sumber,
-          };
-          sumberAnggaranByNama.set(sumberDanaNamaTrimmed, sumberAnggaranData);
-          sumberAnggaranByNamaLower.set(sumberDanaNamaTrimmed.toLowerCase(), sumberAnggaranData);
+          } as any;
+          sumberAnggaranByNama.set(sumberDanaNamaTrimmed, sumberAnggaranData!);
+          sumberAnggaranByNamaLower.set(sumberDanaNamaTrimmed.toLowerCase(), sumberAnggaranData!);
           result.createdSumberAnggaran++;
         }
 
-        // Check if target alrData.id,
-            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaranData.id_sumber,
+        // Check if target already exists
+        const existingTarget = await SubKegiatanTarget.findOne({
+          where: {
+            user_id: puskesmasData.id,
+            id_sub_kegiatan: subKegiatanData!.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData!.id_sumber,
             tahun: group.tahun,
             bulan: null,
           },
@@ -325,8 +328,8 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           // INSERT new record for history tracking
           await SubKegiatanTarget.create({
             user_id: puskesmasData.id,
-            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaranData.id_sumber,
+            id_sub_kegiatan: subKegiatanData!.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData!.id_sumber,
             tahun: group.tahun,
             bulan: null,
             target_k: existingTarget.target_k,
@@ -348,13 +351,10 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           // INSERT new target
           await SubKegiatanTarget.create({
             user_id: puskesmasData.id,
-            id_sub_kegiatan: subKegiatanData.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaranData.id_sumber,
+            id_sub_kegiatan: subKegiatanData!.id_sub_kegiatan,
+            id_sumber_anggaran: sumberAnggaranData!.id_sumber,
             tahun: group.tahun,
             bulan: null,
-            target_k: 0,
-            target_rp: group.totalPagu,
-            id_satuan: null,
             target_k: 0,  // Default 0, must be set in Target Kinerja page
             target_rp: group.totalPagu,
             id_satuan: null,  // Null, must be selected in Target Kinerja page

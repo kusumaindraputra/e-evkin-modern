@@ -148,14 +148,19 @@ async function measureDatabaseMetrics(): Promise<{
     console.log(`  ✓ Average query time (5 samples): ${avgTime.toFixed(2)}ms`);
 
     // 3. Check for slow queries (> 1 second)
-    // Note: Requires log_min_duration_statement = 1000 in PostgreSQL config
-    const [slowQueries] = await sequelize.query(`
-      SELECT COUNT(*) as count FROM pg_stat_statements 
-      WHERE mean_exec_time > 1000 AND query NOT LIKE '%pg_%'
-      LIMIT 1;
-    `);
-    const slowQueryCount = (slowQueries[0] as any)?.count || 0;
-    console.log(`  ✓ Slow queries (>1s) in last session: ${slowQueryCount}`);
+    // Note: Requires pg_stat_statements extension, which may not be installed
+    let slowQueryCount = 0;
+    try {
+      const [slowQueries] = await sequelize.query(`
+        SELECT COUNT(*) as count FROM pg_stat_statements 
+        WHERE mean_exec_time > 1000 AND query NOT LIKE '%pg_%'
+        LIMIT 1;
+      `);
+      slowQueryCount = (slowQueries[0] as any)?.count || 0;
+      console.log(`  ✓ Slow queries (>1s) in last session: ${slowQueryCount}`);
+    } catch (e) {
+      console.log(`  ℹ️  pg_stat_statements not installed (optional extension), skipping slow query analysis`);
+    }
 
     return {
       totalCount,

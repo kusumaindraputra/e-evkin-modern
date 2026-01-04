@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
-import { SubKegiatanTarget, User, SubKegiatan, SumberAnggaran, Satuan, Kegiatan } from '../models';
+import { SubKegiatanTarget, User, SubKegiatan, SumberAnggaran, Kegiatan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
@@ -150,7 +150,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     });
 
     // Process each grouped target
-    for (const [key, group] of grouped) {
+    for (const [, group] of grouped) {
       try {
         // Find puskesmas by kode_sub_unit (PRIMARY METHOD - most reliable)
         let puskesmas: User | null = null;

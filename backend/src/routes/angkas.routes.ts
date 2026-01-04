@@ -4,7 +4,7 @@ import { AnggaranKas, User, SubKegiatan, SumberAnggaran, SubKegiatanTarget, Satu
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
-import { parseAngkasPdf, findBestMatch, findPuskesmasUser, PuskesmasAngkas, AngkasRow } from '../services/angkasParserService';
+import { parseAngkasPdf, findBestMatch, findPuskesmasUser } from '../services/angkasParserService';
 
 const router = Router();
 

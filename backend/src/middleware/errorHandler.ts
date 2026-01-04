@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { Request as ExpressRequest } from 'express';
 
 export class AppError extends Error {
   statusCode: number;

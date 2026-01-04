@@ -261,17 +261,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     return { value: year, label: year.toString() };
   });
 
-  useEffect(() => {
-    loadReferenceData();
-  }, []);
-
-  useEffect(() => {
-    if (filterBulan && filterTahun) {
-      loadData();
-    }
-  }, [filterBulan, filterTahun]);
-
-  const loadReferenceData = async () => {
+  const loadReferenceData = useCallback(async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -288,9 +278,9 @@ export const LaporanBulkInputPage: React.FC = () => {
       console.error('Failed to load reference data:', error);
       message.error('Gagal memuat data referensi');
     }
-  };
+  }, [token]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user || !filterBulan || !filterTahun) return;
 
     setLoading(true);
@@ -395,7 +385,17 @@ export const LaporanBulkInputPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, filterBulan, filterTahun, token, bulanOptions]);
+
+  useEffect(() => {
+    loadReferenceData();
+  }, [loadReferenceData]);
+
+  useEffect(() => {
+    if (filterBulan && filterTahun) {
+      loadData();
+    }
+  }, [filterBulan, filterTahun, loadData]);
 
   const handleFieldChange = useCallback(
     (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: any) => {
@@ -410,7 +410,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     []
   );
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!filterBulan || !filterTahun) {
       message.warning('Pilih bulan dan tahun terlebih dahulu');
       return;
@@ -480,9 +480,9 @@ export const LaporanBulkInputPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterBulan, filterTahun, rows, token, loadData]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!filterBulan || !filterTahun) {
       message.warning('Pilih bulan dan tahun terlebih dahulu');
       return;
@@ -503,7 +503,20 @@ export const LaporanBulkInputPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterBulan, filterTahun, token, loadData]);
+
+  // Memoize static options to prevent recreating objects
+  const bulanOptionsStable = useMemo(() => bulanOptions, []);
+  const tahunOptionsStable = useMemo(() => tahunOptions, []);
+
+  // Stable filter handlers
+  const handleFilterBulanChange = useCallback((value: string) => {
+    setFilterBulan(value);
+  }, []);
+
+  const handleFilterTahunChange = useCallback((value: number) => {
+    setFilterTahun(value);
+  }, []);
 
   const columns: ColumnsType<LaporanRow> = useMemo(
     () => [
@@ -726,8 +739,8 @@ export const LaporanBulkInputPage: React.FC = () => {
               placeholder="Pilih Bulan"
               style={{ width: '100%' }}
               value={filterBulan}
-              onChange={setFilterBulan}
-              options={bulanOptions}
+              onChange={handleFilterBulanChange}
+              options={bulanOptionsStable}
             />
           </Col>
           <Col xs={24} sm={8} md={6}>
@@ -735,8 +748,8 @@ export const LaporanBulkInputPage: React.FC = () => {
               placeholder="Pilih tahun"
               style={{ width: '100%' }}
               value={filterTahun}
-              onChange={setFilterTahun}
-              options={tahunOptions}
+              onChange={handleFilterTahunChange}
+              options={tahunOptionsStable}
             />
           </Col>
           <Col xs={24} sm={8} md={6}>

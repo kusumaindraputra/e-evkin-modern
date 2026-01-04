@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import PuskesmasEditPermission from '../models/PuskesmasEditPermission';
-import { Op } from 'sequelize';
 import SubKegiatanTarget from '../models/SubKegiatanTarget';
 
 export const checkEditPermission = (scope: string) => {

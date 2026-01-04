@@ -105,9 +105,10 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         // Group by puskesmas + sub kegiatan + sumber dana + tahun
         const grouped = new Map();
         data.forEach((row, index) => {
-            const key = `${row['NAMA SUB UNIT']}_${row['KODE SUB KEGIATAN']}_${row['KODE SUMBER DANA']}_${row.TAHUN}`;
+            const key = `${row['KODE SUB UNIT']}_${row['KODE SUB KEGIATAN']}_${row['KODE SUMBER DANA']}_${row.TAHUN}`;
             if (!grouped.has(key)) {
                 grouped.set(key, {
+                    kodeSubUnit: row['KODE SUB UNIT'],
                     puskesmas: row['NAMA SUB UNIT'],
                     subKegiatanKode: row['KODE SUB KEGIATAN'],
                     subKegiatanNama: row['NAMA SUB KEGIATAN'],
@@ -123,20 +124,30 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
             group.rows.push(index + 2); // +2 karena Excel row 1 = header, index 0 = row 2
         });
         // Process each grouped target
-        for (const [key, group] of grouped) {
+        for (const [, group] of grouped) {
             try {
-                // Find puskesmas by nama
-                // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+                // Find puskesmas by kode_sub_unit (PRIMARY METHOD - most reliable)
                 let puskesmas = null;
-                if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+                if (group.kodeSubUnit) {
                     puskesmas = await models_1.User.findOne({
                         where: {
-                            username: 'labkesda',
+                            kode_sub_unit: group.kodeSubUnit,
                             role: 'puskesmas',
                         },
                     });
                 }
-                // Handle prefix "Puskesmas" in Excel vs DB without prefix
+                // FALLBACK: Old name-based matching if kode_sub_unit not matched
+                if (!puskesmas) {
+                    // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+                    if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+                        puskesmas = await models_1.User.findOne({
+                            where: {
+                                username: 'labkesda',
+                                role: 'puskesmas',
+                            },
+                        });
+                    }
+                }
                 if (!puskesmas) {
                     puskesmas = await models_1.User.findOne({
                         where: {
@@ -155,46 +166,12 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         },
                     });
                 }
-                // Handle typo "Puskemas" instead of "Puskesmas"
-                if (!puskesmas && group.puskesmas.startsWith('Puskemas ')) {
-                    const namaWithoutPrefix = group.puskesmas.replace('Puskemas ', '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: namaWithoutPrefix,
-                            role: 'puskesmas',
-                        },
-                    });
-                }
                 // Handle case differences like "Kota batu" vs "Kota Batu"
                 if (!puskesmas) {
                     const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
                     puskesmas = await models_1.User.findOne({
                         where: {
-                            nama: { [sequelize_1.Op.iLike]: searchName }, // Case-insensitive search
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Handle space differences like "Karya Mekar" vs "Karyamekar"
-                if (!puskesmas) {
-                    const searchName = group.puskesmas
-                        .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-                        .replace(/\s+/g, ''); // Remove all spaces
-                    puskesmas = await models_1.User.findOne({
-                        where: {
                             nama: { [sequelize_1.Op.iLike]: searchName },
-                            role: 'puskesmas',
-                        },
-                    });
-                }
-                // Last resort: try to match DB names that contain the search term
-                if (!puskesmas) {
-                    const searchName = group.puskesmas
-                        .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-                        .replace(/\s+/g, '');
-                    puskesmas = await models_1.User.findOne({
-                        where: {
-                            nama: { [sequelize_1.Op.iLike]: `%${searchName}%` },
                             role: 'puskesmas',
                         },
                     });
@@ -210,7 +187,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         row: group.rows[0],
                         puskesmas: group.puskesmas,
                         subKegiatan: group.subKegiatanNama,
-                        error: `Puskesmas "${group.puskesmas}" tidak ditemukan`,
+                        error: `Puskesmas "${group.puskesmas}" (kode: ${group.kodeSubUnit}) tidak ditemukan`,
                     });
                     continue;
                 }

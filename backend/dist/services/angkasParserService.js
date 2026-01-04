@@ -82,6 +82,7 @@ function cleanText(text) {
  * Parse a single page's text content
  * Tracks current sumber anggaran from short code headers
  * Returns ALL puskesmas found on this page (may be multiple)
+ * Also returns rows that belong to currentPuskesmas (from previous page)
  */
 function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
     const lines = pageText.split('\n').map(l => l.trim()).filter(l => l);
@@ -90,6 +91,8 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
     let sumberAnggaran = currentSumberAnggaran;
     const detectedSumberAnggaran = [];
     const rowsForPuskesmas = new Map();
+    const rowsForCurrentPuskesmas = []; // Rows before first puskesmas header on this page
+    let foundFirstPuskesmasOnPage = false;
     for (const line of lines) {
         // Check if this is a Puskesmas header
         const puskesmasMatch = line.match(PUSKESMAS_PATTERN);
@@ -103,6 +106,7 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
             };
             puskesmasList.push(puskesmas);
             rowsForPuskesmas.set(puskesmas.kodePuskesmas, []);
+            foundFirstPuskesmasOnPage = true; // Mark that we found a puskesmas on this page
             continue;
         }
         // Check if this is a Sumber Anggaran header (short code like "4.1")
@@ -132,10 +136,16 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
                     sumberAnggaranKode: sumberAnggaran?.kode || null,
                     sumberAnggaranNama: sumberAnggaran?.nama || null,
                 };
-                // Add to current puskesmas rows
-                const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
-                rows.push(row);
-                rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
+                // If we haven't found a puskesmas on this page yet, this row belongs to currentPuskesmas (from previous page)
+                if (!foundFirstPuskesmasOnPage && currentPuskesmas) {
+                    rowsForCurrentPuskesmas.push(row);
+                }
+                else {
+                    // Add to current puskesmas rows (puskesmas found on this page)
+                    const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
+                    rows.push(row);
+                    rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
+                }
             }
             else if (values.length >= 2) {
                 // Sometimes monthly values may be on next lines, store partial data
@@ -148,9 +158,15 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
                     sumberAnggaranKode: sumberAnggaran?.kode || null,
                     sumberAnggaranNama: sumberAnggaran?.nama || null,
                 };
-                const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
-                rows.push(row);
-                rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
+                // If we haven't found a puskesmas on this page yet, this row belongs to currentPuskesmas (from previous page)
+                if (!foundFirstPuskesmasOnPage && currentPuskesmas) {
+                    rowsForCurrentPuskesmas.push(row);
+                }
+                else {
+                    const rows = rowsForPuskesmas.get(puskesmas.kodePuskesmas) || [];
+                    rows.push(row);
+                    rowsForPuskesmas.set(puskesmas.kodePuskesmas, rows);
+                }
             }
         }
     }
@@ -167,6 +183,7 @@ function parsePage(pageText, currentPuskesmas, currentSumberAnggaran) {
         puskesmasList,
         lastPuskesmas: puskesmas,
         rows: allRows,
+        rowsForCurrentPuskesmas, // Rows that belong to puskesmas from previous page
         sumberAnggaran,
         detectedSumberAnggaran,
     };
@@ -221,7 +238,7 @@ async function parseAngkasPdf(pdfBuffer) {
         const pageText = lines.map(line => line.join(' ')).join('\n');
         fullText += pageText + '\n';
         // Parse this page
-        const { puskesmasList: pagePuskesmasList, lastPuskesmas, rows, sumberAnggaran, detectedSumberAnggaran } = parsePage(pageText, currentPuskesmas, currentSumberAnggaran);
+        const { puskesmasList: pagePuskesmasList, lastPuskesmas, rowsForCurrentPuskesmas, sumberAnggaran, detectedSumberAnggaran } = parsePage(pageText, currentPuskesmas, currentSumberAnggaran);
         // Track detected sumber anggaran
         for (const sa of detectedSumberAnggaran) {
             allDetectedSumberAnggaran.set(sa.kode, sa);
@@ -229,6 +246,12 @@ async function parseAngkasPdf(pdfBuffer) {
         // Update current sumber anggaran for next page
         if (sumberAnggaran) {
             currentSumberAnggaran = sumberAnggaran;
+        }
+        // IMPORTANT: Add rows that belong to currentPuskesmas (from previous page)
+        // This handles the case where puskesmas header is on page N but kegiatan continues on page N+1
+        if (rowsForCurrentPuskesmas.length > 0 && currentPuskesmas && puskesmasMap.has(currentPuskesmas.kodePuskesmas)) {
+            const existing = puskesmasMap.get(currentPuskesmas.kodePuskesmas);
+            existing.rows.push(...rowsForCurrentPuskesmas);
         }
         // Add all puskesmas found on this page to the map
         for (const puskesmas of pagePuskesmasList) {
@@ -382,8 +405,18 @@ const PUSKESMAS_ALIASES = {
 };
 /**
  * Match puskesmas name to user with fuzzy matching
+ * Enhanced: Now also supports matching by kode_sub_unit from PDF's kodePuskesmas
  */
-function findPuskesmasUser(namaPuskesmas, users) {
+function findPuskesmasUser(namaPuskesmas, users, kodePuskesmas) {
+    // FIRST: Try to match by kode_sub_unit (most reliable)
+    // kodePuskesmas from PDF = "1.02.0.00.0.00.01.0010" should match kode_sub_unit in DB
+    if (kodePuskesmas) {
+        const userByKode = users.find(u => u.kode_sub_unit === kodePuskesmas);
+        if (userByKode) {
+            return userByKode.id;
+        }
+    }
+    // FALLBACK: Original fuzzy matching by name
     const normalizedName = normalizePuskesmasName(namaPuskesmas);
     // Check alias table first
     const aliasedName = PUSKESMAS_ALIASES[normalizedName] || normalizedName;

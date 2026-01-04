@@ -8,5 +8,6 @@ import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
 import AnggaranKas from './AnggaranKas';
-export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas, };
+import { sequelize } from '../config/database';
+export { User, Laporan, SumberAnggaran, Satuan, Kegiatan, SubKegiatan, PuskesmasSubKegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas, sequelize, };
 //# sourceMappingURL=index.d.ts.map

@@ -284,7 +284,7 @@ export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
     fullText += pageText + '\n';
 
     // Parse this page
-    const { puskesmasList: pagePuskesmasList, lastPuskesmas, rows, rowsForCurrentPuskesmas, sumberAnggaran, detectedSumberAnggaran } = parsePage(
+    const { puskesmasList: pagePuskesmasList, lastPuskesmas, rowsForCurrentPuskesmas, sumberAnggaran, detectedSumberAnggaran } = parsePage(
       pageText, 
       currentPuskesmas,
       currentSumberAnggaran

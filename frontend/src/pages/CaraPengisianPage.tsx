@@ -354,3 +354,6 @@ export const CaraPengisianPage: React.FC = () => {
     </div>
   );
 };
+
+
+export default CaraPengisianPage;

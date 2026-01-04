@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanSumberAnggaran, SubKegiatanTarget, AnggaranKas } from '../models';
-import { Op } from 'sequelize';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget } from '../models';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();

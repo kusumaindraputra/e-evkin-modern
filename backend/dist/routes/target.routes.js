@@ -83,6 +83,7 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
             whereClause.tahun = parseInt(tahun);
         if (id_sumber_anggaran)
             whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran);
+        // Include creator in query to avoid N+1
         const history = await models_1.SubKegiatanTarget.findAll({
             where: whereClause,
             attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'id_satuan', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
@@ -92,26 +93,16 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                     as: 'satuan',
                     attributes: ['id_satuan', 'satuannya'],
                 },
+                {
+                    model: models_1.User,
+                    as: 'creator',
+                    attributes: ['id', 'username', 'nama'],
+                },
             ],
             order: [['created_at', 'DESC']],
         });
-        // Map to include creator info by fetching user separately
-        const result = await Promise.all(history.map(async (item) => {
-            const createdById = item.getDataValue('created_by');
-            let creator = null;
-            if (createdById) {
-                const userRecord = await models_1.User.findByPk(createdById, {
-                    attributes: ['id', 'username', 'nama'],
-                });
-                if (userRecord) {
-                    creator = {
-                        id: userRecord.getDataValue('id'),
-                        username: userRecord.getDataValue('username'),
-                        nama: userRecord.getDataValue('nama'),
-                    };
-                }
-            }
-            // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
+        // Map result without additional queries
+        const result = history.map((item) => {
             const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
             const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
             return {
@@ -128,13 +119,17 @@ router.get('/history/:id_sub_kegiatan', auth_1.authenticate, async (req, res) =>
                 created_by: item.getDataValue('created_by'),
                 created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
                 updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
-                creator: creator,
+                creator: item.creator ? {
+                    id: item.creator.getDataValue('id'),
+                    username: item.creator.getDataValue('username'),
+                    nama: item.creator.getDataValue('nama'),
+                } : null,
                 satuan: item.satuan ? {
                     id_satuan: item.satuan.getDataValue('id_satuan'),
                     satuannya: item.satuan.getDataValue('satuannya'),
                 } : null,
             };
-        }));
+        });
         return res.json({
             success: true,
             data: result,

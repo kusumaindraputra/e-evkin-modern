@@ -1,7 +1,7 @@
 "use strict";
 // Set test environment
 process.env.NODE_ENV = 'test';
-process.env.DB_NAME = 'e_evkin_modern'; // Use consistent database name
+process.env.DB_NAME = 'evkin_db'; // Match .env configuration
 process.env.DB_USER = 'postgres';
 process.env.DB_PASSWORD = 'admin'; // Correct password from .env
 process.env.DB_HOST = 'localhost';

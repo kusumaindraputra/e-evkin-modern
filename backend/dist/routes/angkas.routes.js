@@ -88,10 +88,10 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         // Parse PDF
         const parsed = await (0, angkasParserService_1.parseAngkasPdf)(req.file.buffer);
         const tahun = tahunOverride ? parseInt(tahunOverride) : parsed.tahun;
-        // Get all puskesmas users
+        // Get all puskesmas users (include kode_sub_unit for matching)
         const puskesmasUsers = await models_1.User.findAll({
             where: { role: 'puskesmas' },
-            attributes: ['id', 'nama', 'username'],
+            attributes: ['id', 'nama', 'username', 'kode_sub_unit'],
         });
         // Get all sub kegiatan for matching
         const subKegiatanList = await models_1.SubKegiatan.findAll({
@@ -115,7 +115,8 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         };
         // Process each puskesmas
         for (const puskesmasData of parsed.puskesmasList) {
-            const userId = (0, angkasParserService_1.findPuskesmasUser)(puskesmasData.namaPuskesmas, puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username })));
+            const userId = (0, angkasParserService_1.findPuskesmasUser)(puskesmasData.namaPuskesmas, puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username, kode_sub_unit: u.kode_sub_unit || undefined })), puskesmasData.kodePuskesmas // Pass kodePuskesmas for kode_sub_unit matching
+            );
             if (!userId) {
                 result.unmatchedPuskesmas.push(puskesmasData.namaPuskesmas);
                 continue;
@@ -152,12 +153,13 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         continue;
                     }
                     try {
-                        // Check if record already exists (get latest for comparison)
+                        // IMPORTANT: Check if record already exists for this kode_rekening + bulan
+                        // WITHOUT filtering by id_sumber_anggaran (PDF doesn't have sumber anggaran granularity)
+                        // This prevents duplicate records for same kode_rekening with different sumber anggaran
                         const existingRecord = await models_1.AnggaranKas.findOne({
                             where: {
                                 user_id: userId,
                                 kode_rekening: row.kodeRekening,
-                                id_sumber_anggaran: sumberAnggaran.id,
                                 tahun,
                                 bulan,
                             },

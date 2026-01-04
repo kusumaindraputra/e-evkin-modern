@@ -25,6 +25,15 @@ export default defineConfig({
           'vendor-axios': ['axios'],
           'vendor-zustand': ['zustand'],
           
+          // Puskesmas pages chunk (lazy loaded)
+          'puskesmas-pages': [
+            './src/pages/LaporanPage.tsx',
+            './src/pages/LaporanBulkInputPage.tsx',
+            './src/pages/CaraPengisianPage.tsx',
+            './src/pages/PuskesmasTargetKinerjaPage.tsx',
+            './src/pages/DashboardPage.tsx',
+          ],
+          
           // Admin pages chunk (lazy loaded)
           'admin-pages': [
             './src/pages/AdminMasterDataPage.tsx',

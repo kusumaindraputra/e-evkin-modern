@@ -2,13 +2,17 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { LaporanPage } from './pages/LaporanPage';
-import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
-import { CaraPengisianPage } from './pages/CaraPengisianPage';
-import { PuskesmasTargetKinerjaPage } from './pages/PuskesmasTargetKinerjaPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
+
+// Lazy load dashboard (shared between roles)
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+
+// Lazy load puskesmas pages for code splitting
+const LaporanPage = lazy(() => import('./pages/LaporanPage'));
+const LaporanBulkInputPage = lazy(() => import('./pages/LaporanBulkInputPage'));
+const CaraPengisianPage = lazy(() => import('./pages/CaraPengisianPage'));
+const PuskesmasTargetKinerjaPage = lazy(() => import('./pages/PuskesmasTargetKinerjaPage'));
 
 // Lazy load admin pages for code splitting
 const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage'));
@@ -78,7 +82,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <DashboardPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <DashboardPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -88,7 +94,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <LaporanBulkInputPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <LaporanBulkInputPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -98,7 +106,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <LaporanPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <LaporanPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -108,7 +118,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <CaraPengisianPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <CaraPengisianPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }
@@ -118,7 +130,9 @@ function App() {
           element={
             <PuskesmasRoute>
               <Layout>
-                <PuskesmasTargetKinerjaPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <PuskesmasTargetKinerjaPage />
+                </Suspense>
               </Layout>
             </PuskesmasRoute>
           }

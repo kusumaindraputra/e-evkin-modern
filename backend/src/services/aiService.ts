@@ -1,7 +1,6 @@
 import OpenAI from 'openai';
 import { config } from '../config';
-import { Laporan, SubKegiatan, Kegiatan, User, SumberAnggaran, Satuan } from '../models';
-import { Op } from 'sequelize';
+import { Laporan, SubKegiatan, Kegiatan, User, SumberAnggaran } from '../models';
 
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,

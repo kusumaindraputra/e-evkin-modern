@@ -48,10 +48,12 @@ export declare function findBestMatch(uraian: string, subKegiatanList: Array<{
 }>): number | null;
 /**
  * Match puskesmas name to user with fuzzy matching
+ * Enhanced: Now also supports matching by kode_sub_unit from PDF's kodePuskesmas
  */
 export declare function findPuskesmasUser(namaPuskesmas: string, users: Array<{
     id: string;
     nama: string;
     username: string;
-}>): string | null;
+    kode_sub_unit?: string;
+}>, kodePuskesmas?: string): string | null;
 //# sourceMappingURL=angkasParserService.d.ts.map

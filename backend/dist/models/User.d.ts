@@ -7,6 +7,7 @@ interface UserAttributes {
     role: 'puskesmas' | 'admin';
     kode_puskesmas?: string;
     nama_puskesmas?: string;
+    kode_sub_unit?: string;
     id_blud?: string;
     kecamatan?: string;
     wilayah?: string;
@@ -23,6 +24,7 @@ declare class User extends Model<UserAttributes, UserCreationAttributes> impleme
     role: 'puskesmas' | 'admin';
     kode_puskesmas?: string;
     nama_puskesmas?: string;
+    kode_sub_unit?: string;
     id_blud?: string;
     kecamatan?: string;
     wilayah?: string;

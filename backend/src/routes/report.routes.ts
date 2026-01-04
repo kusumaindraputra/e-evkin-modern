@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { Op } from 'sequelize';
 import sequelize from '../config/database';
 import Laporan from '../models/Laporan';
 import SubKegiatan from '../models/SubKegiatan';

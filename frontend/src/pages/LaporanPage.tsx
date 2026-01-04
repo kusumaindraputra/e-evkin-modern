@@ -658,3 +658,6 @@ export const LaporanPage: React.FC = () => {
     </div>
   );
 };
+
+
+export default LaporanPage;

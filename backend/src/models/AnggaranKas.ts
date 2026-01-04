@@ -1,8 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import User from './User';
-import SubKegiatan from './SubKegiatan';
-import SumberAnggaran from './SumberAnggaran';
 
 // Interface for AnggaranKas attributes
 interface AnggaranKasAttributes {

@@ -6,7 +6,6 @@ import Kegiatan from '../models/Kegiatan';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
 import PuskesmasEditPermission from '../models/PuskesmasEditPermission';
-import { Op } from 'sequelize';
 
 const router = Router();
 

@@ -26,12 +26,27 @@
  */
 
 import { sequelize } from '../config/database';
+// Import ALL models to ensure tables are created during sync
 import User from '../models/User';
 import Laporan from '../models/Laporan';
 import Satuan from '../models/Satuan';
 import SumberAnggaran from '../models/SumberAnggaran';
 import Kegiatan from '../models/Kegiatan';
 import SubKegiatan from '../models/SubKegiatan';
+import SubKegiatanTarget from '../models/SubKegiatanTarget';
+import SubKegiatanSumberAnggaran from '../models/SubKegiatanSumberAnggaran';
+import PuskesmasSubKegiatan from '../models/PuskesmasSubKegiatan';
+import PuskesmasEditPermission from '../models/PuskesmasEditPermission';
+import AnggaranKas from '../models/AnggaranKas';
+// Import associations to set up relationships
+import '../models/index';
+
+// Mark unused imports as intentionally loaded for table creation
+void SubKegiatanTarget;
+void SubKegiatanSumberAnggaran;
+void PuskesmasSubKegiatan;
+void PuskesmasEditPermission;
+void AnggaranKas;
 
 async function seed() {
   try {

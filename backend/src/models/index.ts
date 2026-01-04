@@ -8,6 +8,7 @@ import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
 import AnggaranKas from './AnggaranKas';
+import PuskesmasEditPermission from './PuskesmasEditPermission';
 
 // Define associations
 User.hasMany(Laporan, {
@@ -141,4 +142,5 @@ export {
   SubKegiatanSumberAnggaran,
   SubKegiatanTarget,
   AnggaranKas,
+  PuskesmasEditPermission,
 };

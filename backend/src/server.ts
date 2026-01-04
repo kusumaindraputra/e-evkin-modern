@@ -9,11 +9,10 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully');
 
-    // Sync models (in development)
+    // Sync models (in development) - auto-create missing tables/columns
     if (config.env === 'development') {
-      // Skip sync - database schema already created
-      // await sequelize.sync({ alter: true });
-      console.log('✅ Database schema ready (sync skipped)');
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database schema synced (alter: true)');
     }
 
     // Start server

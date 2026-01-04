@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Form, Select, InputNumber, Input, Button, Space, Typography, Card, Row, Col, message, Alert } from 'antd';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
+import { formatNumber } from '../utils/formatters';
 
 const { Text } = Typography;
 const { OptGroup, Option } = Select;
@@ -52,7 +53,6 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
   // Load reference data
   useEffect(() => {
     const loadReferenceData = async () => {
-      console.log('🚀 LaporanForm: Starting loadReferenceData...');
       try {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -63,13 +63,10 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
         if (userStr) {
           const user = JSON.parse(userStr);
           userId = user.id;
-          console.log('👤 User ID:', userId);
         }
 
         const tahunSekarang = new Date().getFullYear();
-        console.log('📅 Tahun sekarang:', tahunSekarang);
 
-        console.log('📡 Fetching data from APIs...');
         const [sumberAnggaranRes, satuanRes, kegiatanRes, assignedWithTargetsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/reference/sumber-anggaran`, config),
           axios.get(`${API_BASE_URL}/reference/satuan`, config),
@@ -80,13 +77,9 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
             : axios.get(`${API_BASE_URL}/reference/sub-kegiatan`, config),
         ]);
 
-        console.log('✅ All API responses received');
-
         // Transform data: hanya tampilkan sub kegiatan yang ADA TARGET-nya
         let subKegiatanData: any[] = [];
         if (userId && assignedWithTargetsRes.data.data) {
-          console.log('🔍 Raw target data:', assignedWithTargetsRes.data.data);
-          
           // Filter hanya yang punya targets (STRICT)
           subKegiatanData = assignedWithTargetsRes.data.data
             .filter((item: any) => item.targets && item.targets.length > 0)
@@ -96,8 +89,6 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
               id_kegiatan: item.subKegiatan.kegiatanParent?.id_kegiatan,
               indikator_kinerja: item.subKegiatan.indikator_kinerja,
             }));
-          
-          console.log('📊 Filtered sub kegiatan:', subKegiatanData.length, subKegiatanData);
           
           if (subKegiatanData.length === 0) {
             message.warning('Belum ada sub kegiatan dengan target yang diset untuk tahun ini. Hubungi admin.');
@@ -160,7 +151,6 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
 
   // Handle sub kegiatan change
   const handleSubKegiatanChange = async (value: number) => {
-    console.log('🎯 Sub kegiatan changed to:', value);
     const sub = referenceData.subKegiatan.find((s) => s.value === value);
     if (sub) {
       setSelectedIndikator(sub.indikator_kinerja || '');
@@ -170,7 +160,6 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
       form.setFieldValue('id_sumber_anggaran', undefined);
       
       // Fetch valid sumber anggaran for this sub kegiatan
-      console.log('🔍 Fetching sumber anggaran assignments...');
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(
@@ -180,15 +169,11 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
           }
         );
         
-        console.log('📦 Raw API response:', response.data);
-        
         const sumberAnggaranList = response.data.data.map((item: any) => ({
           value: item.sumberAnggaran.id_sumber,
           label: item.sumberAnggaran.sumber,
         }));
         
-        console.log('📊 Processed list:', sumberAnggaranList);
-        console.log('📊 Total count:', sumberAnggaranList.length);
         setAssignedSumberAnggaran(sumberAnggaranList);
         
         if (sumberAnggaranList.length === 0) {
@@ -300,9 +285,6 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
     }
   };
 
-  console.log('🎨 RENDER - assignedSumberAnggaran:', assignedSumberAnggaran);
-  console.log('🎨 RENDER - count:', assignedSumberAnggaran.length);
-
   return (
     <Form
       form={form}
@@ -397,7 +379,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                   <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '14px' }}>
                     {targetData[sa.value] ? (
                       <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
-                        {targetData[sa.value].target_k.toLocaleString('id-ID')}
+                        {formatNumber(targetData[sa.value].target_k)}
                       </Text>
                     ) : (
                       <Text type="secondary">Target belum diset oleh admin</Text>
@@ -441,7 +423,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                   <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '4px', fontSize: '14px' }}>
                     {targetData[sa.value] ? (
                       <Text strong style={{ fontSize: '16px', color: '#1890ff' }}>
-                        Rp {targetData[sa.value].target_rp.toLocaleString('id-ID')}
+                        {formatNumber(targetData[sa.value].target_rp)}
                       </Text>
                     ) : (
                       <Text type="secondary">Target belum diset oleh admin</Text>
@@ -465,7 +447,7 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                           return Promise.reject(new Error('Target belum diset untuk sumber anggaran ini'));
                         }
                         if (value > target.target_rp) {
-                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (Rp ${target.target_rp.toLocaleString('id-ID')})`));
+                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (${formatNumber(target.target_rp)})`));
                         }
                         return Promise.resolve();
                       },

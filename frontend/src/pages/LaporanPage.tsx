@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
+import { formatNumber, formatPercentage } from '../utils/formatters';
 import LaporanForm from '../components/LaporanForm';
 import LaporanDetail from '../components/LaporanDetail';
 import { useAuthStore } from '../store/authStore';
@@ -134,14 +135,10 @@ export const LaporanPage: React.FC = () => {
       if (filterTahun) params.tahun = filterTahun;
       if (filterStatus) params.status = filterStatus;
 
-      console.log('Loading laporan with params:', params);
-
       const response = await axios.get(`${API_BASE_URL}/laporan`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
-
-      console.log('Laporan response:', response.data);
 
       // Handle response structure: { data: [...], pagination: {...} }
       const data = response.data.data || response.data;
@@ -153,8 +150,6 @@ export const LaporanPage: React.FC = () => {
         pageSize: paginationData.limit || pageSize,
         total: paginationData.total || 0,
       });
-      
-      console.log('Laporan data set:', Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error loading laporan:', error);
       message.error(error.response?.data?.message || 'Gagal memuat data laporan');
@@ -212,8 +207,6 @@ export const LaporanPage: React.FC = () => {
         bulan: bulanSekarang,
         tahun: tahunSekarang,
       };
-
-      console.log('Submitting laporan:', payload);
 
       if (modalMode === 'create') {
         await axios.post(`${API_BASE_URL}/laporan`, payload, {
@@ -321,21 +314,6 @@ export const LaporanPage: React.FC = () => {
       default:
         return status;
     }
-  };
-
-  const formatNumber = (num: number | string) => {
-    if (num === null || num === undefined || num === '') return '0';
-    const numValue = typeof num === 'string' ? parseFloat(num) : num;
-    if (isNaN(numValue)) return '0';
-    return numValue.toLocaleString('id-ID');
-  };
-
-  const formatPercentage = (num: number) => {
-    if (num === null || num === undefined) return '0,00';
-    return num.toLocaleString('id-ID', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
   };
 
   const columns: ColumnsType<LaporanData> = [

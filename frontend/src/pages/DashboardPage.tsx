@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import ChatWidget from '../components/ChatWidget';
+import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
 import {
   LineChart,
   Line,
@@ -165,9 +166,6 @@ export const DashboardPage: React.FC = () => {
 
       const data = response.data.data || [];
       
-      // Debug: log data untuk melihat nilai sebenarnya
-      console.log('YTD Budget Data (raw):', data);
-      
       // Ensure data types are numbers
       const processedData = data.map((item: any) => ({
         ...item,
@@ -175,8 +173,6 @@ export const DashboardPage: React.FC = () => {
         realisasi_rp: Number(item.realisasi_rp) || 0,
         persentase: Number(item.persentase) || 0
       }));
-      
-      console.log('YTD Budget Data (processed):', processedData);
       
       setBudgetData(processedData);
 
@@ -278,25 +274,6 @@ export const DashboardPage: React.FC = () => {
     await fetchPuskesmasReportingDetails();
   };
 
-  const formatRupiah = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatRupiahShort = (value: number) => {
-    if (value >= 1000000000) {
-      return `Rp ${(value / 1000000000).toFixed(1)}M`;
-    } else if (value >= 1000000) {
-      return `Rp ${(value / 1000000).toFixed(1)}Jt`;
-    } else if (value >= 1000) {
-      return `Rp ${(value / 1000).toFixed(1)}Rb`;
-    }
-    return formatRupiah(value);
-  };
-
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
@@ -396,7 +373,7 @@ export const DashboardPage: React.FC = () => {
                 value={totalStats.totalTarget}
                 prefix={<DollarOutlined />}
                 valueStyle={{ color: '#1890ff' }}
-                formatter={(value) => formatRupiah(value as number)}
+                formatter={(value) => formatCurrencyWithPrefix(value as number)}
               />
             </Card>
           </Col>
@@ -407,7 +384,7 @@ export const DashboardPage: React.FC = () => {
                 value={totalStats.totalRealisasi}
                 prefix={<DollarOutlined />}
                 valueStyle={{ color: '#52c41a' }}
-                formatter={(value) => formatRupiah(value as number)}
+                formatter={(value) => formatCurrencyWithPrefix(value as number)}
               />
             </Card>
           </Col>
@@ -444,10 +421,10 @@ export const DashboardPage: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="bulan" />
                     <YAxis 
-                      tickFormatter={(value) => formatRupiahShort(value)}
+                      tickFormatter={(value) => `Rp ${formatCurrencyAbbreviated(value)}`}
                     />
                     <Tooltip 
-                      formatter={(value: number) => formatRupiah(value)}
+                      formatter={(value: number) => formatCurrencyWithPrefix(value)}
                       labelStyle={{ color: '#000' }}
                     />
                     <Legend />
@@ -611,12 +588,12 @@ export const DashboardPage: React.FC = () => {
                         <Space direction="vertical" style={{ width: '100%' }} size="small">
                           <div>
                             <Text style={{ fontSize: 11 }}>Target: </Text>
-                            <Text strong style={{ fontSize: 11 }}>{formatRupiah(item.target_rp)}</Text>
+                            <Text strong style={{ fontSize: 11 }}>{formatCurrencyWithPrefix(item.target_rp)}</Text>
                           </div>
                           <div>
                             <Text style={{ fontSize: 11 }}>Realisasi: </Text>
                             <Text strong style={{ fontSize: 11, color: '#52c41a' }}>
-                              {formatRupiah(item.realisasi_rp)}
+                              {formatCurrencyWithPrefix(item.realisasi_rp)}
                             </Text>
                           </div>
                           <Progress 

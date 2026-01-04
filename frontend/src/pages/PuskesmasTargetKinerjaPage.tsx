@@ -20,6 +20,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { formatNumber, formatDateTime } from '../utils/formatters';
 
 interface Target {
   id: number;
@@ -89,34 +90,6 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuthStore();
   const [form] = Form.useForm();
-
-  // Helper function untuk format tanggal
-  const formatDate = (dateString: string | null | undefined) => {
-    try {
-      if (!dateString) {
-        return 'No Date';
-      }
-      
-      const date = new Date(dateString);
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
-        return 'Invalid Date';
-      }
-      
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Error formatting date:', error, 'Input:', dateString);
-      return 'Format Error';
-    }
-  };
 
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(false);
@@ -379,14 +352,14 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       width: 70,
     },
     {
-      title: 'Target K',
+      title: 'Target (K)',
       dataIndex: 'target_k',
       key: 'target_k',
       width: 100,
       align: 'right' as const,
       render: (value: number) => (
         <span style={{ color: value === 0 ? '#faad14' : undefined }}>
-          {value?.toLocaleString('id-ID')}
+          {formatNumber(value)}
         </span>
       ),
     },
@@ -403,12 +376,12 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       },
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'target_rp',
       key: 'target_rp',
       width: 150,
       align: 'right' as const,
-      render: (value: number) => `Rp ${value?.toLocaleString('id-ID')}`,
+      render: (value: number) => formatNumber(value),
     },
     {
       title: 'Aksi',
@@ -452,12 +425,12 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
                 {permissionInfo.enabled ? 'Ditutup oleh Admin.' : (
                   <div>
                     {permissionInfo.start_at ? (
-                      <span>Jadwal mulai: {formatDate(permissionInfo.start_at)}</span>
+                      <span>Jadwal mulai: {formatDateTime(permissionInfo.start_at)}</span>
                     ) : (
                       <span>Menunggu jadwal dibuka.</span>
                     )}
                     {permissionInfo.end_at && (
-                      <div>Jadwal selesai: {formatDate(permissionInfo.end_at)}</div>
+                      <div>Jadwal selesai: {formatDateTime(permissionInfo.end_at)}</div>
                     )}
                   </div>
                 )}
@@ -555,7 +528,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
               <strong>Tahun:</strong> {selectedTarget.tahun}
             </p>
             <p style={{ margin: 0 }}>
-              <strong>Target Rp:</strong> Rp {selectedTarget.target_rp?.toLocaleString('id-ID')}
+              <strong>Target (Rp):</strong> {formatNumber(selectedTarget.target_rp)}
             </p>
           </div>
         )}
@@ -638,16 +611,16 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             children: (
               <div>
                 <div style={{ fontWeight: 'bold' }}>
-                  {formatDate(record.created_at)}
+                  {formatDateTime(record.created_at)}
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  Target K: <strong>{record.target_k.toLocaleString('id-ID')}</strong>
+                  Target (K): <strong>{formatNumber(record.target_k)}</strong>
                 </div>
                 <div>
                   Satuan: <strong>{record.satuan?.satuannya || <i style={{ color: '#999' }}>Belum dipilih</i>}</strong>
                 </div>
                 <div style={{ color: '#888', fontSize: '12px' }}>
-                  Target Rp: Rp {record.target_rp.toLocaleString('id-ID')}
+                  Target (Rp): {formatNumber(record.target_rp)}
                 </div>
                 <div style={{ marginTop: 4, fontSize: '12px', color: '#888' }}>
                   Dibuat oleh: {record.creator?.nama || record.creator?.username || 'N/A'}

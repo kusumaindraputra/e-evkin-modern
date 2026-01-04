@@ -24,6 +24,7 @@ import {
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { formatNumber, formatDateTime } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 
@@ -250,24 +251,6 @@ export const TargetPuskesmasPage: React.FC = () => {
     }
   };
 
-  const formatRupiah = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const currentSubKegiatan = subKegiatanList.find(s => s.value === selectedSubKegiatan);
 
   return (
@@ -470,8 +453,8 @@ export const TargetPuskesmasPage: React.FC = () => {
                     <Text strong>{formatDateTime(item.created_at)}</Text>
                     <Text type="secondary">oleh {item.creator?.username || 'Unknown User'}</Text>
                     <Space style={{ marginTop: 8 }}>
-                      <Tag color="blue">Target (K): {item.target_k.toLocaleString('id-ID')}</Tag>
-                      <Tag color="green">Target (Rp): {formatRupiah(item.target_rp)}</Tag>
+                      <Tag color="blue">Target (K): {formatNumber(item.target_k)}</Tag>
+                      <Tag color="green">Target (Rp): {formatNumber(item.target_rp)}</Tag>
                     </Space>
                     {item.target_k === 0 && item.target_rp === 0 && (
                       <Text type="danger" style={{ fontSize: '12px' }}>Target dihapus</Text>

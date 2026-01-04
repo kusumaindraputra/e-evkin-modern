@@ -23,6 +23,7 @@ import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
+import { formatNumber } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -145,8 +146,6 @@ export const LaporanBulkInputPage: React.FC = () => {
         }).catch(() => ({ data: { data: [] } })), // Fallback jika belum ada data angkas
       ]);
 
-      console.log('🔍 Target assigned response:', assignmentsRes.data);
-      console.log('📊 Angkas response:', angkasRes.data);
 
       const existingLaporan = Array.isArray(laporanRes.data.data)
         ? laporanRes.data.data
@@ -165,8 +164,6 @@ export const LaporanBulkInputPage: React.FC = () => {
 
       // Map target data to rows (NEW FORMAT)
       const targetData = assignmentsRes.data.data || [];
-      console.log('📊 Target data:', targetData);
-      
       const mappedRows: LaporanRow[] = [];
       
       // For each sub kegiatan with targets
@@ -391,7 +388,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
       render: (_: any, record: LaporanRow) => (
         <div style={{ textAlign: 'right' }}>
-          {(record.target_k || 0).toLocaleString('id-ID')}
+          {formatNumber(record.target_k || 0)}
         </div>
       ),
     },
@@ -443,7 +440,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
       render: (_: any, record: LaporanRow) => (
         <div style={{ textAlign: 'right' }}>
-          {(record.target_rp || 0).toLocaleString('id-ID')}
+          {formatNumber(record.target_rp || 0)}
         </div>
       ),
     },
@@ -454,7 +451,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
       render: (_: any, record: LaporanRow) => (
         <div style={{ textAlign: 'right', color: record.target_angkas ? '#1890ff' : '#999' }}>
-          {(record.target_angkas || 0).toLocaleString('id-ID')}
+          {formatNumber(record.target_angkas || 0)}
         </div>
       ),
     },

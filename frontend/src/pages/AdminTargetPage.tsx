@@ -18,6 +18,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { formatNumber, formatDateTime } from '../utils/formatters';
 
 interface Target {
   id: number;
@@ -85,34 +86,6 @@ interface SumberAnggaran {
 const AdminTargetPage: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuthStore();
-
-  // Helper function untuk format tanggal
-  const formatDate = (dateString: string | null | undefined) => {
-    try {
-      if (!dateString) {
-        return 'No Date';
-      }
-      
-      const date = new Date(dateString);
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date string:', dateString);
-        return 'Invalid Date';
-      }
-      
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Error formatting date:', error, 'Input:', dateString);
-      return 'Format Error';
-    }
-  };
 
   const [targets, setTargets] = useState<Target[]>([]);
   const [loading, setLoading] = useState(false);
@@ -216,8 +189,6 @@ const AdminTargetPage: React.FC = () => {
       if (filters.tahun && filters.tahun !== undefined) {
         params.tahun = filters.tahun;
       }
-
-      console.log('Loading targets with params:', params);
 
       const response = await axios.get(`${API_BASE_URL}/target/admin`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -339,7 +310,7 @@ const AdminTargetPage: React.FC = () => {
                             <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.puskesmas}</td>
                             <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.subKegiatan}>{item.subKegiatan}</td>
                             <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{item.sumberDana}</td>
-                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>Rp {item.target_rp?.toLocaleString('id-ID')}</td>
+                            <td style={{ padding: '6px 8px', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{formatNumber(item.target_rp)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -455,12 +426,12 @@ const AdminTargetPage: React.FC = () => {
       width: 80,
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'target_rp',
       key: 'target_rp',
       width: 150,
       align: 'right' as const,
-      render: (value: number) => `Rp ${value?.toLocaleString('id-ID')}`,
+      render: (value: number) => formatNumber(value),
     },
     {
       title: 'Dibuat Oleh',
@@ -607,10 +578,10 @@ const AdminTargetPage: React.FC = () => {
             children: (
               <div>
                 <div style={{ fontWeight: 'bold' }}>
-                  {formatDate(record.created_at)}
+                  {formatDateTime(record.created_at)}
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  Target Rp: <strong>Rp {record.target_rp.toLocaleString('id-ID')}</strong>
+                  Target (Rp): <strong>{formatNumber(record.target_rp)}</strong>
                 </div>
                 <div style={{ marginTop: 4, fontSize: '12px', color: '#888' }}>
                   Dibuat oleh: {record.creator?.nama || record.creator?.username || 'N/A'}

@@ -25,6 +25,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { formatCurrencyWithPrefix, formatDateTime } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 
@@ -152,32 +153,6 @@ const AdminAngkasUploadPage: React.FC = () => {
   const [selectedAngkasRecord, setSelectedAngkasRecord] = useState<AngkasRecord | null>(null);
   const [historyAllData, setHistoryAllData] = useState<HistoryAllResponse | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    try {
-      if (!dateString) return 'No Date';
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid Date';
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Format Error';
-    }
-  };
 
   const bulanNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -498,7 +473,7 @@ const AdminAngkasUploadPage: React.FC = () => {
       if (!record.hasAngkas) {
         return <span style={{ color: '#bfbfbf' }}>-</span>;
       }
-      return value ? formatCurrency(value) : '-';
+      return value ? formatCurrencyWithPrefix(value) : '-';
     },
   }));
 
@@ -543,23 +518,23 @@ const AdminAngkasUploadPage: React.FC = () => {
       width: 100,
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'target_rp',
       key: 'target_rp',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => formatCurrency(value || 0),
+      render: (value: number) => formatCurrencyWithPrefix(value || 0),
     },
     ...monthlyColumns,
     {
-      title: 'Total Angkas',
+      title: 'Total Angkas (Rp)',
       dataIndex: 'total',
       key: 'total',
       width: 120,
       fixed: 'right' as const,
       render: (value: number, record: AngkasRecord) => (
         <strong style={{ color: record.hasAngkas ? undefined : '#bfbfbf' }}>
-          {formatCurrency(value)}
+          {formatCurrencyWithPrefix(value)}
         </strong>
       ),
       align: 'right' as const,
@@ -967,10 +942,10 @@ const AdminAngkasUploadPage: React.FC = () => {
                               children: (
                                 <div>
                                   <div style={{ fontWeight: 'bold' }}>
-                                    {formatDate(record.created_at)}
+                                    {formatDateTime(record.created_at)}
                                   </div>
                                   <div style={{ marginTop: 4 }}>
-                                    Nilai: <strong>{formatCurrency(record.nilai)}</strong>
+                                    Nilai: <strong>{formatCurrencyWithPrefix(record.nilai)}</strong>
                                   </div>
                                   <div style={{ fontSize: '12px', color: '#888' }}>
                                     Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
@@ -1000,10 +975,10 @@ const AdminAngkasUploadPage: React.FC = () => {
                           children: (
                             <div>
                               <div style={{ fontWeight: 'bold' }}>
-                                {formatDate(record.created_at)}
+                                {formatDateTime(record.created_at)}
                               </div>
                               <div style={{ marginTop: 4 }}>
-                                Target Rp: <strong>{formatCurrency(record.target_rp)}</strong>
+                                Target (Rp): <strong>{formatCurrencyWithPrefix(record.target_rp)}</strong>
                               </div>
                               <div style={{ fontSize: '12px', color: '#888' }}>
                                 Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
@@ -1031,10 +1006,10 @@ const AdminAngkasUploadPage: React.FC = () => {
                           children: (
                             <div>
                               <div style={{ fontWeight: 'bold' }}>
-                                {formatDate(record.created_at)}
+                                {formatDateTime(record.created_at)}
                               </div>
                               <div style={{ marginTop: 4 }}>
-                                Target K: <strong>{record.target_k}</strong> {record.satuan || '-'}
+                                Target (K): <strong>{record.target_k}</strong> {record.satuan || '-'}
                               </div>
                               <div style={{ fontSize: '12px', color: '#888' }}>
                                 Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}

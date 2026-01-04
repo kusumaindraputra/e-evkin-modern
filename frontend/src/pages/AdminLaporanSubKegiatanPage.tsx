@@ -18,6 +18,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 import { exportToExcel, formatRupiahForExcel, formatPercentageForExcel } from '../utils/excelExport';
+import { formatNumber } from '../utils/formatters';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -254,14 +255,6 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     message.success('Data berhasil diunduh');
   };
 
-  const formatRupiah = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
   const getPersentaseColor = (persentase: number) => {
     if (persentase >= 90) return 'green';
     if (persentase >= 70) return 'blue';
@@ -335,25 +328,25 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.jumlah_laporan - b.jumlah_laporan,
     },
     {
-      title: 'Target K',
+      title: 'Target (K)',
       dataIndex: 'total_target_k',
       key: 'total_target_k',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => value.toLocaleString('id-ID'),
+      render: (value: number) => formatNumber(value),
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_k - b.total_target_k,
     },
     {
-      title: 'Realisasi K',
+      title: 'Realisasi (K)',
       dataIndex: 'total_realisasi_k',
       key: 'total_realisasi_k',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => value.toLocaleString('id-ID'),
+      render: (value: number) => formatNumber(value),
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_k - b.total_realisasi_k,
     },
     {
-      title: '% K',
+      title: 'Capaian K (%)',
       dataIndex: 'persentase_k',
       key: 'persentase_k',
       width: 100,
@@ -364,25 +357,25 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.persentase_k - b.persentase_k,
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'total_target_rp',
       key: 'total_target_rp',
       width: 150,
       align: 'right' as const,
-      render: (value: number) => formatRupiah(value),
+      render: (value: number) => formatNumber(value),
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_target_rp - b.total_target_rp,
     },
     {
-      title: 'Realisasi Rp',
+      title: 'Realisasi (Rp)',
       dataIndex: 'total_realisasi_rp',
       key: 'total_realisasi_rp',
       width: 150,
       align: 'right' as const,
-      render: (value: number) => formatRupiah(value),
+      render: (value: number) => formatNumber(value),
       sorter: (a: AggregatedReport, b: AggregatedReport) => a.total_realisasi_rp - b.total_realisasi_rp,
     },
     {
-      title: '% Rp',
+      title: 'Capaian Rp (%)',
       dataIndex: 'persentase_rp',
       key: 'persentase_rp',
       width: 100,
@@ -425,23 +418,25 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       sorter: (a: DetailLaporan, b: DetailLaporan) => (a.sumberAnggaran?.sumber || '').localeCompare(b.sumberAnggaran?.sumber || ''),
     },
     {
-      title: 'Target K',
+      title: 'Target (K)',
       dataIndex: 'target_k',
       key: 'target_k',
       width: 100,
       align: 'right' as const,
+      render: (value: number) => formatNumber(value),
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_k - b.target_k,
     },
     {
-      title: 'Realisasi K',
+      title: 'Realisasi (K)',
       dataIndex: 'realisasi_k',
       key: 'realisasi_k',
       width: 100,
       align: 'right' as const,
+      render: (value: number) => formatNumber(value),
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_k - b.realisasi_k,
     },
     {
-      title: '% K',
+      title: 'Capaian K (%)',
       key: 'persen_k',
       width: 100,
       align: 'right' as const,
@@ -457,25 +452,25 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
       },
     },
     {
-      title: 'Target Rp',
+      title: 'Target (Rp)',
       dataIndex: 'target_rp',
       key: 'target_rp',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => formatRupiah(value),
+      render: (value: number) => formatNumber(value),
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.target_rp - b.target_rp,
     },
     {
-      title: 'Realisasi Rp',
+      title: 'Realisasi (Rp)',
       dataIndex: 'realisasi_rp',
       key: 'realisasi_rp',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => formatRupiah(value),
+      render: (value: number) => formatNumber(value),
       sorter: (a: DetailLaporan, b: DetailLaporan) => a.realisasi_rp - b.realisasi_rp,
     },
     {
-      title: '% Rp',
+      title: 'Capaian Rp (%)',
       key: 'persen_rp',
       width: 100,
       align: 'right' as const,

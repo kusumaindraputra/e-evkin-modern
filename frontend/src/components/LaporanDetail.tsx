@@ -1,5 +1,6 @@
 import { Card, Descriptions, Tag, Typography, Row, Col, Progress, Divider } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { formatNumber, formatDateTime } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 
@@ -37,14 +38,6 @@ interface LaporanDetailProps {
 }
 
 const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
-  const formatNumber = (num: number) => {
-    return num?.toLocaleString('id-ID') || '0';
-  };
-
-  const formatCurrency = (num: number) => {
-    return `Rp ${num?.toLocaleString('id-ID') || '0'}`;
-  };
-
   const calculatePercentage = (realisasi: number, target: number) => {
     if (!target || target === 0) return 0;
     return Math.round((realisasi / target) * 100);
@@ -198,15 +191,15 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
           <Col span={12}>
             <Card size="small">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="Target Pagu">
-                  <Text strong>{formatCurrency(laporan.target_rp)}</Text>
+                <Descriptions.Item label="Target Pagu (Rp)">
+                  <Text strong>{formatNumber(laporan.target_rp)}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Anggaran Kas">
-                  <Text strong>{formatCurrency(laporan.angkas)}</Text>
+                <Descriptions.Item label="Anggaran Kas (Rp)">
+                  <Text strong>{formatNumber(laporan.angkas)}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Realisasi Anggaran">
+                <Descriptions.Item label="Realisasi Anggaran (Rp)">
                   <Text strong style={{ color: '#52c41a' }}>
-                    {formatCurrency(laporan.realisasi_rp)}
+                    {formatNumber(laporan.realisasi_rp)}
                   </Text>
                 </Descriptions.Item>
               </Descriptions>
@@ -262,10 +255,10 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
       <Card size="small">
         <Descriptions column={2} size="small">
           <Descriptions.Item label="Dibuat">
-            {new Date(laporan.created_at).toLocaleString('id-ID')}
+            {formatDateTime(laporan.created_at)}
           </Descriptions.Item>
           <Descriptions.Item label="Diupdate">
-            {new Date(laporan.updated_at).toLocaleString('id-ID')}
+            {formatDateTime(laporan.updated_at)}
           </Descriptions.Item>
         </Descriptions>
       </Card>

@@ -883,3 +883,6 @@ export const AdminMasterDataPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminMasterDataPage;
+

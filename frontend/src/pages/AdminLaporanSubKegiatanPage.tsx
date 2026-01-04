@@ -673,3 +673,5 @@ export const AdminLaporanSubKegiatanPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminLaporanSubKegiatanPage;

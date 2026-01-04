@@ -14,4 +14,34 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Manual chunk configuration for optimal code splitting
+        manualChunks: {
+          // Vendor chunks
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-antd': ['antd'],
+          'vendor-axios': ['axios'],
+          'vendor-zustand': ['zustand'],
+          
+          // Admin pages chunk (lazy loaded)
+          'admin-pages': [
+            './src/pages/AdminMasterDataPage.tsx',
+            './src/pages/AdminKegiatanPage.tsx',
+            './src/pages/AdminPuskesmasPage.tsx',
+            './src/pages/AdminLaporanSubKegiatanPage.tsx',
+            './src/pages/AdminLaporanSumberAnggaranPage.tsx',
+            './src/pages/AdminPuskesmasConfigPage.tsx',
+            './src/pages/AdminTargetPage.tsx',
+            './src/pages/AdminTargetKinerjaPage.tsx',
+            './src/pages/AdminAngkasUploadPage.tsx',
+          ],
+        },
+      },
+    },
+    // Increase chunk size warning limit temporarily (will optimize further)
+    chunkSizeWarningLimit: 1000,
+  },
 })
+

@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Spin } from 'antd';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LaporanPage } from './pages/LaporanPage';
 import { LaporanBulkInputPage } from './pages/LaporanBulkInputPage';
-import { AdminMasterDataPage } from './pages/AdminMasterDataPage';
-import { AdminKegiatanPage } from './pages/AdminKegiatanPage';
-import { AdminPuskesmasPage } from './pages/AdminPuskesmasPage';
-import { AdminLaporanSubKegiatanPage } from './pages/AdminLaporanSubKegiatanPage';
-import { AdminLaporanSumberAnggaranPage } from './pages/AdminLaporanSumberAnggaranPage';
-import { AdminPuskesmasConfigPage } from './pages/AdminPuskesmasConfigPage';
 import { CaraPengisianPage } from './pages/CaraPengisianPage';
-import AdminTargetPage from './pages/AdminTargetPage';
-import AdminTargetKinerjaPage from './pages/AdminTargetKinerjaPage';
-import AdminAngkasUploadPage from './pages/AdminAngkasUploadPage';
 import { PuskesmasTargetKinerjaPage } from './pages/PuskesmasTargetKinerjaPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
+
+// Lazy load admin pages for code splitting
+const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage'));
+const AdminKegiatanPage = lazy(() => import('./pages/AdminKegiatanPage'));
+const AdminPuskesmasPage = lazy(() => import('./pages/AdminPuskesmasPage'));
+const AdminLaporanSubKegiatanPage = lazy(() => import('./pages/AdminLaporanSubKegiatanPage'));
+const AdminLaporanSumberAnggaranPage = lazy(() => import('./pages/AdminLaporanSumberAnggaranPage'));
+const AdminPuskesmasConfigPage = lazy(() => import('./pages/AdminPuskesmasConfigPage'));
+const AdminTargetPage = lazy(() => import('./pages/AdminTargetPage'));
+const AdminTargetKinerjaPage = lazy(() => import('./pages/AdminTargetKinerjaPage'));
+const AdminAngkasUploadPage = lazy(() => import('./pages/AdminAngkasUploadPage'));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <Spin size="large" tip="Loading..." />
+  </div>
+);
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -120,7 +130,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminMasterDataPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminMasterDataPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -130,7 +142,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminKegiatanPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminKegiatanPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -140,7 +154,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminPuskesmasPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminPuskesmasPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -150,7 +166,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminPuskesmasConfigPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminPuskesmasConfigPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -160,7 +178,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminLaporanSubKegiatanPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminLaporanSubKegiatanPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -170,7 +190,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminLaporanSumberAnggaranPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminLaporanSumberAnggaranPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -180,7 +202,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminTargetPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminTargetPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -190,7 +214,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminTargetKinerjaPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminTargetKinerjaPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }
@@ -200,7 +226,9 @@ function App() {
           element={
             <AdminRoute>
               <Layout>
-                <AdminAngkasUploadPage />
+                <Suspense fallback={<LoadingFallback />}>
+                  <AdminAngkasUploadPage />
+                </Suspense>
               </Layout>
             </AdminRoute>
           }

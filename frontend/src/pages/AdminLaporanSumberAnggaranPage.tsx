@@ -636,3 +636,5 @@ export const AdminLaporanSumberAnggaranPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminLaporanSumberAnggaranPage;

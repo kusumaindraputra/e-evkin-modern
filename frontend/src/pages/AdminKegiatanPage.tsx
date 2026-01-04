@@ -498,3 +498,5 @@ export const AdminKegiatanPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminKegiatanPage;

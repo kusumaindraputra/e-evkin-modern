@@ -301,3 +301,5 @@ export const AdminPuskesmasPage: React.FC = () => {
     </div>
   );
 };
+
+export default AdminPuskesmasPage;

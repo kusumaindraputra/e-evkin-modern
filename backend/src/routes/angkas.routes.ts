@@ -213,12 +213,13 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           }
 
           try {
-            // Check if record already exists (get latest for comparison)
+            // IMPORTANT: Check if record already exists for this kode_rekening + bulan
+            // WITHOUT filtering by id_sumber_anggaran (PDF doesn't have sumber anggaran granularity)
+            // This prevents duplicate records for same kode_rekening with different sumber anggaran
             const existingRecord = await AnggaranKas.findOne({
               where: {
                 user_id: userId,
                 kode_rekening: row.kodeRekening,
-                id_sumber_anggaran: sumberAnggaran.id,
                 tahun,
                 bulan,
               },

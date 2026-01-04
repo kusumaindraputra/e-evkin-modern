@@ -242,8 +242,9 @@ async function inputLaporan(testData: any, targetsCreated: any[]) {
 
     // Verify laporan count
     const laporanCount = await Laporan.count({ where: { tahun: TAHUN } });
+    // @ts-ignore - implicit types ok for seeder
     const expectedCount = BULAN_LIST.length * puskesmasList.length * 
-      subKegiatanList.reduce((sum, sk) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0);
+      subKegiatanList.reduce((sum: number, sk: any) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0);
     
     log('Verify Laporan Count', laporanCount === expectedCount,
       `Laporan count in DB: ${laporanCount}, Expected: ${expectedCount}`);
@@ -317,9 +318,9 @@ async function verifyDashboardData(testData: any) {
     // Total per month = puskesmas * targets * 10,000,000
     // Realisasi: Jan=30%, Feb=50%, Mar=70%
     // Average = (30+50+70)/3 = 50%
-    
+    // @ts-ignore - implicit types ok for seeder
     const numSumberAnggaran = subKegiatanList.reduce(
-      (sum, sk) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0
+      (sum: number, sk: any) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0
     );
     const targetsPerPuskesmas = numSumberAnggaran;
     const totalTargetsAllPuskesmas = puskesmasList.length * targetsPerPuskesmas;

@@ -73,8 +73,9 @@ async function analyze() {
   });
   
   console.log(`\n🎯 Targets for 2025 (${targets.length} total):`);
+  // @ts-ignore - sumberAnggaran association is ok for test seeder
   targets.forEach(t => {
-    console.log(`   - ${t.sumberAnggaran?.sumber}: Target K=${t.target_k}, Target Rp=${t.target_rp?.toLocaleString('id-ID')}`);
+    console.log(`   - ${(t as any).sumberAnggaran?.sumber}: Target K=${t.target_k}, Target Rp=${t.target_rp?.toLocaleString('id-ID')}`);
   });
   
   // 5. Get angkas data for this user and sub kegiatan

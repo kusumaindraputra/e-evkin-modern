@@ -567,6 +567,7 @@ async function createLaporanAllPuskesmas(): Promise<boolean> {
             const realisasi_fisik = Math.min(100, Math.round(percentage * performanceFactor * 100));
 
             try {
+              // @ts-ignore - null is ok for test seeder
               await Laporan.create({
                 user_id: userId,
                 bulan,
@@ -574,7 +575,7 @@ async function createLaporanAllPuskesmas(): Promise<boolean> {
                 id_kegiatan: subKegiatan.id_kegiatan,
                 id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
                 id_sumber_anggaran: sumberAnggaran.id_sumber,
-                id_satuan: target.id_satuan,
+                id_satuan: target.id_satuan ?? 1,
                 target_k: target.target_k,
                 target_rp: target.target_rp,
                 angkas: target.target_rp, // Use target as angkas for test

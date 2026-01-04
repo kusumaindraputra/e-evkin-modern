@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Table,
   Button,
@@ -57,6 +57,176 @@ interface ReferenceData {
   sumberAnggaran: Array<{ value: number; label: string }>;
   satuan: Array<{ value: number; label: string }>;
 }
+
+// Memoized render components to prevent re-renders
+interface SumberAnggaranCellProps {
+  id_sumber_anggaran?: number;
+  sumberAnggaran: ReferenceData['sumberAnggaran'];
+}
+
+const SumberAnggaranCell = memo(({ id_sumber_anggaran, sumberAnggaran }: SumberAnggaranCellProps) => {
+  const sumber = sumberAnggaran.find((sa) => sa.value === id_sumber_anggaran);
+  return <Tag color="blue">{sumber?.label || 'N/A'}</Tag>;
+});
+SumberAnggaranCell.displayName = 'SumberAnggaranCell';
+
+interface SatuanCellProps {
+  id_satuan?: number;
+  satuan: ReferenceData['satuan'];
+}
+
+const SatuanCell = memo(({ id_satuan, satuan }: SatuanCellProps) => {
+  const satuanItem = satuan.find((s) => s.value === id_satuan);
+  return <div style={{ textAlign: 'center' }}>{satuanItem?.label || '-'}</div>;
+});
+SatuanCell.displayName = 'SatuanCell';
+
+interface AngkasInputProps {
+  value?: number;
+  targetAngkas?: number;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}
+
+const AngkasInput = memo(({ value, targetAngkas, disabled, onChange }: AngkasInputProps) => (
+  <InputNumber
+    style={{ width: '100%' }}
+    value={value}
+    onChange={onChange}
+    min={0}
+    max={targetAngkas || undefined}
+    step={1}
+    controls={false}
+    formatter={(val) => {
+      if (!val) return '0';
+      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }}
+    parser={(val) => {
+      const parsed = val?.replace(/\./g, '');
+      return parsed ? Number(parsed) : 0;
+    }}
+    disabled={disabled}
+  />
+));
+AngkasInput.displayName = 'AngkasInput';
+
+interface RealisasiKInputProps {
+  value?: number;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}
+
+const RealisasiKInput = memo(({ value, disabled, onChange }: RealisasiKInputProps) => (
+  <InputNumber
+    style={{ width: '100%' }}
+    value={value}
+    onChange={onChange}
+    min={0}
+    step={1}
+    controls={false}
+    formatter={(val) => {
+      if (!val) return '0';
+      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }}
+    parser={(val) => {
+      const parsed = val?.replace(/\./g, '');
+      return parsed ? Number(parsed) : 0;
+    }}
+    disabled={disabled}
+  />
+));
+RealisasiKInput.displayName = 'RealisasiKInput';
+
+interface RealisasiRpInputProps {
+  value?: number;
+  maxValue?: number;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}
+
+const RealisasiRpInput = memo(({ value, maxValue, disabled, onChange }: RealisasiRpInputProps) => (
+  <InputNumber
+    style={{ width: '100%' }}
+    value={value}
+    onChange={onChange}
+    min={0}
+    max={maxValue || undefined}
+    step={1}
+    controls={false}
+    formatter={(val) => {
+      if (!val) return '0';
+      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }}
+    parser={(val) => {
+      const parsed = val?.replace(/\./g, '');
+      return parsed ? Number(parsed) : 0;
+    }}
+    disabled={disabled}
+  />
+));
+RealisasiRpInput.displayName = 'RealisasiRpInput';
+
+interface RealisasiFisikInputProps {
+  value?: number;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}
+
+const RealisasiFisikInput = memo(({ value, disabled, onChange }: RealisasiFisikInputProps) => (
+  <InputNumber
+    style={{ width: '100%' }}
+    value={value}
+    onChange={onChange}
+    min={0}
+    max={100}
+    step={0.01}
+    controls={false}
+    formatter={(val) => `${val}`}
+    disabled={disabled}
+  />
+));
+RealisasiFisikInput.displayName = 'RealisasiFisikInput';
+
+interface TextAreaInputProps {
+  value?: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+}
+
+const TextAreaInput = memo(({ value, disabled, onChange }: TextAreaInputProps) => (
+  <TextArea
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    rows={2}
+    disabled={disabled}
+  />
+));
+TextAreaInput.displayName = 'TextAreaInput';
+
+interface StatusTagProps {
+  status?: string;
+}
+
+const StatusTag = memo(({ status }: StatusTagProps) => {
+  if (!status) return <Tag>Belum Disimpan</Tag>;
+  const color =
+    status === 'terkirim'
+      ? 'processing'
+      : status === 'tersimpan'
+      ? 'default'
+      : 'warning';
+
+  const label =
+    status === 'tersimpan'
+      ? 'Tersimpan'
+      : status === 'terkirim'
+      ? 'Terkirim'
+      : status;
+
+  return <Tag color={color}>{label}</Tag>;
+});
+StatusTag.displayName = 'StatusTag';
+
 
 export const LaporanBulkInputPage: React.FC = () => {
   const { user, token } = useAuthStore();
@@ -227,15 +397,18 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   };
 
-  const handleFieldChange = (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: any) => {
-    setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id_sub_kegiatan === id_sub_kegiatan && row.id_sumber_anggaran === id_sumber_anggaran
-          ? { ...row, [field]: value }
-          : row
-      )
-    );
-  };
+  const handleFieldChange = useCallback(
+    (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: any) => {
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id_sub_kegiatan === id_sub_kegiatan && row.id_sumber_anggaran === id_sumber_anggaran
+            ? { ...row, [field]: value }
+            : row
+        )
+      );
+    },
+    []
+  );
 
   const handleSave = async () => {
     if (!filterBulan || !filterTahun) {
@@ -332,259 +505,194 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   };
 
-  const columns: ColumnsType<LaporanRow> = [
-    {
-      title: 'No',
-      key: 'no',
-      width: 50,
-      fixed: 'left',
-      render: (_: any, __: any, index: number) => index + 1,
-    },
-    {
-      title: 'Kode',
-      dataIndex: 'kode_sub',
-      key: 'kode_sub',
-      width: 100,
-      fixed: 'left',
-      sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
-    },
-    {
-      title: 'Sub Kegiatan',
-      dataIndex: 'kegiatan',
-      key: 'kegiatan',
-      width: 250,
-      sorter: (a, b) => a.kegiatan.localeCompare(b.kegiatan),
-    },
-    {
-      title: 'Indikator Kinerja',
-      dataIndex: 'indikator_kinerja',
-      key: 'indikator_kinerja',
-      width: 250,
-      render: (text: string) => (
-        <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
-      ),
-      sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
-    },
-    {
-      title: 'Sumber Anggaran',
-      key: 'id_sumber_anggaran',
-      width: 150,
-      render: (_: any, record: LaporanRow) => {
-        const sumberAnggaran = referenceData.sumberAnggaran.find(
-          (sa) => sa.value === record.id_sumber_anggaran
-        );
-        return (
-          <Tag color="blue">
-            {sumberAnggaran?.label || 'N/A'}
-          </Tag>
-        );
+  const columns: ColumnsType<LaporanRow> = useMemo(
+    () => [
+      {
+        title: 'No',
+        key: 'no',
+        width: 50,
+        fixed: 'left',
+        render: (_: any, __: any, index: number) => index + 1,
       },
-      sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
-    },
-    {
-      title: 'Target (K)',
-      key: 'target_k',
-      width: 120,
-      sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
-      render: (_: any, record: LaporanRow) => (
-        <div style={{ textAlign: 'right' }}>
-          {formatNumber(record.target_k || 0)}
-        </div>
-      ),
-    },
-    {
-      title: 'Satuan',
-      key: 'id_satuan',
-      width: 120,
-      render: (_: any, record: LaporanRow) => {
-        const satuan = referenceData.satuan.find((s) => s.value === record.id_satuan);
-        return (
-          <div style={{ textAlign: 'center' }}>
-            {satuan?.label || '-'}
+      {
+        title: 'Kode',
+        dataIndex: 'kode_sub',
+        key: 'kode_sub',
+        width: 100,
+        fixed: 'left',
+        sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
+      },
+      {
+        title: 'Sub Kegiatan',
+        dataIndex: 'kegiatan',
+        key: 'kegiatan',
+        width: 250,
+        sorter: (a, b) => a.kegiatan.localeCompare(b.kegiatan),
+      },
+      {
+        title: 'Indikator Kinerja',
+        dataIndex: 'indikator_kinerja',
+        key: 'indikator_kinerja',
+        width: 250,
+        render: (text: string) => (
+          <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
+        ),
+        sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
+      },
+      {
+        title: 'Sumber Anggaran',
+        key: 'id_sumber_anggaran',
+        width: 150,
+        render: (_: any, record: LaporanRow) => (
+          <SumberAnggaranCell
+            id_sumber_anggaran={record.id_sumber_anggaran}
+            sumberAnggaran={referenceData.sumberAnggaran}
+          />
+        ),
+        sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
+      },
+      {
+        title: 'Target (K)',
+        key: 'target_k',
+        width: 120,
+        sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
+        render: (_: any, record: LaporanRow) => (
+          <div style={{ textAlign: 'right' }}>
+            {formatNumber(record.target_k || 0)}
           </div>
-        );
+        ),
       },
-    },
-    {
-      title: 'Realisasi Angkas (Rp)',
-      key: 'angkas',
-      width: 150,
-      sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
-      render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.angkas}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
-          }
-          min={0}
-          max={record.target_angkas || undefined} // Cannot exceed target_angkas
-          step={1}
-          controls={false}
-          formatter={(value) => {
-            if (!value) return '0';
-            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-          }}
-          parser={(value) => {
-            const parsed = value?.replace(/\./g, '');
-            return parsed ? Number(parsed) : 0;
-          }}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Target Pagu (Rp)',
-      key: 'target_rp',
-      width: 150,
-      sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
-      render: (_: any, record: LaporanRow) => (
-        <div style={{ textAlign: 'right' }}>
-          {formatNumber(record.target_rp || 0)}
-        </div>
-      ),
-    },
-    {
-      title: 'Target Angkas (Rp)',
-      key: 'target_angkas',
-      width: 150,
-      sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
-      render: (_: any, record: LaporanRow) => (
-        <div style={{ textAlign: 'right', color: record.target_angkas ? '#1890ff' : '#999' }}>
-          {formatNumber(record.target_angkas || 0)}
-        </div>
-      ),
-    },
-    {
-      title: 'Realisasi (K)',
-      key: 'realisasi_k',
-      width: 120,
-      sorter: (a, b) => (a.realisasi_k || 0) - (b.realisasi_k || 0),
-      render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.realisasi_k}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_k', value)
-          }
-          min={0}
-          step={1}
-          controls={false}
-          formatter={(value) => {
-            if (!value) return '0';
-            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-          }}
-          parser={(value) => {
-            const parsed = value?.replace(/\./g, '');
-            return parsed ? Number(parsed) : 0;
-          }}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Realisasi (Rp)',
-      key: 'realisasi_rp',
-      width: 150,
-      sorter: (a, b) => (a.realisasi_rp || 0) - (b.realisasi_rp || 0),
-      render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.realisasi_rp}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
-          }
-          min={0}
-          max={record.angkas || undefined} // Cannot exceed angkas (realisasi angkas)
-          step={1}
-          controls={false}
-          formatter={(value) => {
-            if (!value) return '0';
-            return `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-          }}
-          parser={(value) => {
-            const parsed = value?.replace(/\./g, '');
-            return parsed ? Number(parsed) : 0;
-          }}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Realisasi Fisik (%)',
-      key: 'realisasi_fisik',
-      width: 120,
-      sorter: (a, b) => (a.realisasi_fisik || 0) - (b.realisasi_fisik || 0),
-      render: (_: any, record: LaporanRow) => (
-        <InputNumber
-          style={{ width: '100%' }}
-          value={record.realisasi_fisik}
-          onChange={(value) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_fisik', value)
-          }
-          min={0}
-          max={100}
-          step={0.01}
-          controls={false}
-          formatter={(value) => `${value}`}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Permasalahan',
-      key: 'permasalahan',
-      width: 200,
-      render: (_: any, record: LaporanRow) => (
-        <TextArea
-          value={record.permasalahan}
-          onChange={(e) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'permasalahan', e.target.value)
-          }
-          rows={2}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Upaya',
-      key: 'upaya',
-      width: 200,
-      render: (_: any, record: LaporanRow) => (
-        <TextArea
-          value={record.upaya}
-          onChange={(e) =>
-            handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'upaya', e.target.value)
-          }
-          rows={2}
-          disabled={record.status === 'terkirim'}
-        />
-      ),
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 120,
-      fixed: 'right',
-      sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
-      render: (_: any, record: LaporanRow) => {
-        if (!record.status) return <Tag>Belum Disimpan</Tag>;
-        const color =
-          record.status === 'terkirim'
-            ? 'processing'
-            : record.status === 'tersimpan'
-            ? 'default'
-            : 'warning';
-        
-        const label = 
-          record.status === 'tersimpan' ? 'Tersimpan' :
-          record.status === 'terkirim' ? 'Terkirim' :
-          record.status;
-        
-        return <Tag color={color}>{label}</Tag>;
+      {
+        title: 'Satuan',
+        key: 'id_satuan',
+        width: 120,
+        render: (_: any, record: LaporanRow) => (
+          <SatuanCell id_satuan={record.id_satuan} satuan={referenceData.satuan} />
+        ),
       },
-    },
-  ];
+      {
+        title: 'Realisasi Angkas (Rp)',
+        key: 'angkas',
+        width: 150,
+        sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
+        render: (_: any, record: LaporanRow) => (
+          <AngkasInput
+            value={record.angkas}
+            targetAngkas={record.target_angkas}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Target Pagu (Rp)',
+        key: 'target_rp',
+        width: 150,
+        sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
+        render: (_: any, record: LaporanRow) => (
+          <div style={{ textAlign: 'right' }}>
+            {formatNumber(record.target_rp || 0)}
+          </div>
+        ),
+      },
+      {
+        title: 'Target Angkas (Rp)',
+        key: 'target_angkas',
+        width: 150,
+        sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
+        render: (_: any, record: LaporanRow) => (
+          <div style={{ textAlign: 'right', color: record.target_angkas ? '#1890ff' : '#999' }}>
+            {formatNumber(record.target_angkas || 0)}
+          </div>
+        ),
+      },
+      {
+        title: 'Realisasi (K)',
+        key: 'realisasi_k',
+        width: 120,
+        sorter: (a, b) => (a.realisasi_k || 0) - (b.realisasi_k || 0),
+        render: (_: any, record: LaporanRow) => (
+          <RealisasiKInput
+            value={record.realisasi_k}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_k', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Realisasi (Rp)',
+        key: 'realisasi_rp',
+        width: 150,
+        sorter: (a, b) => (a.realisasi_rp || 0) - (b.realisasi_rp || 0),
+        render: (_: any, record: LaporanRow) => (
+          <RealisasiRpInput
+            value={record.realisasi_rp}
+            maxValue={record.angkas}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Realisasi Fisik (%)',
+        key: 'realisasi_fisik',
+        width: 120,
+        sorter: (a, b) => (a.realisasi_fisik || 0) - (b.realisasi_fisik || 0),
+        render: (_: any, record: LaporanRow) => (
+          <RealisasiFisikInput
+            value={record.realisasi_fisik}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_fisik', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Permasalahan',
+        key: 'permasalahan',
+        width: 200,
+        render: (_: any, record: LaporanRow) => (
+          <TextAreaInput
+            value={record.permasalahan}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'permasalahan', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Upaya',
+        key: 'upaya',
+        width: 200,
+        render: (_: any, record: LaporanRow) => (
+          <TextAreaInput
+            value={record.upaya}
+            disabled={record.status === 'terkirim'}
+            onChange={(value) =>
+              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'upaya', value)
+            }
+          />
+        ),
+      },
+      {
+        title: 'Status',
+        key: 'status',
+        width: 120,
+        fixed: 'right',
+        sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
+        render: (_: any, record: LaporanRow) => <StatusTag status={record.status} />,
+      },
+    ],
+    [referenceData, handleFieldChange]
+  );
 
   // Check if there are no unsaved records (allow mix of tersimpan and terkirim)
   const canSendReport = rows.length > 0 && rows.every(

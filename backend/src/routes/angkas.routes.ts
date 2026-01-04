@@ -126,10 +126,10 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     const parsed = await parseAngkasPdf(req.file.buffer);
     const tahun = tahunOverride ? parseInt(tahunOverride) : parsed.tahun;
 
-    // Get all puskesmas users
+    // Get all puskesmas users (include kode_sub_unit for matching)
     const puskesmasUsers = await User.findAll({
       where: { role: 'puskesmas' },
-      attributes: ['id', 'nama', 'username'],
+      attributes: ['id', 'nama', 'username', 'kode_sub_unit'],
     });
 
     // Get all sub kegiatan for matching
@@ -159,7 +159,8 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     for (const puskesmasData of parsed.puskesmasList) {
       const userId = findPuskesmasUser(
         puskesmasData.namaPuskesmas,
-        puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username }))
+        puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username, kode_sub_unit: u.kode_sub_unit || undefined })),
+        puskesmasData.kodePuskesmas // Pass kodePuskesmas for kode_sub_unit matching
       );
 
       if (!userId) {

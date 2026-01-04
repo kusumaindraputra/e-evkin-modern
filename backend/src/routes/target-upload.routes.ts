@@ -14,6 +14,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 interface ExcelRow {
   NO: number;
   TAHUN: number;
+  'KODE SUB UNIT': string;  // Added for kode_sub_unit matching
   'NAMA SUB UNIT': string;
   'KODE SUB KEGIATAN': string;
   'NAMA SUB KEGIATAN': string;
@@ -115,6 +116,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
 
     // Group by puskesmas + sub kegiatan + sumber dana + tahun
     const grouped = new Map<string, {
+      kodeSubUnit: string;  // Added for kode_sub_unit matching
       puskesmas: string;
       subKegiatanKode: string;
       subKegiatanNama: string;
@@ -126,10 +128,11 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     }>();
 
     data.forEach((row, index) => {
-      const key = `${row['NAMA SUB UNIT']}_${row['KODE SUB KEGIATAN']}_${row['KODE SUMBER DANA']}_${row.TAHUN}`;
+      const key = `${row['KODE SUB UNIT']}_${row['KODE SUB KEGIATAN']}_${row['KODE SUMBER DANA']}_${row.TAHUN}`;
       
       if (!grouped.has(key)) {
         grouped.set(key, {
+          kodeSubUnit: row['KODE SUB UNIT'],
           puskesmas: row['NAMA SUB UNIT'],
           subKegiatanKode: row['KODE SUB KEGIATAN'],
           subKegiatanNama: row['NAMA SUB KEGIATAN'],
@@ -149,20 +152,31 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     // Process each grouped target
     for (const [key, group] of grouped) {
       try {
-        // Find puskesmas by nama
-        // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+        // Find puskesmas by kode_sub_unit (PRIMARY METHOD - most reliable)
         let puskesmas: User | null = null;
         
-        if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+        if (group.kodeSubUnit) {
           puskesmas = await User.findOne({
             where: { 
-              username: 'labkesda',
+              kode_sub_unit: group.kodeSubUnit,
               role: 'puskesmas',
             },
           });
         }
 
-        // Handle prefix "Puskesmas" in Excel vs DB without prefix
+        // FALLBACK: Old name-based matching if kode_sub_unit not matched
+        if (!puskesmas) {
+          // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+          if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+            puskesmas = await User.findOne({
+              where: { 
+                username: 'labkesda',
+                role: 'puskesmas',
+              },
+            });
+          }
+        }
+
         if (!puskesmas) {
           puskesmas = await User.findOne({
             where: { 
@@ -183,49 +197,12 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           });
         }
 
-        // Handle typo "Puskemas" instead of "Puskesmas"
-        if (!puskesmas && group.puskesmas.startsWith('Puskemas ')) {
-          const namaWithoutPrefix = group.puskesmas.replace('Puskemas ', '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: namaWithoutPrefix,
-              role: 'puskesmas',
-            },
-          });
-        }
-
         // Handle case differences like "Kota batu" vs "Kota Batu"
         if (!puskesmas) {
           const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
           puskesmas = await User.findOne({
             where: { 
-              nama: { [Op.iLike]: searchName }, // Case-insensitive search
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Handle space differences like "Karya Mekar" vs "Karyamekar"
-        if (!puskesmas) {
-          const searchName = group.puskesmas
-            .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-            .replace(/\s+/g, ''); // Remove all spaces
-          puskesmas = await User.findOne({
-            where: { 
               nama: { [Op.iLike]: searchName },
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Last resort: try to match DB names that contain the search term
-        if (!puskesmas) {
-          const searchName = group.puskesmas
-            .replace(/^Puskesmas\s+|^Puskemas\s+/i, '')
-            .replace(/\s+/g, '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: { [Op.iLike]: `%${searchName}%` },
               role: 'puskesmas',
             },
           });
@@ -243,7 +220,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             row: group.rows[0],
             puskesmas: group.puskesmas,
             subKegiatan: group.subKegiatanNama,
-            error: `Puskesmas "${group.puskesmas}" tidak ditemukan`,
+            error: `Puskesmas "${group.puskesmas}" (kode: ${group.kodeSubUnit}) tidak ditemukan`,
           });
           continue;
         }

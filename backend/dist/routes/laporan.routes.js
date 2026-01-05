@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const models_1 = require("../models");
 const auth_1 = require("../middleware/auth");
+const sequelize_1 = require("sequelize");
 const router = (0, express_1.Router)();
 // Get all laporan with pagination (hanya laporan user sendiri untuk puskesmas)
 router.get('/', auth_1.authenticate, async (req, res) => {
@@ -271,6 +272,61 @@ router.post('/bulk-upsert', auth_1.authenticate, async (req, res) => {
             skipped: 0,
             errors: [],
         };
+        // OPTIMIZATION: Pre-fetch all required data in single queries
+        const subKegiatanIds = [...new Set(laporanArray.map((d) => d.id_sub_kegiatan).filter(Boolean))];
+        const tahunValues = [...new Set(laporanArray.map((d) => d.tahun).filter(Boolean))];
+        // Pre-fetch all SubKegiatan in one query
+        const subKegiatanMap = new Map();
+        if (subKegiatanIds.length > 0) {
+            const subKegiatanList = await models_1.SubKegiatan.findAll({
+                where: { id_sub_kegiatan: { [sequelize_1.Op.in]: subKegiatanIds } },
+                attributes: ['id_sub_kegiatan', 'id_kegiatan'],
+                transaction,
+            });
+            subKegiatanList.forEach(sk => subKegiatanMap.set(sk.id_sub_kegiatan, sk));
+        }
+        // Pre-fetch all targets for this user in relevant years
+        const targetMap = new Map();
+        if (subKegiatanIds.length > 0 && tahunValues.length > 0) {
+            const targets = await models_1.SubKegiatanTarget.findAll({
+                where: {
+                    user_id: userId,
+                    id_sub_kegiatan: { [sequelize_1.Op.in]: subKegiatanIds },
+                    bulan: null,
+                    tahun: { [sequelize_1.Op.in]: tahunValues },
+                },
+                order: [['created_at', 'DESC']],
+                transaction,
+            });
+            // Group by unique key (only keep latest per combination)
+            for (const t of targets) {
+                const key = `${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
+                if (!targetMap.has(key)) {
+                    targetMap.set(key, t);
+                }
+            }
+        }
+        // OPTIMIZATION: Pre-fetch all existing laporan for this user in relevant months/years
+        // This eliminates N+1 findOne queries in the loop
+        const bulanValues = [...new Set(laporanArray.map((d) => d.bulan).filter(Boolean))];
+        const sumberAnggaranIds = [...new Set(laporanArray.map((d) => d.id_sumber_anggaran).filter(Boolean))];
+        const existingLaporanMap = new Map();
+        if (subKegiatanIds.length > 0 && bulanValues.length > 0 && tahunValues.length > 0) {
+            const existingLaporan = await models_1.Laporan.findAll({
+                where: {
+                    user_id: userId,
+                    id_sub_kegiatan: { [sequelize_1.Op.in]: subKegiatanIds },
+                    id_sumber_anggaran: { [sequelize_1.Op.in]: sumberAnggaranIds },
+                    bulan: { [sequelize_1.Op.in]: bulanValues },
+                    tahun: { [sequelize_1.Op.in]: tahunValues },
+                },
+                transaction,
+            });
+            for (const lap of existingLaporan) {
+                const key = `${lap.user_id}_${lap.id_sub_kegiatan}_${lap.id_sumber_anggaran}_${lap.bulan}_${lap.tahun}`;
+                existingLaporanMap.set(key, lap);
+            }
+        }
         // Process each laporan within the transaction
         for (const data of laporanArray) {
             try {
@@ -279,18 +335,9 @@ router.post('/bulk-upsert', auth_1.authenticate, async (req, res) => {
                     results.skipped++;
                     continue;
                 }
-                // VALIDATION: Check if target exists for this combination (using SubKegiatanTarget)
-                const target = await models_1.SubKegiatanTarget.findOne({
-                    where: {
-                        user_id: userId,
-                        id_sub_kegiatan: data.id_sub_kegiatan,
-                        id_sumber_anggaran: data.id_sumber_anggaran,
-                        bulan: null, // yearly target
-                        tahun: data.tahun,
-                    },
-                    order: [['created_at', 'DESC']],
-                    transaction,
-                });
+                // VALIDATION: Check if target exists (from pre-fetched map)
+                const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
+                const target = targetMap.get(targetKey);
                 if (!target) {
                     results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
                     results.skipped++;
@@ -308,11 +355,8 @@ router.post('/bulk-upsert', auth_1.authenticate, async (req, res) => {
                     results.skipped++;
                     continue;
                 }
-                // Get id_kegiatan from SubKegiatan relationship
-                const subKegiatan = await models_1.SubKegiatan.findByPk(data.id_sub_kegiatan, {
-                    attributes: ['id_sub_kegiatan', 'id_kegiatan'],
-                    transaction,
-                });
+                // Get id_kegiatan from pre-fetched map
+                const subKegiatan = subKegiatanMap.get(data.id_sub_kegiatan);
                 const laporanData = {
                     ...data,
                     user_id: userId,
@@ -334,17 +378,9 @@ router.post('/bulk-upsert', auth_1.authenticate, async (req, res) => {
                     }
                 }
                 else {
-                    // Check if exists based on unique combination
-                    const existing = await models_1.Laporan.findOne({
-                        where: {
-                            user_id: userId,
-                            id_sub_kegiatan: data.id_sub_kegiatan,
-                            id_sumber_anggaran: data.id_sumber_anggaran,
-                            bulan: data.bulan,
-                            tahun: data.tahun,
-                        },
-                        transaction,
-                    });
+                    // OPTIMIZED: Check if exists using pre-fetched map (eliminates N+1 queries)
+                    const existingKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.bulan}_${data.tahun}`;
+                    const existing = existingLaporanMap.get(existingKey);
                     if (existing) {
                         // Update existing
                         await existing.update(laporanData, { transaction });
@@ -352,7 +388,9 @@ router.post('/bulk-upsert', auth_1.authenticate, async (req, res) => {
                     }
                     else {
                         // Create new
-                        await models_1.Laporan.create(laporanData, { transaction });
+                        const newLaporan = await models_1.Laporan.create(laporanData, { transaction });
+                        // Add to map in case same combination appears again in same batch
+                        existingLaporanMap.set(existingKey, newLaporan);
                         results.created++;
                     }
                 }

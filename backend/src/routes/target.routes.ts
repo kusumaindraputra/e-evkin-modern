@@ -206,6 +206,7 @@ router.get('/latest/:id_sub_kegiatan', authenticate, async (req, res) => {
 });
 
 // Get semua sub kegiatan yang punya target untuk puskesmas ini
+// Returns sumberAnggaranCount to indicate if angkas should be auto-filled or manual
 router.get('/assigned', authenticate, async (req, res) => {
   try {
     const userId = req.user!.id;
@@ -269,7 +270,16 @@ router.get('/assigned', authenticate, async (req, res) => {
       }
     }
 
-    const result = Array.from(groupedBySubKegiatan.values());
+    // Add sumberAnggaranCount to each group
+    // If count > 1, angkas must be entered manually (PDF angkas can't be split per sumber)
+    // If count == 1, angkas can be auto-filled from PDF upload
+    const result = Array.from(groupedBySubKegiatan.values()).map(group => ({
+      ...group,
+      sumberAnggaranCount: group.targets.length,
+      // isManualAngkas: true means puskesmas must input angkas manually
+      // because we can't determine how to split PDF angkas across multiple sumber anggaran
+      isManualAngkas: group.targets.length > 1,
+    }));
 
     return res.json({
       success: true,

@@ -56,12 +56,13 @@ User.init({
         type: sequelize_1.DataTypes.STRING(50),
         allowNull: true,
     },
-    nama_puskesmas: {
-        type: sequelize_1.DataTypes.STRING(200),
-        allowNull: true,
-    },
     kode_sub_unit: {
         type: sequelize_1.DataTypes.STRING(50),
+        allowNull: true,
+        unique: true,
+    },
+    nama_puskesmas: {
+        type: sequelize_1.DataTypes.STRING(200),
         allowNull: true,
     },
     id_blud: {

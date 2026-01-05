@@ -91,7 +91,14 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         // Get all puskesmas users (include kode_sub_unit for matching)
         const puskesmasUsers = await models_1.User.findAll({
             where: { role: 'puskesmas' },
-            attributes: ['id', 'nama', 'username', 'kode_sub_unit'],
+            attributes: ['id', 'nama', 'username', 'kode_sub_unit', 'nama_puskesmas'],
+        });
+        // Create mapping from kode_sub_unit to user_id for fast lookup
+        const kodeSubUnitToUserId = new Map();
+        puskesmasUsers.forEach(u => {
+            if (u.kode_sub_unit) {
+                kodeSubUnitToUserId.set(u.kode_sub_unit, u.id);
+            }
         });
         // Get all sub kegiatan for matching
         const subKegiatanList = await models_1.SubKegiatan.findAll({
@@ -113,12 +120,31 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
             errors: [],
             successList: [],
         };
+        // OPTIMIZATION: Pre-fetch all existing AnggaranKas for this tahun
+        // This eliminates N+1 queries (12 per row for each bulan!)
+        const existingAngkas = await models_1.AnggaranKas.findAll({
+            where: { tahun },
+            attributes: ['id', 'user_id', 'kode_rekening', 'id_sumber_anggaran', 'bulan', 'nilai', 'created_at'],
+            order: [['created_at', 'DESC']],
+        });
+        // Build lookup map: user_id + kode_rekening + id_sumber_anggaran + bulan -> latest record
+        const existingAngkasMap = new Map();
+        for (const angkas of existingAngkas) {
+            const key = `${angkas.user_id}_${angkas.kode_rekening}_${angkas.id_sumber_anggaran}_${angkas.bulan}`;
+            if (!existingAngkasMap.has(key)) {
+                existingAngkasMap.set(key, angkas);
+            }
+        }
         // Process each puskesmas
         for (const puskesmasData of parsed.puskesmasList) {
-            const userId = (0, angkasParserService_1.findPuskesmasUser)(puskesmasData.namaPuskesmas, puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username, kode_sub_unit: u.kode_sub_unit || undefined })), puskesmasData.kodePuskesmas // Pass kodePuskesmas for kode_sub_unit matching
-            );
+            // Primary: match by kode_sub_unit (kodePuskesmas from PDF)
+            let userId = kodeSubUnitToUserId.get(puskesmasData.kodePuskesmas);
+            // Fallback: match by name if kode not found
             if (!userId) {
-                result.unmatchedPuskesmas.push(puskesmasData.namaPuskesmas);
+                userId = (0, angkasParserService_1.findPuskesmasUser)(puskesmasData.namaPuskesmas, puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username }))) || undefined;
+            }
+            if (!userId) {
+                result.unmatchedPuskesmas.push(`${puskesmasData.namaPuskesmas} (kode: ${puskesmasData.kodePuskesmas})`);
                 continue;
             }
             // Process each row
@@ -153,18 +179,9 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         continue;
                     }
                     try {
-                        // IMPORTANT: Check if record already exists for this kode_rekening + bulan
-                        // WITHOUT filtering by id_sumber_anggaran (PDF doesn't have sumber anggaran granularity)
-                        // This prevents duplicate records for same kode_rekening with different sumber anggaran
-                        const existingRecord = await models_1.AnggaranKas.findOne({
-                            where: {
-                                user_id: userId,
-                                kode_rekening: row.kodeRekening,
-                                tahun,
-                                bulan,
-                            },
-                            order: [['created_at', 'DESC']], // Get the latest record
-                        });
+                        // OPTIMIZED: Check if record already exists using pre-fetched map
+                        const angkasKey = `${userId}_${row.kodeRekening}_${sumberAnggaran.id}_${bulan}`;
+                        const existingRecord = existingAngkasMap.get(angkasKey) || null;
                         if (existingRecord) {
                             // Compare values - skip if same
                             const existingNilai = Number(existingRecord.nilai);
@@ -174,7 +191,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                                 continue; // Skip - no change needed
                             }
                             // INSERT new record for history tracking (value changed)
-                            await models_1.AnggaranKas.create({
+                            const newAngkas = await models_1.AnggaranKas.create({
                                 user_id: userId,
                                 id_sub_kegiatan: idSubKegiatan,
                                 id_sumber_anggaran: sumberAnggaran.id,
@@ -185,6 +202,8 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                                 nilai: newNilai,
                                 created_by: adminId,
                             });
+                            // Update cache with new record for potential future iterations
+                            existingAngkasMap.set(angkasKey, newAngkas);
                             result.updated++;
                             result.success++;
                             result.successList.push({
@@ -201,7 +220,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         }
                         else {
                             // INSERT new record (first entry)
-                            await models_1.AnggaranKas.create({
+                            const newAngkas = await models_1.AnggaranKas.create({
                                 user_id: userId,
                                 id_sub_kegiatan: idSubKegiatan,
                                 id_sumber_anggaran: sumberAnggaran.id,
@@ -212,6 +231,8 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                                 nilai,
                                 created_by: adminId,
                             });
+                            // Add to cache for potential future iterations
+                            existingAngkasMap.set(angkasKey, newAngkas);
                             result.inserted++;
                             result.success++;
                             result.successList.push({

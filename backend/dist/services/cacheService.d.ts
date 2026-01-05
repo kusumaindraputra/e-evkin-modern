@@ -1,37 +1,72 @@
-import NodeCache from 'node-cache';
 /**
- * Cache service using node-cache for reference data
- * TTL: 1 hour (3600 seconds) for reference data
+ * Simple In-Memory Cache Service
+ *
+ * Provides caching for reference data that rarely changes.
+ * Can be replaced with Redis in production for distributed caching.
+ *
+ * Features:
+ * - TTL-based expiration
+ * - Cache invalidation
+ * - Memory-efficient for small datasets
  */
 declare class CacheService {
     private cache;
-    private readonly CACHE_TTL;
-    constructor();
+    private defaultTTL;
     /**
-     * Get value from cache
+     * Get item from cache
+     * @param key Cache key
+     * @returns Cached data or null if not found/expired
      */
-    get<T>(key: string): T | undefined;
+    get<T>(key: string): T | null;
     /**
-     * Set value in cache
+     * Set item in cache
+     * @param key Cache key
+     * @param data Data to cache
+     * @param ttlMs Time to live in milliseconds (default: 5 minutes)
      */
-    set<T>(key: string, value: T, ttl?: number): void;
+    set<T>(key: string, data: T, ttlMs?: number): void;
     /**
-     * Delete from cache
+     * Delete item from cache
+     * @param key Cache key
      */
-    delete(key: string): number;
+    delete(key: string): boolean;
+    /**
+     * Invalidate all cache entries matching a pattern
+     * @param pattern Prefix pattern to match
+     */
+    invalidatePattern(pattern: string): number;
     /**
      * Clear all cache
      */
-    flush(): void;
+    clear(): void;
     /**
-     * Get all keys
+     * Get cache statistics
      */
-    getKeys(): string[];
+    stats(): {
+        size: number;
+        keys: string[];
+    };
     /**
-     * Get cache stats
+     * Get or fetch - returns cached data or fetches and caches
+     * @param key Cache key
+     * @param fetcher Function to fetch data if not cached
+     * @param ttlMs TTL in milliseconds
      */
-    getStats(): NodeCache.Stats;
+    getOrFetch<T>(key: string, fetcher: () => Promise<T>, ttlMs?: number): Promise<T>;
 }
 export declare const cacheService: CacheService;
+export declare const CACHE_KEYS: {
+    SUMBER_ANGGARAN: string;
+    SATUAN: string;
+    KEGIATAN: string;
+    SUB_KEGIATAN_ALL: string;
+    SUB_KEGIATAN_BY_KEGIATAN: (id: number) => string;
+};
+export declare const CACHE_TTL: {
+    REFERENCE_DATA: number;
+    SHORT: number;
+    MEDIUM: number;
+    LONG: number;
+};
 export default cacheService;
 //# sourceMappingURL=cacheService.d.ts.map

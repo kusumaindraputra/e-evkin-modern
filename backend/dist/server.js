@@ -12,12 +12,10 @@ const startServer = async () => {
         // Test database connection
         await database_1.default.authenticate();
         console.log('✅ Database connected successfully');
-        // Sync models (in development)
-        if (config_1.config.env === 'development') {
-            // Skip sync - database schema already created
-            // await sequelize.sync({ alter: true });
-            console.log('✅ Database schema ready (sync skipped)');
-        }
+        // Note: sync({ alter: true }) disabled due to index naming conflicts with existing database
+        // Use proper migrations for schema changes instead
+        // To create missing tables only (safe), uncomment: await sequelize.sync({ force: false });
+        console.log('ℹ️  Database sync disabled - using existing schema');
         // Start server
         app_1.default.listen(config_1.config.port, () => {
             console.log(`🚀 Server running on port ${config_1.config.port}`);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import {
   Table,
   Button,
@@ -242,6 +242,10 @@ export const LaporanBulkInputPage: React.FC = () => {
     satuan: [],
   });
   
+  // Refs to prevent double-loading in React StrictMode
+  const referenceDataLoaded = useRef(false);
+  const loadDataInProgress = useRef(false);
+  
   // Filters
   const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
@@ -267,6 +271,10 @@ export const LaporanBulkInputPage: React.FC = () => {
   });
 
   const loadReferenceData = useCallback(async () => {
+    // Skip if already loaded (prevents double-loading in React StrictMode)
+    if (referenceDataLoaded.current) return;
+    referenceDataLoaded.current = true;
+    
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -282,11 +290,17 @@ export const LaporanBulkInputPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to load reference data:', error);
       message.error('Gagal memuat data referensi');
+      // Reset flag to allow retry on error
+      referenceDataLoaded.current = false;
     }
   }, [token]);
 
   const loadData = useCallback(async () => {
     if (!user || !filterBulan || !filterTahun) return;
+    
+    // Prevent concurrent requests (React StrictMode double-invokes effects)
+    if (loadDataInProgress.current) return;
+    loadDataInProgress.current = true;
 
     setLoading(true);
     try {
@@ -398,6 +412,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       message.error(error.response?.data?.message || 'Gagal memuat data');
     } finally {
       setLoading(false);
+      loadDataInProgress.current = false;
     }
   }, [user, filterBulan, filterTahun, token, bulanOptions]);
 

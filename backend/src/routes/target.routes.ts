@@ -86,6 +86,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
     if (tahun) whereClause.tahun = parseInt(tahun as string);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
 
+    // OPTIMIZED: Include creator in single query instead of N+1 lookup
     const history = await SubKegiatanTarget.findAll({
       where: whereClause,
       attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'id_satuan', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
@@ -95,56 +96,45 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
           as: 'satuan',
           attributes: ['id_satuan', 'satuannya'],
         },
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'username', 'nama'],
+        },
       ],
       order: [['created_at', 'DESC']],
     });
 
-    // Map to include creator info by fetching user separately
-    const result = await Promise.all(
-      history.map(async (item: any) => {
-        const createdById = item.getDataValue('created_by');
-        let creator = null;
-        
-        if (createdById) {
-          const userRecord = await User.findByPk(createdById, {
-            attributes: ['id', 'username', 'nama'],
-          });
-          
-          if (userRecord) {
-            creator = {
-              id: userRecord.getDataValue('id'),
-              username: userRecord.getDataValue('username'),
-              nama: userRecord.getDataValue('nama'),
-            };
-          }
-        }
+    // Map results with included creator (no additional queries needed)
+    const result = history.map((item: any) => {
+      const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
+      const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
 
-        // Sequelize with underscored:true returns createdAt/updatedAt as camelCase
-        const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
-        const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
-
-        return {
-          id: item.getDataValue('id'),
-          user_id: item.getDataValue('user_id'),
-          id_sub_kegiatan: item.getDataValue('id_sub_kegiatan'),
-          id_sumber_anggaran: item.getDataValue('id_sumber_anggaran'),
-          id_satuan: item.getDataValue('id_satuan'),
-          target_k: item.getDataValue('target_k'),
-          target_rp: item.getDataValue('target_rp'),
-          bulan: item.getDataValue('bulan'),
-          tahun: item.getDataValue('tahun'),
-          catatan: item.getDataValue('catatan'),
-          created_by: item.getDataValue('created_by'),
-          created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
-          updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
-          creator: creator,
-          satuan: item.satuan ? {
-            id_satuan: item.satuan.getDataValue('id_satuan'),
-            satuannya: item.satuan.getDataValue('satuannya'),
-          } : null,
-        };
-      })
-    );
+      return {
+        id: item.getDataValue('id'),
+        user_id: item.getDataValue('user_id'),
+        id_sub_kegiatan: item.getDataValue('id_sub_kegiatan'),
+        id_sumber_anggaran: item.getDataValue('id_sumber_anggaran'),
+        id_satuan: item.getDataValue('id_satuan'),
+        target_k: item.getDataValue('target_k'),
+        target_rp: item.getDataValue('target_rp'),
+        bulan: item.getDataValue('bulan'),
+        tahun: item.getDataValue('tahun'),
+        catatan: item.getDataValue('catatan'),
+        created_by: item.getDataValue('created_by'),
+        created_at: createdAtValue ? new Date(createdAtValue).toISOString() : null,
+        updated_at: updatedAtValue ? new Date(updatedAtValue).toISOString() : null,
+        creator: item.creator ? {
+          id: item.creator.getDataValue('id'),
+          username: item.creator.getDataValue('username'),
+          nama: item.creator.getDataValue('nama'),
+        } : null,
+        satuan: item.satuan ? {
+          id_satuan: item.satuan.getDataValue('id_satuan'),
+          satuannya: item.satuan.getDataValue('satuannya'),
+        } : null,
+      };
+    });
 
     return res.json({
       success: true,
@@ -366,21 +356,23 @@ router.post('/bulk', authenticate, async (req, res) => {
       });
     }
 
-    // Create all targets (akan otomatis membuat history)
-    const newTargets = await Promise.all(
-      targets.map(target =>
-        SubKegiatanTarget.create({
-          user_id: userId,
-          id_sub_kegiatan: target.id_sub_kegiatan,
-          id_sumber_anggaran: target.id_sumber_anggaran,
-          target_k: target.target_k,
-          target_rp: target.target_rp,
-          bulan: null,
-          tahun,
-          created_by: userId,
-        })
-      )
-    );
+    // OPTIMIZED: Use bulkCreate instead of Promise.all with individual creates
+    const targetData = targets.map(target => ({
+      user_id: userId,
+      id_sub_kegiatan: target.id_sub_kegiatan,
+      id_sumber_anggaran: target.id_sumber_anggaran,
+      id_satuan: target.id_satuan || null,
+      target_k: target.target_k,
+      target_rp: target.target_rp,
+      bulan: null,
+      tahun,
+      created_by: userId,
+    }));
+
+    const newTargets = await SubKegiatanTarget.bulkCreate(targetData, {
+      validate: true,
+      returning: true,
+    });
 
     return res.status(201).json({
       success: true,

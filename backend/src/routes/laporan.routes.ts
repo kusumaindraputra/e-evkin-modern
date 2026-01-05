@@ -299,6 +299,43 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
       errors: [] as string[],
     };
 
+    // OPTIMIZATION: Pre-fetch all required data in single queries
+    const subKegiatanIds = [...new Set(laporanArray.map((d: any) => d.id_sub_kegiatan).filter(Boolean))];
+    const tahunValues = [...new Set(laporanArray.map((d: any) => d.tahun).filter(Boolean))];
+    
+    // Pre-fetch all SubKegiatan in one query
+    const subKegiatanMap = new Map<number, any>();
+    if (subKegiatanIds.length > 0) {
+      const subKegiatanList = await SubKegiatan.findAll({
+        where: { id_sub_kegiatan: { [Op.in]: subKegiatanIds } },
+        attributes: ['id_sub_kegiatan', 'id_kegiatan'],
+        transaction,
+      });
+      subKegiatanList.forEach(sk => subKegiatanMap.set(sk.id_sub_kegiatan, sk));
+    }
+
+    // Pre-fetch all targets for this user in relevant years
+    const targetMap = new Map<string, any>();
+    if (subKegiatanIds.length > 0 && tahunValues.length > 0) {
+      const targets = await SubKegiatanTarget.findAll({
+        where: {
+          user_id: userId,
+          id_sub_kegiatan: { [Op.in]: subKegiatanIds },
+          bulan: null,
+          tahun: { [Op.in]: tahunValues },
+        },
+        order: [['created_at', 'DESC']],
+        transaction,
+      });
+      // Group by unique key (only keep latest per combination)
+      for (const t of targets) {
+        const key = `${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
+        if (!targetMap.has(key)) {
+          targetMap.set(key, t);
+        }
+      }
+    }
+
     // Process each laporan within the transaction
     for (const data of laporanArray) {
       try {
@@ -308,18 +345,9 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
           continue;
         }
 
-        // VALIDATION: Check if target exists for this combination (using SubKegiatanTarget)
-        const target = await SubKegiatanTarget.findOne({
-          where: {
-            user_id: userId,
-            id_sub_kegiatan: data.id_sub_kegiatan,
-            id_sumber_anggaran: data.id_sumber_anggaran,
-            bulan: null, // yearly target
-            tahun: data.tahun,
-          },
-          order: [['created_at', 'DESC']],
-          transaction,
-        });
+        // VALIDATION: Check if target exists (from pre-fetched map)
+        const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
+        const target = targetMap.get(targetKey);
 
         if (!target) {
           results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
@@ -341,11 +369,8 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
           continue;
         }
 
-        // Get id_kegiatan from SubKegiatan relationship
-        const subKegiatan = await SubKegiatan.findByPk(data.id_sub_kegiatan, {
-          attributes: ['id_sub_kegiatan', 'id_kegiatan'],
-          transaction,
-        });
+        // Get id_kegiatan from pre-fetched map
+        const subKegiatan = subKegiatanMap.get(data.id_sub_kegiatan);
 
         const laporanData = {
           ...data,

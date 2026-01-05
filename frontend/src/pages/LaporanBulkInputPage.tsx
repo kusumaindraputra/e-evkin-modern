@@ -275,12 +275,8 @@ export const LaporanBulkInputPage: React.FC = () => {
 
   const loadReferenceData = useCallback(async () => {
     // Skip if already loaded (prevents double-loading in React StrictMode)
-    if (referenceDataLoaded.current) {
-      console.log('[loadReferenceData] Skipped - already loaded');
-      return;
-    }
+    if (referenceDataLoaded.current) return;
     referenceDataLoaded.current = true;
-    console.log('[loadReferenceData] Starting...');
     
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -294,7 +290,6 @@ export const LaporanBulkInputPage: React.FC = () => {
         sumberAnggaran: sumberAnggaranRes.data,
         satuan: satuanRes.data,
       });
-      console.log('[loadReferenceData] Success');
     } catch (error) {
       console.error('Failed to load reference data:', error);
       message.error('Gagal memuat data referensi');
@@ -393,10 +388,11 @@ export const LaporanBulkInputPage: React.FC = () => {
             id_sumber_anggaran: idSumberAnggaran,
             
             // Target dan satuan dari admin (READ-ONLY)
-            target_k: target.target_k,
-            target_rp: target.target_rp,
+            // Use default satuan (1=Orang) if not set in target
+            target_k: target.target_k || 0,
+            target_rp: target.target_rp || 0,
             target_angkas: targetAngkas,
-            id_satuan: target.id_satuan,
+            id_satuan: target.id_satuan || 1, // Default to "Orang" if not set
             
             // Flag for angkas handling
             isManualAngkas,

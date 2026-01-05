@@ -747,7 +747,7 @@ router.get('/history/all', auth_1.authenticate, async (req, res) => {
             include: [
                 { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
                 { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
-                { model: models_1.Satuan, as: 'satuan', attributes: ['id_satuan', 'satuan'] },
+                { model: models_1.Satuan, as: 'satuan', attributes: ['id_satuan', 'satuannya'] },
             ],
             order: [['created_at', 'DESC']],
         });

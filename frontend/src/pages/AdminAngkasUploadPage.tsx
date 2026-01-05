@@ -24,7 +24,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { formatCurrencyWithPrefix, formatDateTime } from '../utils/formatters';
+import { formatNumber, formatDateTime } from '../utils/formatters';
 
 const { Text } = Typography;
 
@@ -472,7 +472,7 @@ const AdminAngkasUploadPage: React.FC = () => {
       if (!record.hasAngkas) {
         return <span style={{ color: '#bfbfbf' }}>-</span>;
       }
-      return value ? formatCurrencyWithPrefix(value) : '-';
+      return value ? formatNumber(value) : '-';
     },
   }));
 
@@ -522,7 +522,7 @@ const AdminAngkasUploadPage: React.FC = () => {
       key: 'target_rp',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => formatCurrencyWithPrefix(value || 0),
+      render: (value: number) => formatNumber(value || 0),
     },
     ...monthlyColumns,
     {
@@ -533,7 +533,7 @@ const AdminAngkasUploadPage: React.FC = () => {
       fixed: 'right' as const,
       render: (value: number, record: AngkasRecord) => (
         <strong style={{ color: record.hasAngkas ? undefined : '#bfbfbf' }}>
-          {formatCurrencyWithPrefix(value)}
+          {formatNumber(value)}
         </strong>
       ),
       align: 'right' as const,
@@ -930,7 +930,7 @@ const AdminAngkasUploadPage: React.FC = () => {
                                     {formatDateTime(record.created_at)}
                                   </div>
                                   <div style={{ marginTop: 4 }}>
-                                    Nilai: <strong>{formatCurrencyWithPrefix(record.nilai)}</strong>
+                                    Nilai: <strong>{formatNumber(record.nilai)}</strong>
                                   </div>
                                   <div style={{ fontSize: '12px', color: '#888' }}>
                                     Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
@@ -963,7 +963,7 @@ const AdminAngkasUploadPage: React.FC = () => {
                                 {formatDateTime(record.created_at)}
                               </div>
                               <div style={{ marginTop: 4 }}>
-                                Target (Rp): <strong>{formatCurrencyWithPrefix(record.target_rp)}</strong>
+                                Target (Rp): <strong>{formatNumber(record.target_rp)}</strong>
                               </div>
                               <div style={{ fontSize: '12px', color: '#888' }}>
                                 Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}

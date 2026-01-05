@@ -1,62 +1,138 @@
-import NodeCache from 'node-cache';
-
 /**
- * Cache service using node-cache for reference data
- * TTL: 1 hour (3600 seconds) for reference data
+ * Simple In-Memory Cache Service
+ * 
+ * Provides caching for reference data that rarely changes.
+ * Can be replaced with Redis in production for distributed caching.
+ * 
+ * Features:
+ * - TTL-based expiration
+ * - Cache invalidation
+ * - Memory-efficient for small datasets
  */
+
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+
 class CacheService {
-  private cache: NodeCache;
-  private readonly CACHE_TTL = 3600; // 1 hour in seconds
+  private cache: Map<string, CacheEntry<any>> = new Map();
+  private defaultTTL: number = 5 * 60 * 1000; // 5 minutes default
 
-  constructor() {
-    // stdTTL: standard time to leave in seconds
-    // checkperiod: auto delete check interval in seconds
-    this.cache = new NodeCache({ stdTTL: this.CACHE_TTL, checkperiod: 600 });
+  /**
+   * Get item from cache
+   * @param key Cache key
+   * @returns Cached data or null if not found/expired
+   */
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    
+    if (!entry) {
+      return null;
+    }
+
+    // Check if expired
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data as T;
   }
 
   /**
-   * Get value from cache
+   * Set item in cache
+   * @param key Cache key
+   * @param data Data to cache
+   * @param ttlMs Time to live in milliseconds (default: 5 minutes)
    */
-  get<T>(key: string): T | undefined {
-    return this.cache.get<T>(key);
+  set<T>(key: string, data: T, ttlMs: number = this.defaultTTL): void {
+    this.cache.set(key, {
+      data,
+      expiresAt: Date.now() + ttlMs,
+    });
   }
 
   /**
-   * Set value in cache
+   * Delete item from cache
+   * @param key Cache key
    */
-  set<T>(key: string, value: T, ttl?: number): void {
-    this.cache.set(key, value, ttl || this.CACHE_TTL);
+  delete(key: string): boolean {
+    return this.cache.delete(key);
   }
 
   /**
-   * Delete from cache
+   * Invalidate all cache entries matching a pattern
+   * @param pattern Prefix pattern to match
    */
-  delete(key: string): number {
-    return this.cache.del(key);
+  invalidatePattern(pattern: string): number {
+    let count = 0;
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(pattern)) {
+        this.cache.delete(key);
+        count++;
+      }
+    }
+    return count;
   }
 
   /**
    * Clear all cache
    */
-  flush(): void {
-    this.cache.flushAll();
+  clear(): void {
+    this.cache.clear();
   }
 
   /**
-   * Get all keys
+   * Get cache statistics
    */
-  getKeys(): string[] {
-    return this.cache.keys();
+  stats(): { size: number; keys: string[] } {
+    return {
+      size: this.cache.size,
+      keys: Array.from(this.cache.keys()),
+    };
   }
 
   /**
-   * Get cache stats
+   * Get or fetch - returns cached data or fetches and caches
+   * @param key Cache key
+   * @param fetcher Function to fetch data if not cached
+   * @param ttlMs TTL in milliseconds
    */
-  getStats() {
-    return this.cache.getStats();
+  async getOrFetch<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    ttlMs: number = this.defaultTTL
+  ): Promise<T> {
+    const cached = this.get<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+
+    const data = await fetcher();
+    this.set(key, data, ttlMs);
+    return data;
   }
 }
 
-// Export singleton instance
+// Singleton instance
 export const cacheService = new CacheService();
+
+// Cache keys constants
+export const CACHE_KEYS = {
+  SUMBER_ANGGARAN: 'reference:sumber_anggaran',
+  SATUAN: 'reference:satuan',
+  KEGIATAN: 'reference:kegiatan',
+  SUB_KEGIATAN_ALL: 'reference:sub_kegiatan:all',
+  SUB_KEGIATAN_BY_KEGIATAN: (id: number) => `reference:sub_kegiatan:kegiatan:${id}`,
+};
+
+// Cache TTLs
+export const CACHE_TTL = {
+  REFERENCE_DATA: 10 * 60 * 1000, // 10 minutes for reference data
+  SHORT: 1 * 60 * 1000,           // 1 minute
+  MEDIUM: 5 * 60 * 1000,          // 5 minutes
+  LONG: 30 * 60 * 1000,           // 30 minutes
+};
+
 export default cacheService;

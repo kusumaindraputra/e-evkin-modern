@@ -8,6 +8,7 @@ import PuskesmasSubKegiatan from './PuskesmasSubKegiatan';
 import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
 import AnggaranKas from './AnggaranKas';
+import PuskesmasEditPermission from './PuskesmasEditPermission';
 import { sequelize } from '../config/database';
 
 // Define associations
@@ -142,5 +143,9 @@ export {
   SubKegiatanSumberAnggaran,
   SubKegiatanTarget,
   AnggaranKas,
+<<<<<<< HEAD
   sequelize,
+=======
+  PuskesmasEditPermission,
+>>>>>>> Version-2
 };

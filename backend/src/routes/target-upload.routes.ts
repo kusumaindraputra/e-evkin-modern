@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
-import { SubKegiatanTarget, User, SubKegiatan, SumberAnggaran, Kegiatan } from '../models';
+import { SubKegiatanTarget, User, SubKegiatan, SumberAnggaran, Satuan, Kegiatan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
@@ -14,7 +14,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 interface ExcelRow {
   NO: number;
   TAHUN: number;
-  'KODE SUB UNIT': string;  // Added for kode_sub_unit matching
+  'KODE SUB UNIT': string;
   'NAMA SUB UNIT': string;
   'KODE SUB KEGIATAN': string;
   'NAMA SUB KEGIATAN': string;
@@ -114,9 +114,70 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       successList: [],
     };
 
-    // Group by puskesmas + sub kegiatan + sumber dana + tahun
+    // OPTIMIZATION: Pre-fetch all reference data before processing loop
+    // This eliminates N+1 queries for User, SubKegiatan, SumberAnggaran lookups
+
+    // Pre-fetch all puskesmas users with kode_sub_unit
+    const allPuskesmasUsers = await User.findAll({
+      where: { role: 'puskesmas' },
+      attributes: ['id', 'username', 'kode_sub_unit', 'nama_puskesmas'],
+    });
+    
+    // Build lookup maps for fast access
+    const userByKodeSubUnit = new Map<string, User>();
+    const userByUsername = new Map<string, User>();
+    const userByNamaPuskesmas = new Map<string, User>();
+    
+    for (const u of allPuskesmasUsers) {
+      if (u.kode_sub_unit) userByKodeSubUnit.set(u.kode_sub_unit, u);
+      if (u.username) userByUsername.set(u.username.toLowerCase(), u);
+      if (u.nama_puskesmas) userByNamaPuskesmas.set(u.nama_puskesmas.toLowerCase(), u);
+    }
+
+    // Pre-fetch all SubKegiatan
+    const allSubKegiatan = await SubKegiatan.findAll({
+      attributes: ['id_sub_kegiatan', 'kode_sub', 'kegiatan'],
+    });
+    const subKegiatanByKode = new Map<string, SubKegiatan>();
+    for (const sk of allSubKegiatan) {
+      if (sk.kode_sub) subKegiatanByKode.set(sk.kode_sub, sk);
+    }
+
+    // Pre-fetch all SumberAnggaran
+    const allSumberAnggaran = await SumberAnggaran.findAll({
+      attributes: ['id_sumber', 'sumber'],
+    });
+    const sumberAnggaranByNama = new Map<string, SumberAnggaran>();
+    const sumberAnggaranByNamaLower = new Map<string, SumberAnggaran>();
+    for (const sa of allSumberAnggaran) {
+      sumberAnggaranByNama.set(sa.sumber, sa);
+      sumberAnggaranByNamaLower.set(sa.sumber.toLowerCase(), sa);
+    }
+
+    // Extract unique tahun values from data first
+    const tahunValues = [...new Set(data.map(row => row.TAHUN))];
+    
+    // Pre-fetch all existing targets for all years in the upload
+    const allExistingTargets = await SubKegiatanTarget.findAll({
+      where: {
+        tahun: { [Op.in]: tahunValues },
+        bulan: null,
+      },
+      order: [['created_at', 'DESC']],
+    });
+    
+    // Build lookup map: user_id + id_sub_kegiatan + id_sumber_anggaran + tahun -> latest target
+    const existingTargetMap = new Map<string, SubKegiatanTarget>();
+    for (const target of allExistingTargets) {
+      const key = `${target.user_id}_${target.id_sub_kegiatan}_${target.id_sumber_anggaran}_${target.tahun}`;
+      if (!existingTargetMap.has(key)) {
+        existingTargetMap.set(key, target);
+      }
+    }
+
+    // Group by kode_sub_unit + sub kegiatan + sumber dana + tahun
     const grouped = new Map<string, {
-      kodeSubUnit: string;  // Added for kode_sub_unit matching
+      kodeSubUnit: string;
       puskesmas: string;
       subKegiatanKode: string;
       subKegiatanNama: string;
@@ -150,62 +211,25 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     });
 
     // Process each grouped target
-    for (const [, group] of grouped) {
+    for (const [key, group] of grouped) {
       try {
-        // Find puskesmas by kode_sub_unit (PRIMARY METHOD - most reliable)
+        // OPTIMIZED: Find puskesmas using pre-fetched maps (no database query)
         let puskesmas: User | null = null;
         
+        // Primary: by kode_sub_unit
         if (group.kodeSubUnit) {
-          puskesmas = await User.findOne({
-            where: { 
-              kode_sub_unit: group.kodeSubUnit,
-              role: 'puskesmas',
-            },
-          });
+          puskesmas = userByKodeSubUnit.get(group.kodeSubUnit) || null;
         }
 
-        // FALLBACK: Old name-based matching if kode_sub_unit not matched
+        // Fallback: Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
+        if (!puskesmas && group.puskesmas === 'Laboratorium Kesehatan Daerah') {
+          puskesmas = userByUsername.get('labkesda') || null;
+        }
+
+        // Fallback: try by nama_puskesmas (case-insensitive)
         if (!puskesmas) {
-          // Handle specific mapping for "Laboratorium Kesehatan Daerah" -> "labkesda"
-          if (group.puskesmas === 'Laboratorium Kesehatan Daerah') {
-            puskesmas = await User.findOne({
-              where: { 
-                username: 'labkesda',
-                role: 'puskesmas',
-              },
-            });
-          }
-        }
-
-        if (!puskesmas) {
-          puskesmas = await User.findOne({
-            where: { 
-              nama: group.puskesmas,
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // If not found, try without "Puskesmas" prefix
-        if (!puskesmas && group.puskesmas.startsWith('Puskesmas ')) {
-          const namaWithoutPrefix = group.puskesmas.replace('Puskesmas ', '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: namaWithoutPrefix,
-              role: 'puskesmas',
-            },
-          });
-        }
-
-        // Handle case differences like "Kota batu" vs "Kota Batu"
-        if (!puskesmas) {
-          const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '');
-          puskesmas = await User.findOne({
-            where: { 
-              nama: { [Op.iLike]: searchName },
-              role: 'puskesmas',
-            },
-          });
+          const searchName = group.puskesmas.replace(/^Puskesmas\s+|^Puskemas\s+/i, '').toLowerCase();
+          puskesmas = userByNamaPuskesmas.get(searchName) || null;
         }
 
         if (!puskesmas) {
@@ -225,10 +249,8 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           continue;
         }
 
-        // Find sub kegiatan by kode
-        let subKegiatan = await SubKegiatan.findOne({
-          where: { kode_sub: group.subKegiatanKode },
-        });
+        // OPTIMIZED: Find sub kegiatan using pre-fetched map
+        let subKegiatan = subKegiatanByKode.get(group.subKegiatanKode) || null;
 
         if (!subKegiatan) {
           // Insert new sub kegiatan if not found
@@ -254,21 +276,18 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             indikator_kinerja: 'Auto-generated dari upload Excel',
           });
 
+          // Add to cache for future iterations
+          subKegiatanByKode.set(group.subKegiatanKode, subKegiatan);
           result.createdSubKegiatan++;
         }
 
-        // Find sumber anggaran - need to map KODE SUMBER DANA to our table
-        // Trim whitespace and try to match by nama
+        // OPTIMIZED: Find sumber anggaran using pre-fetched map
         const sumberDanaNamaTrimmed = group.sumberDanaNama.trim();
-        let sumberAnggaran = await SumberAnggaran.findOne({
-          where: { sumber: sumberDanaNamaTrimmed },
-        });
+        let sumberAnggaran = sumberAnggaranByNama.get(sumberDanaNamaTrimmed) || null;
 
         // If not found, try case-insensitive search
         if (!sumberAnggaran) {
-          sumberAnggaran = await SumberAnggaran.findOne({
-            where: { sumber: { [Op.iLike]: sumberDanaNamaTrimmed } },
-          });
+          sumberAnggaran = sumberAnggaranByNamaLower.get(sumberDanaNamaTrimmed.toLowerCase()) || null;
         }
 
         // If still not found, create new sumber anggaran
@@ -276,20 +295,15 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           sumberAnggaran = await SumberAnggaran.create({
             sumber: sumberDanaNamaTrimmed,
           });
+          // Add to cache for future iterations
+          sumberAnggaranByNama.set(sumberAnggaran.sumber, sumberAnggaran);
+          sumberAnggaranByNamaLower.set(sumberAnggaran.sumber.toLowerCase(), sumberAnggaran);
           result.createdSumberAnggaran++;
         }
 
-        // Check if target already exists
-        const existingTarget = await SubKegiatanTarget.findOne({
-          where: {
-            user_id: puskesmas.id,
-            id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
-            id_sumber_anggaran: sumberAnggaran.id_sumber,
-            tahun: group.tahun,
-            bulan: null,
-          },
-          order: [['created_at', 'DESC']], // Get the latest record
-        });
+        // OPTIMIZED: Check if target already exists using pre-fetched map
+        const targetKey = `${puskesmas.id}_${subKegiatan.id_sub_kegiatan}_${sumberAnggaran.id_sumber}_${group.tahun}`;
+        const existingTarget = existingTargetMap.get(targetKey) || null;
 
         if (existingTarget) {
           // Check if target_rp is the same, skip if no change needed
@@ -305,7 +319,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           // INSERT new record for history tracking (instead of UPDATE)
           // This preserves the old value and creates a new entry
           // Preserve target_k and id_satuan from existing record (only update target_rp)
-          await SubKegiatanTarget.create({
+          const newTarget = await SubKegiatanTarget.create({
             user_id: puskesmas.id,
             id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
             id_sumber_anggaran: sumberAnggaran.id_sumber,
@@ -317,6 +331,8 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             created_by: adminId,
             catatan: catatan,
           });
+          // Update cache with new target (for potential future iterations in same batch)
+          existingTargetMap.set(targetKey, newTarget);
           result.updated++;
           result.successList.push({
             type: 'updated',
@@ -329,7 +345,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
         } else {
           // INSERT new target (first entry)
           // Set target_k=0 and id_satuan=null - admin must set via Target Kinerja page
-          await SubKegiatanTarget.create({
+          const newTarget = await SubKegiatanTarget.create({
             user_id: puskesmas.id,
             id_sub_kegiatan: subKegiatan.id_sub_kegiatan,
             id_sumber_anggaran: sumberAnggaran.id_sumber,
@@ -341,6 +357,8 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             created_by: adminId,
             catatan: catatan,
           });
+          // Add to cache for potential future iterations in same batch
+          existingTargetMap.set(targetKey, newTarget);
           result.inserted++;
           result.successList.push({
             type: 'inserted',

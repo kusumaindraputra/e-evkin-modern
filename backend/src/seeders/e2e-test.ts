@@ -5,8 +5,9 @@
 
 import { Op } from 'sequelize';
 
-// Import models and sequelize from models index
-import { sequelize, User, Kegiatan, SubKegiatan, Satuan, SumberAnggaran, SubKegiatanTarget, Laporan } from '../models';
+// Import models from models index
+import { User, Kegiatan, SubKegiatan, Satuan, SumberAnggaran, SubKegiatanTarget, Laporan } from '../models';
+import sequelize from '../config/database';
 
 const TAHUN = 2026;
 const BULAN_LIST = ['Januari', 'Februari', 'Maret'];

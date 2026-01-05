@@ -809,7 +809,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             )}
           </Card>
 
-          {/* Table */}
+          {/* Table - with virtual scrolling for large datasets */}
           <Card>
             <Table
               columns={columns}
@@ -820,6 +820,7 @@ export const LaporanBulkInputPage: React.FC = () => {
               scroll={{ x: 2800, y: 500 }}
               pagination={false}
               bordered
+              virtual
             />
           </Card>
         </>

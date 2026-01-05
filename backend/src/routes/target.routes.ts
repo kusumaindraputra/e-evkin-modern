@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SubKegiatanTarget, SubKegiatan, User, SumberAnggaran, Satuan } from '../models';
+import { SubKegiatanTarget, SubKegiatan, User, PuskesmasSubKegiatan, SumberAnggaran, Satuan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 import { checkEditPermission } from '../middleware/editPermission';
@@ -86,7 +86,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
     if (tahun) whereClause.tahun = parseInt(tahun as string);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = parseInt(id_sumber_anggaran as string);
 
-    // Include creator in query to avoid N+1
+    // OPTIMIZED: Include creator in single query instead of N+1 lookup
     const history = await SubKegiatanTarget.findAll({
       where: whereClause,
       attributes: ['id', 'user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'id_satuan', 'target_k', 'target_rp', 'bulan', 'tahun', 'catatan', 'created_by', 'created_at', 'updated_at'],
@@ -105,7 +105,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
       order: [['created_at', 'DESC']],
     });
 
-    // Map result without additional queries
+    // Map results with included creator (no additional queries needed)
     const result = history.map((item: any) => {
       const createdAtValue = item.getDataValue('createdAt') || item.getDataValue('created_at');
       const updatedAtValue = item.getDataValue('updatedAt') || item.getDataValue('updated_at');
@@ -356,21 +356,23 @@ router.post('/bulk', authenticate, async (req, res) => {
       });
     }
 
-    // Create all targets (akan otomatis membuat history)
-    const newTargets = await Promise.all(
-      targets.map(target =>
-        SubKegiatanTarget.create({
-          user_id: userId,
-          id_sub_kegiatan: target.id_sub_kegiatan,
-          id_sumber_anggaran: target.id_sumber_anggaran,
-          target_k: target.target_k,
-          target_rp: target.target_rp,
-          bulan: null,
-          tahun,
-          created_by: userId,
-        })
-      )
-    );
+    // OPTIMIZED: Use bulkCreate instead of Promise.all with individual creates
+    const targetData = targets.map(target => ({
+      user_id: userId,
+      id_sub_kegiatan: target.id_sub_kegiatan,
+      id_sumber_anggaran: target.id_sumber_anggaran,
+      id_satuan: target.id_satuan || null,
+      target_k: target.target_k,
+      target_rp: target.target_rp,
+      bulan: null,
+      tahun,
+      created_by: userId,
+    }));
+
+    const newTargets = await SubKegiatanTarget.bulkCreate(targetData, {
+      validate: true,
+      returning: true,
+    });
 
     return res.status(201).json({
       success: true,

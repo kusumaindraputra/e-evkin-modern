@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Laporan, User, SubKegiatan, Kegiatan } from '../models';
 import { authenticate } from '../middleware/auth';
 import { Op, QueryTypes } from 'sequelize';
+import { getDashboardStats, getBudgetMonthly, getTop10Absorption, invalidateDashboardCache } from '../services/dashboardService';
 
 const router = Router();
 
@@ -244,7 +245,7 @@ router.post('/laporan/bulk-return', authenticate, async (req: Request, res: Resp
   }
 });
 
-// Get dashboard statistics for admin
+// Get dashboard statistics for admin (CACHED)
 router.get('/dashboard/stats', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
@@ -257,51 +258,12 @@ router.get('/dashboard/stats', authenticate, async (req: Request, res: Response)
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
     const currentMonth = bulan as string || undefined;
 
-    // Build where clause
-    const where: any = { tahun: currentYear };
-    if (currentMonth) {
-      where.bulan = currentMonth;
-    }
-
-    // Get total laporan count
-    const totalLaporan = await Laporan.count({ where });
-
-    // Get status counts
-    const statusCounts = await Laporan.findAll({
-      attributes: [
-        'status',
-        [Laporan.sequelize!.fn('COUNT', Laporan.sequelize!.col('id')), 'count']
-      ],
-      where,
-      group: ['status'],
-      raw: true
-    }) as any[];
-
-    const tersimpan = statusCounts.find(s => s.status === 'tersimpan')?.count || 0;
-    const terkirim = statusCounts.find(s => s.status === 'terkirim')?.count || 0;
-
-    // Get total puskesmas
-    const totalPuskesmas = await User.count({
-      where: { role: 'puskesmas' }
-    });
-
-    // Get puskesmas yang sudah mengirim laporan
-    const puskesmasReporting = await Laporan.count({
-      where: { ...where, status: 'terkirim' },
-      distinct: true,
-      col: 'user_id'
-    });
+    // Use cached dashboard service
+    const stats = await getDashboardStats(currentYear, currentMonth);
 
     res.status(200).json({
       message: 'Dashboard statistics retrieved successfully',
-      data: {
-        totalLaporan,
-        tersimpan,
-        terkirim,
-        totalPuskesmas,
-        puskesmasReporting,
-        persentasePuskesmasReporting: totalPuskesmas > 0 ? Math.round((puskesmasReporting / totalPuskesmas) * 100 * 100) / 100 : 0
-      },
+      data: stats,
       tahun: currentYear,
       bulan: currentMonth
     });
@@ -311,7 +273,7 @@ router.get('/dashboard/stats', authenticate, async (req: Request, res: Response)
   }
 });
 
-// Get budget realization per month for dashboard (with month filter)
+// Get budget realization per month for dashboard (with month filter) - CACHED
 router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
@@ -329,59 +291,13 @@ router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: 
       return;
     }
 
-    // Query untuk mendapatkan data per sub kegiatan untuk bulan tertentu
-    const query = `
-      SELECT 
-        l.id_sub_kegiatan,
-        sk.kode_sub,
-        sk.kegiatan as sub_kegiatan_nama,
-        k.kode as kegiatan_kode,
-        k.kegiatan as kegiatan_nama,
-        SUM(l.target_rp) as target_rp,
-        SUM(l.realisasi_rp) as realisasi_rp
-      FROM laporan l
-      INNER JOIN sub_kegiatan sk ON l.id_sub_kegiatan = sk.id_sub_kegiatan
-      INNER JOIN kegiatan k ON sk.id_kegiatan = k.id_kegiatan
-      WHERE l.tahun = :tahun 
-        AND l.bulan = :bulan
-        AND l.status = 'terkirim'
-      GROUP BY l.id_sub_kegiatan, sk.kode_sub, sk.kegiatan, k.kode, k.kegiatan
-      ORDER BY sk.kode_sub ASC
-    `;
-
-    const monthlyData = await Laporan.sequelize!.query(query, {
-      replacements: { tahun: currentYear, bulan: currentMonth },
-      type: QueryTypes.SELECT
-    }) as any[];
-
-    // Process data
-    const processedData = monthlyData.map((item: any) => {
-      const targetRp = parseFloat(item.target_rp) || 0;
-      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
-      const persentase = targetRp > 0 ? (realisasiRp / targetRp) * 100 : 0;
-
-      return {
-        sub_kegiatan: `${item.kode_sub} - ${item.sub_kegiatan_nama}`,
-        kegiatan: `${item.kegiatan_kode} - ${item.kegiatan_nama}`,
-        target_rp: targetRp,
-        realisasi_rp: realisasiRp,
-        persentase: Math.round(persentase * 100) / 100
-      };
-    });
-
-    // Calculate totals
-    const totalTarget = processedData.reduce((sum, item) => sum + item.target_rp, 0);
-    const totalRealisasi = processedData.reduce((sum, item) => sum + item.realisasi_rp, 0);
-    const totalPersentase = totalTarget > 0 ? (totalRealisasi / totalTarget) * 100 : 0;
+    // Use cached dashboard service
+    const result = await getBudgetMonthly(currentYear, currentMonth);
 
     res.status(200).json({
       message: 'Monthly budget data retrieved successfully',
-      data: processedData,
-      summary: {
-        totalTarget,
-        totalRealisasi,
-        totalPersentase: Math.round(totalPersentase * 100) / 100
-      },
+      data: result.data,
+      summary: result.summary,
       tahun: currentYear,
       bulan: currentMonth
     });
@@ -391,7 +307,7 @@ router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: 
   }
 });
 
-// Get top 10 budget absorption for dashboard
+// Get top 10 budget absorption for dashboard - CACHED
 router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const userRole = (req as any).user?.role;
@@ -409,50 +325,8 @@ router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, re
       return;
     }
 
-    // Query untuk mendapatkan top 10 puskesmas dengan penyerapan tertinggi
-    const query = `
-      SELECT 
-        u.username as puskesmas_nama,
-        CAST(SUM(l.target_rp) AS DECIMAL) as target_rp,
-        CAST(SUM(l.realisasi_rp) AS DECIMAL) as realisasi_rp,
-        CASE 
-          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
-          ELSE 0
-        END as persentase
-      FROM laporan l
-      INNER JOIN users u ON l.user_id = u.id
-      WHERE l.tahun = :tahun 
-        AND l.bulan = :bulan
-        AND l.status = 'terkirim'
-        AND u.role = 'puskesmas'
-      GROUP BY u.username
-      ORDER BY 
-        CASE 
-          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
-          ELSE 0
-        END DESC,
-        CAST(SUM(l.realisasi_rp) AS DECIMAL) DESC
-      LIMIT 10
-    `;
-
-    const top10Data = await Laporan.sequelize!.query(query, {
-      replacements: { tahun: currentYear, bulan: currentMonth },
-      type: QueryTypes.SELECT
-    }) as any[];
-
-    // Process data
-    const processedData = top10Data.map((item: any) => {
-      const targetRp = parseFloat(item.target_rp) || 0;
-      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
-      const persentase = parseFloat(item.persentase) || 0;
-
-      return {
-        puskesmas: item.puskesmas_nama,
-        target_rp: targetRp,
-        realisasi_rp: realisasiRp,
-        persentase: Math.round(persentase * 100) / 100
-      };
-    });
+    // Use cached dashboard service
+    const processedData = await getTop10Absorption(currentYear, currentMonth);
 
     res.status(200).json({
       message: 'Top 10 absorption data retrieved successfully',

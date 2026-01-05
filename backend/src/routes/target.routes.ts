@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SubKegiatanTarget, SubKegiatan, User, PuskesmasSubKegiatan, SumberAnggaran, Satuan } from '../models';
+import { SubKegiatanTarget, SubKegiatan, User, SumberAnggaran, Satuan } from '../models';
 import { Op } from 'sequelize';
 import { authenticate } from '../middleware/auth';
 import { checkEditPermission } from '../middleware/editPermission';

@@ -9,7 +9,6 @@ interface UserAttributes {
   nama: string;
   role: 'puskesmas' | 'admin';
   kode_puskesmas?: string;
-  kode_sub_unit?: string;
   nama_puskesmas?: string;
   kode_sub_unit?: string;
   id_blud?: string;
@@ -28,7 +27,6 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   declare nama: string;
   declare role: 'puskesmas' | 'admin';
   declare kode_puskesmas?: string;
-  declare kode_sub_unit?: string;
   declare nama_puskesmas?: string;
   declare kode_sub_unit?: string;
   declare id_blud?: string;
@@ -91,16 +89,12 @@ User.init(
       allowNull: true,
     },
     kode_sub_unit: {
-      type: DataTypes.STRING(30),
+      type: DataTypes.STRING(50),
       allowNull: true,
       unique: true,
     },
     nama_puskesmas: {
       type: DataTypes.STRING(200),
-      allowNull: true,
-    },
-    kode_sub_unit: {
-      type: DataTypes.STRING(50),
       allowNull: true,
     },
     id_blud: {

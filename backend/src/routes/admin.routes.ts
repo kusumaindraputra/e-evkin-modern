@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Laporan, User, SubKegiatan, Kegiatan } from '../models';
 import { authenticate } from '../middleware/auth';
 import { Op, QueryTypes } from 'sequelize';
-import { getDashboardStats, getBudgetMonthly, getTop10Absorption, invalidateDashboardCache } from '../services/dashboardService';
+import { getDashboardStats, getBudgetMonthly, getTop10Absorption } from '../services/dashboardService';
 
 const router = Router();
 

@@ -143,9 +143,6 @@ export {
   SubKegiatanSumberAnggaran,
   SubKegiatanTarget,
   AnggaranKas,
-<<<<<<< HEAD
   sequelize,
-=======
   PuskesmasEditPermission,
->>>>>>> Version-2
 };

@@ -5,8 +5,9 @@
 
 import { Op } from 'sequelize';
 
-// Import models and sequelize from models index
-import { sequelize, User, Kegiatan, SubKegiatan, Satuan, SumberAnggaran, SubKegiatanTarget, Laporan } from '../models';
+// Import models from models index
+import { User, Kegiatan, SubKegiatan, Satuan, SumberAnggaran, SubKegiatanTarget, Laporan } from '../models';
+import sequelize from '../config/database';
 
 const TAHUN = 2026;
 const BULAN_LIST = ['Januari', 'Februari', 'Maret'];
@@ -243,7 +244,7 @@ async function inputLaporan(testData: any, targetsCreated: any[]) {
     // Verify laporan count
     const laporanCount = await Laporan.count({ where: { tahun: TAHUN } });
     const expectedCount = BULAN_LIST.length * puskesmasList.length * 
-      subKegiatanList.reduce((sum, sk) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0);
+      subKegiatanList.reduce((sum: number, sk: any) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0);
     
     log('Verify Laporan Count', laporanCount === expectedCount,
       `Laporan count in DB: ${laporanCount}, Expected: ${expectedCount}`);
@@ -319,7 +320,7 @@ async function verifyDashboardData(testData: any) {
     // Average = (30+50+70)/3 = 50%
     
     const numSumberAnggaran = subKegiatanList.reduce(
-      (sum, sk) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0
+      (sum: number, sk: any) => sum + ((sk as any).sumberAnggaranList?.length || 0), 0
     );
     const targetsPerPuskesmas = numSumberAnggaran;
     const totalTargetsAllPuskesmas = puskesmasList.length * targetsPerPuskesmas;

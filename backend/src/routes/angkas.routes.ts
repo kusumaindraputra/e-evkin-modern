@@ -126,10 +126,18 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     const parsed = await parseAngkasPdf(req.file.buffer);
     const tahun = tahunOverride ? parseInt(tahunOverride) : parsed.tahun;
 
-    // Get all puskesmas users
+    // Get all puskesmas users (include kode_sub_unit for matching)
     const puskesmasUsers = await User.findAll({
       where: { role: 'puskesmas' },
-      attributes: ['id', 'nama', 'username'],
+      attributes: ['id', 'nama', 'username', 'kode_sub_unit', 'nama_puskesmas'],
+    });
+
+    // Create mapping from kode_sub_unit to user_id for fast lookup
+    const kodeSubUnitToUserId = new Map<string, string>();
+    puskesmasUsers.forEach(u => {
+      if (u.kode_sub_unit) {
+        kodeSubUnitToUserId.set(u.kode_sub_unit, u.id);
+      }
     });
 
     // Get all sub kegiatan for matching
@@ -157,13 +165,19 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
 
     // Process each puskesmas
     for (const puskesmasData of parsed.puskesmasList) {
-      const userId = findPuskesmasUser(
-        puskesmasData.namaPuskesmas,
-        puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username }))
-      );
+      // Primary: match by kode_sub_unit (kodePuskesmas from PDF)
+      let userId = kodeSubUnitToUserId.get(puskesmasData.kodePuskesmas);
+      
+      // Fallback: match by name if kode not found
+      if (!userId) {
+        userId = findPuskesmasUser(
+          puskesmasData.namaPuskesmas,
+          puskesmasUsers.map(u => ({ id: u.id, nama: u.nama, username: u.username }))
+        ) || undefined;
+      }
 
       if (!userId) {
-        result.unmatchedPuskesmas.push(puskesmasData.namaPuskesmas);
+        result.unmatchedPuskesmas.push(`${puskesmasData.namaPuskesmas} (kode: ${puskesmasData.kodePuskesmas})`);
         continue;
       }
 

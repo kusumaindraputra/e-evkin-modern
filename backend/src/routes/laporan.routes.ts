@@ -336,6 +336,30 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
       }
     }
 
+    // OPTIMIZATION: Pre-fetch all existing laporan for this user in relevant months/years
+    // This eliminates N+1 findOne queries in the loop
+    const bulanValues = [...new Set(laporanArray.map((d: any) => d.bulan).filter(Boolean))];
+    const sumberAnggaranIds = [...new Set(laporanArray.map((d: any) => d.id_sumber_anggaran).filter(Boolean))];
+    const existingLaporanMap = new Map<string, any>();
+    
+    if (subKegiatanIds.length > 0 && bulanValues.length > 0 && tahunValues.length > 0) {
+      const existingLaporan = await Laporan.findAll({
+        where: {
+          user_id: userId,
+          id_sub_kegiatan: { [Op.in]: subKegiatanIds },
+          id_sumber_anggaran: { [Op.in]: sumberAnggaranIds },
+          bulan: { [Op.in]: bulanValues },
+          tahun: { [Op.in]: tahunValues },
+        },
+        transaction,
+      });
+      
+      for (const lap of existingLaporan) {
+        const key = `${lap.user_id}_${lap.id_sub_kegiatan}_${lap.id_sumber_anggaran}_${lap.bulan}_${lap.tahun}`;
+        existingLaporanMap.set(key, lap);
+      }
+    }
+
     // Process each laporan within the transaction
     for (const data of laporanArray) {
       try {
@@ -393,17 +417,9 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
             results.skipped++;
           }
         } else {
-          // Check if exists based on unique combination
-          const existing = await Laporan.findOne({
-            where: {
-              user_id: userId,
-              id_sub_kegiatan: data.id_sub_kegiatan,
-              id_sumber_anggaran: data.id_sumber_anggaran,
-              bulan: data.bulan,
-              tahun: data.tahun,
-            },
-            transaction,
-          });
+          // OPTIMIZED: Check if exists using pre-fetched map (eliminates N+1 queries)
+          const existingKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.bulan}_${data.tahun}`;
+          const existing = existingLaporanMap.get(existingKey);
 
           if (existing) {
             // Update existing
@@ -411,7 +427,9 @@ router.post('/bulk-upsert', authenticate, async (req: Request, res: Response) =>
             results.updated++;
           } else {
             // Create new
-            await Laporan.create(laporanData, { transaction });
+            const newLaporan = await Laporan.create(laporanData, { transaction });
+            // Add to map in case same combination appears again in same batch
+            existingLaporanMap.set(existingKey, newLaporan);
             results.created++;
           }
         }

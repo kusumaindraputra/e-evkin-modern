@@ -56,6 +56,12 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+test-output*.txt
+*.xlsx
+*.pdf
+
+# Keep test files in docs/test files (tracked)
+!docs/test files/
 
 # Package manager
 package-lock.json
@@ -87,3 +93,6 @@ MENU_ACCESS.md
 !ecosystem.config.js
 !nginx.conf
 !deploy.sh
+
+# Beads issue tracking
+.beads/

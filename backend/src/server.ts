@@ -9,11 +9,10 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully');
 
-    // Sync models (in development) - auto-create missing tables/columns
-    if (config.env === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Database schema synced (alter: true)');
-    }
+    // Note: sync({ alter: true }) disabled due to index naming conflicts with existing database
+    // Use proper migrations for schema changes instead
+    // To create missing tables only (safe), uncomment: await sequelize.sync({ force: false });
+    console.log('ℹ️  Database sync disabled - using existing schema');
 
     // Start server
     app.listen(config.port, () => {

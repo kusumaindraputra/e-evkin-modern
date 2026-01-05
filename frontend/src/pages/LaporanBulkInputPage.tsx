@@ -232,9 +232,32 @@ const StatusTag = memo(({ status }: StatusTagProps) => {
 });
 StatusTag.displayName = 'StatusTag';
 
+// Static options moved outside component to prevent re-creation on every render
+const BULAN_OPTIONS = [
+  { value: 'Januari', label: 'Januari' },
+  { value: 'Februari', label: 'Februari' },
+  { value: 'Maret', label: 'Maret' },
+  { value: 'April', label: 'April' },
+  { value: 'Mei', label: 'Mei' },
+  { value: 'Juni', label: 'Juni' },
+  { value: 'Juli', label: 'Juli' },
+  { value: 'Agustus', label: 'Agustus' },
+  { value: 'September', label: 'September' },
+  { value: 'Oktober', label: 'Oktober' },
+  { value: 'November', label: 'November' },
+  { value: 'Desember', label: 'Desember' },
+];
+
+const TAHUN_OPTIONS = Array.from({ length: 5 }, (_, i) => {
+  const year = new Date().getFullYear() - i;
+  return { value: year, label: year.toString() };
+});
+
 
 export const LaporanBulkInputPage: React.FC = () => {
-  const { user, token } = useAuthStore();
+  // Use individual selectors to prevent unnecessary re-renders
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<LaporanRow[]>([]);
   const [referenceData, setReferenceData] = useState<ReferenceData>({
@@ -250,30 +273,14 @@ export const LaporanBulkInputPage: React.FC = () => {
   const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
 
-  const bulanOptions = [
-    { value: 'Januari', label: 'Januari' },
-    { value: 'Februari', label: 'Februari' },
-    { value: 'Maret', label: 'Maret' },
-    { value: 'April', label: 'April' },
-    { value: 'Mei', label: 'Mei' },
-    { value: 'Juni', label: 'Juni' },
-    { value: 'Juli', label: 'Juli' },
-    { value: 'Agustus', label: 'Agustus' },
-    { value: 'September', label: 'September' },
-    { value: 'Oktober', label: 'Oktober' },
-    { value: 'November', label: 'November' },
-    { value: 'Desember', label: 'Desember' },
-  ];
-
-  const tahunOptions = Array.from({ length: 5 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
-    return { value: year, label: year.toString() };
-  });
-
   const loadReferenceData = useCallback(async () => {
     // Skip if already loaded (prevents double-loading in React StrictMode)
-    if (referenceDataLoaded.current) return;
+    if (referenceDataLoaded.current) {
+      console.log('[loadReferenceData] Skipped - already loaded');
+      return;
+    }
     referenceDataLoaded.current = true;
+    console.log('[loadReferenceData] Starting...');
     
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -287,6 +294,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         sumberAnggaran: sumberAnggaranRes.data,
         satuan: satuanRes.data,
       });
+      console.log('[loadReferenceData] Success');
     } catch (error) {
       console.error('Failed to load reference data:', error);
       message.error('Gagal memuat data referensi');
@@ -307,7 +315,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       // Get bulan index for angkas query (1-12)
-      const bulanIndex = bulanOptions.findIndex(b => b.value === filterBulan) + 1;
+      const bulanIndex = BULAN_OPTIONS.findIndex(b => b.value === filterBulan) + 1;
 
       // Load sub kegiatan yang punya target di tahun ini
       const [assignmentsRes, laporanRes, angkasRes] = await Promise.all([
@@ -414,7 +422,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       setLoading(false);
       loadDataInProgress.current = false;
     }
-  }, [user, filterBulan, filterTahun, token, bulanOptions]);
+  }, [user, filterBulan, filterTahun, token]);
 
   useEffect(() => {
     loadReferenceData();
@@ -533,10 +541,6 @@ export const LaporanBulkInputPage: React.FC = () => {
       setLoading(false);
     }
   }, [filterBulan, filterTahun, token, loadData]);
-
-  // Memoize static options to prevent recreating objects
-  const bulanOptionsStable = useMemo(() => bulanOptions, []);
-  const tahunOptionsStable = useMemo(() => tahunOptions, []);
 
   // Stable filter handlers
   const handleFilterBulanChange = useCallback((value: string) => {
@@ -780,7 +784,7 @@ export const LaporanBulkInputPage: React.FC = () => {
               style={{ width: '100%' }}
               value={filterBulan}
               onChange={handleFilterBulanChange}
-              options={bulanOptionsStable}
+              options={BULAN_OPTIONS}
             />
           </Col>
           <Col xs={24} sm={8} md={6}>
@@ -789,7 +793,7 @@ export const LaporanBulkInputPage: React.FC = () => {
               style={{ width: '100%' }}
               value={filterTahun}
               onChange={handleFilterTahunChange}
-              options={tahunOptionsStable}
+              options={TAHUN_OPTIONS}
             />
           </Col>
           <Col xs={24} sm={8} md={6}>

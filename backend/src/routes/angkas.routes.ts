@@ -163,6 +163,23 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       successList: [],
     };
 
+    // OPTIMIZATION: Pre-fetch all existing AnggaranKas for this tahun
+    // This eliminates N+1 queries (12 per row for each bulan!)
+    const existingAngkas = await AnggaranKas.findAll({
+      where: { tahun },
+      attributes: ['id', 'user_id', 'kode_rekening', 'id_sumber_anggaran', 'bulan', 'nilai', 'created_at'],
+      order: [['created_at', 'DESC']],
+    });
+    
+    // Build lookup map: user_id + kode_rekening + id_sumber_anggaran + bulan -> latest record
+    const existingAngkasMap = new Map<string, typeof existingAngkas[0]>();
+    for (const angkas of existingAngkas) {
+      const key = `${angkas.user_id}_${angkas.kode_rekening}_${angkas.id_sumber_anggaran}_${angkas.bulan}`;
+      if (!existingAngkasMap.has(key)) {
+        existingAngkasMap.set(key, angkas);
+      }
+    }
+
     // Process each puskesmas
     for (const puskesmasData of parsed.puskesmasList) {
       // Primary: match by kode_sub_unit (kodePuskesmas from PDF)
@@ -226,17 +243,9 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           }
 
           try {
-            // Check if record already exists (get latest for comparison)
-            const existingRecord = await AnggaranKas.findOne({
-              where: {
-                user_id: userId,
-                kode_rekening: row.kodeRekening,
-                id_sumber_anggaran: sumberAnggaran.id,
-                tahun,
-                bulan,
-              },
-              order: [['created_at', 'DESC']], // Get the latest record
-            });
+            // OPTIMIZED: Check if record already exists using pre-fetched map
+            const angkasKey = `${userId}_${row.kodeRekening}_${sumberAnggaran.id}_${bulan}`;
+            const existingRecord = existingAngkasMap.get(angkasKey) || null;
 
             if (existingRecord) {
               // Compare values - skip if same
@@ -249,7 +258,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
               }
 
               // INSERT new record for history tracking (value changed)
-              await AnggaranKas.create({
+              const newAngkas = await AnggaranKas.create({
                 user_id: userId,
                 id_sub_kegiatan: idSubKegiatan,
                 id_sumber_anggaran: sumberAnggaran.id,
@@ -260,6 +269,9 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
                 nilai: newNilai,
                 created_by: adminId,
               });
+              
+              // Update cache with new record for potential future iterations
+              existingAngkasMap.set(angkasKey, newAngkas);
 
               result.updated++;
               result.success++;
@@ -277,7 +289,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
               });
             } else {
               // INSERT new record (first entry)
-              await AnggaranKas.create({
+              const newAngkas = await AnggaranKas.create({
                 user_id: userId,
                 id_sub_kegiatan: idSubKegiatan,
                 id_sumber_anggaran: sumberAnggaran.id,
@@ -288,6 +300,9 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
                 nilai,
                 created_by: adminId,
               });
+              
+              // Add to cache for potential future iterations
+              existingAngkasMap.set(angkasKey, newAngkas);
 
               result.inserted++;
               result.success++;

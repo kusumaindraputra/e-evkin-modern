@@ -25,7 +25,47 @@ body {
   min-height: 100vh;
 }
 
+/* ====================================
+   GLOBAL TABLE STYLES
+   - Sticky headers
+   - Zebra striping
+   ==================================== */
+
+/* Sticky header for all Ant Design tables */
+.ant-table-wrapper .ant-table-thead > tr > th {
+  position: sticky !important;
+  top: 0;
+  z-index: 2;
+  background: #fafafa !important;
+}
+
+/* When table has fixed header with scroll.y */
+.ant-table-wrapper .ant-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
 /* Zebra striping for table rows */
+.ant-table-wrapper .ant-table-tbody > tr:nth-child(odd) > td {
+  background-color: #ffffff;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr:nth-child(even) > td {
+  background-color: #fafafa;
+}
+
+/* Hover effect - override zebra background */
+.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background-color: #e6f4ff !important;
+}
+
+/* Selected row */
+.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #bae0ff !important;
+}
+
+/* Legacy class support (for custom rowClassName) */
 .table-row-light {
   background-color: #ffffff;
 }
@@ -36,5 +76,5 @@ body {
 
 .table-row-light:hover,
 .table-row-dark:hover {
-  background-color: #f0f0f0 !important;
+  background-color: #e6f4ff !important;
 }

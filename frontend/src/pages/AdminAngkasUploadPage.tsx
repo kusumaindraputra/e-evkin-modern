@@ -15,19 +15,18 @@ import {
   Typography,
   Space,
   Popconfirm,
-  InputNumber,
   Alert,
   Statistic,
   Timeline,
 } from 'antd';
-import { UploadOutlined, LoadingOutlined, DeleteOutlined, LinkOutlined, InfoCircleOutlined, HistoryOutlined } from '@ant-design/icons';
+import { UploadOutlined, LoadingOutlined, DeleteOutlined, LinkOutlined, HistoryOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatCurrencyWithPrefix, formatDateTime } from '../utils/formatters';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface AngkasRecord {
   user_id: string;
@@ -597,24 +596,7 @@ const AdminAngkasUploadPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={3}>Upload Target Angkas (Anggaran Kas)</Title>
-      
-      <Alert
-        message="Informasi Target Angkas"
-        description={
-          <span>
-            Data ditampilkan berdasarkan <strong>Target Anggaran</strong> per Puskesmas. 
-            Status menunjukkan apakah data Angkas sudah diupload untuk kombinasi tersebut.
-            Upload file PDF untuk mengisi data bulanan.
-          </span>
-        }
-        type="info"
-        showIcon
-        icon={<InfoCircleOutlined />}
-        style={{ marginBottom: 16 }}
-      />
-
+    <div style={{ padding: '24px' }}>
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={8}>
           <Card size="small">
@@ -641,36 +623,39 @@ const AdminAngkasUploadPage: React.FC = () => {
         </Col>
       </Row>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Row gutter={16} align="middle">
-          <Col>
-            <span>Tahun: </span>
-            <InputNumber
+      <Card title="Upload Target Angkas (Anggaran Kas)" style={{ marginBottom: 16 }}>
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={4}>
+            <Select
+              placeholder="Pilih Tahun"
+              style={{ width: '100%' }}
               value={filters.tahun}
-              onChange={(value) => setFilters({ ...filters, tahun: value || new Date().getFullYear() })}
-              min={2020}
-              max={2050}
+              onChange={(value) => setFilters({ ...filters, tahun: value })}
+              options={[
+                { value: 2024, label: '2024' },
+                { value: 2025, label: '2025' },
+                { value: 2026, label: '2026' },
+              ]}
             />
           </Col>
-          <Col>
-            <span>Sumber Anggaran: </span>
+          <Col span={6}>
             <Select
+              placeholder="Pilih Sumber Anggaran"
+              style={{ width: '100%' }}
               value={filters.id_sumber_anggaran}
               onChange={(value) => setFilters({ ...filters, id_sumber_anggaran: value })}
-              style={{ width: 150 }}
               allowClear
-              placeholder="Semua"
               options={sumberAnggaranList}
             />
           </Col>
-          <Col>
-            <span>Status: </span>
+          <Col span={5}>
             <Select
+              placeholder="Status"
+              style={{ width: '100%' }}
               value={filters.status}
               onChange={(value) => setFilters({ ...filters, status: value })}
-              style={{ width: 140 }}
               options={[
-                { value: 'all', label: 'Semua' },
+                { value: 'all', label: 'Semua Status' },
                 { value: 'uploaded', label: 'Sudah Upload' },
                 { value: 'not_uploaded', label: 'Belum Upload' },
               ]}
@@ -726,7 +711,7 @@ const AdminAngkasUploadPage: React.FC = () => {
                   })}
                   rowKey={(record) => `${record.user_id}-${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
                   loading={loading}
-                  scroll={{ x: 2400 }}
+                  scroll={{ x: 2400, y: 500 }}
                   pagination={{
                     showSizeChanger: true,
                     showTotal: (total) => `Total ${total} data`,

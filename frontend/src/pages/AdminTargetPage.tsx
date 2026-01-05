@@ -528,7 +528,7 @@ const AdminTargetPage: React.FC = () => {
           dataSource={targets}
           rowKey="id"
           loading={loading}
-          scroll={{ x: 1500 }}
+          scroll={{ x: 1500, y: 500 }}
           pagination={{ 
             pageSize: pageSize,
             showSizeChanger: false,

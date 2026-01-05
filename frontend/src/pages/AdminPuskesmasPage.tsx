@@ -218,7 +218,7 @@ export const AdminPuskesmasPage: React.FC = () => {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} puskesmas` }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1200, y: 500 }}
         />
       </Card>
 

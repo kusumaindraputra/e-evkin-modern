@@ -488,7 +488,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           dataSource={targets}
           rowKey="id"
           loading={loading}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1200, y: 500 }}
           pagination={{ 
             pageSize: pageSize,
             showSizeChanger: false,

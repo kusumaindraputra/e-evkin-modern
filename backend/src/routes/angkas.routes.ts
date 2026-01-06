@@ -918,6 +918,7 @@ router.get('/history/all', authenticate, async (req: Request, res: Response): Pr
         id: record.id,
         bulan: record.bulan,
         nilai: Number(record.nilai),
+        sumberAnggaran: (record as any).sumberAnggaran,
         creator: (record as any).creator,
         created_at: record.created_at,
       });

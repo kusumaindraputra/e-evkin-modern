@@ -83,6 +83,10 @@ interface HistoryRecord {
   bulan: number;
   nilai: number;
   created_at: string;
+  sumberAnggaran?: {
+    id_sumber: number;
+    sumber: string;
+  };
   creator: {
     id: number;
     username: string;
@@ -931,6 +935,9 @@ const AdminAngkasUploadPage: React.FC = () => {
                                   </div>
                                   <div style={{ marginTop: 4 }}>
                                     Nilai: <strong>{formatNumber(record.nilai)}</strong>
+                                    {record.sumberAnggaran && (
+                                      <Tag color="cyan" style={{ marginLeft: 8 }}>{record.sumberAnggaran.sumber}</Tag>
+                                    )}
                                   </div>
                                   <div style={{ fontSize: '12px', color: '#888' }}>
                                     Diupload oleh: {record.creator?.nama || record.creator?.username || 'N/A'}

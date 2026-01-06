@@ -40,7 +40,7 @@ interface LaporanRow {
   id_satuan?: number; // Read-only dari admin target
   target_k?: number; // Read-only dari admin
   target_rp?: number; // Read-only dari admin
-  target_angkas?: number; // Read-only dari admin - kumulatif angkas (only for single sumber anggaran)
+  target_angkas?: number; // From PDF for single sumber, or manual input for multiple sumber
   angkas?: number;
   realisasi_k?: number;
   realisasi_rp?: number;
@@ -53,8 +53,8 @@ interface LaporanRow {
   status?: string;
   
   // Angkas handling flag
-  // true = user must enter angkas manually (multiple sumber anggaran per sub kegiatan)
-  // false = angkas auto-filled from PDF upload (single sumber anggaran)
+  // true = user must enter target_angkas manually (multiple sumber anggaran per sub kegiatan)
+  // false = target_angkas auto-filled from PDF upload (single sumber anggaran)
   isManualAngkas?: boolean;
 }
 
@@ -62,6 +62,35 @@ interface ReferenceData {
   sumberAnggaran: Array<{ value: number; label: string }>;
   satuan: Array<{ value: number; label: string }>;
 }
+
+// Interface for target data from API
+interface TargetData {
+  id: number;
+  id_sumber_anggaran: number;
+  id_satuan: number | null;
+  target_k: number;
+  target_rp: string | number;
+  bulan: string | null;
+  tahun: number;
+}
+
+// Interface for existing laporan from API
+interface ExistingLaporan {
+  id: string;
+  id_sub_kegiatan: number;
+  id_sumber_anggaran: number;
+  angkas: string | number;
+  target_angkas: string | number | null;
+  realisasi_k: number;
+  realisasi_rp: string | number;
+  realisasi_fisik: string | number;
+  permasalahan: string;
+  upaya: string;
+  status: string;
+}
+
+// Type for field change values
+type FieldChangeValue = string | number | null;
 
 // Memoized render components to prevent re-renders
 interface SumberAnggaranCellProps {
@@ -114,6 +143,37 @@ const AngkasInput = memo(({ value, targetAngkas, disabled, onChange }: AngkasInp
   />
 ));
 AngkasInput.displayName = 'AngkasInput';
+
+// Component for manual target_angkas input (when sub_kegiatan has multiple sumber_anggaran)
+interface TargetAngkasInputProps {
+  value?: number;
+  maxValue?: number; // target_rp as soft limit
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+}
+
+const TargetAngkasInput = memo(({ value, maxValue, disabled, onChange }: TargetAngkasInputProps) => (
+  <InputNumber
+    style={{ width: '100%' }}
+    value={value}
+    onChange={onChange}
+    min={0}
+    max={maxValue || undefined}
+    step={1}
+    controls={false}
+    placeholder="Input target"
+    formatter={(val) => {
+      if (!val) return '';
+      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }}
+    parser={(val) => {
+      const parsed = val?.replace(/\./g, '');
+      return parsed ? Number(parsed) : 0;
+    }}
+    disabled={disabled}
+  />
+));
+TargetAngkasInput.displayName = 'TargetAngkasInput';
 
 interface RealisasiKInputProps {
   value?: number;
@@ -363,19 +423,27 @@ export const LaporanBulkInputPage: React.FC = () => {
         const isManualAngkas = item.isManualAngkas || false;
         
         // Create one row for each target (each sumber anggaran)
-        targets.forEach((target: any) => {
+        targets.forEach((target: TargetData) => {
           const idSumberAnggaran = target.id_sumber_anggaran;
           
           // Find existing laporan for this sub kegiatan + sumber anggaran combo
           const existing = existingLaporan.find(
-            (l: any) => 
+            (l: ExistingLaporan) => 
               l.id_sub_kegiatan === subKegiatanId && 
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
           // Get target_angkas from map (by sub_kegiatan only, not sumber_anggaran)
-          // Only auto-fill if NOT manual angkas (single sumber anggaran)
-          const targetAngkas = isManualAngkas ? 0 : (angkasMap.get(subKegiatanId) || 0);
+          // For single sumber anggaran: auto-fill from PDF
+          // For multiple sumber anggaran: use saved value or 0
+          let targetAngkas: number;
+          if (isManualAngkas) {
+            // Use saved target_angkas from laporan if exists, otherwise 0
+            targetAngkas = existing?.target_angkas ? Number(existing.target_angkas) : 0;
+          } else {
+            // Auto-fill from PDF angkas
+            targetAngkas = angkasMap.get(subKegiatanId) || 0;
+          }
 
           mappedRows.push({
             id_sub_kegiatan: subKegiatanId,
@@ -390,7 +458,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             // Target dan satuan dari admin (READ-ONLY)
             // Use default satuan (1=Orang) if not set in target
             target_k: target.target_k || 0,
-            target_rp: target.target_rp || 0,
+            target_rp: Number(target.target_rp) || 0,
             target_angkas: targetAngkas,
             id_satuan: target.id_satuan || 1, // Default to "Orang" if not set
             
@@ -431,7 +499,7 @@ export const LaporanBulkInputPage: React.FC = () => {
   }, [filterBulan, filterTahun, loadData]);
 
   const handleFieldChange = useCallback(
-    (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: any) => {
+    (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: FieldChangeValue) => {
       setRows((prevRows) =>
         prevRows.map((row) =>
           row.id_sub_kegiatan === id_sub_kegiatan && row.id_sumber_anggaran === id_sumber_anggaran
@@ -463,13 +531,24 @@ export const LaporanBulkInputPage: React.FC = () => {
       return;
     }
 
+    // Validate: check that target_angkas is filled for manual mode rows
+    const rowsToSave = rows.filter((row) => row.id_sumber_anggaran && row.id_satuan);
+    const missingTargetAngkas = rowsToSave.filter(
+      (row) => row.isManualAngkas && (!row.target_angkas || row.target_angkas <= 0)
+    );
+    
+    if (missingTargetAngkas.length > 0) {
+      const kodeList = missingTargetAngkas.map(r => r.kode_sub).join(', ');
+      message.warning(`Target Angkas harus diisi untuk kode rekening: ${kodeList}`);
+      return;
+    }
+
     setLoading(true);
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       // Prepare laporan array for bulk upsert
-      const laporanArray = rows
-        .filter((row) => row.id_sumber_anggaran && row.id_satuan)
+      const laporanArray = rowsToSave
         .map((row) => ({
           id: row.laporan_id, // Include ID for update detection
           id_kegiatan: row.id_kegiatan,
@@ -479,6 +558,9 @@ export const LaporanBulkInputPage: React.FC = () => {
           target_k: row.target_k || 0,
           angkas: row.angkas || 0,
           target_rp: row.target_rp || 0,
+          // Include target_angkas for manual input (isManualAngkas=true)
+          // null means auto from PDF, value means manual input
+          target_angkas: row.isManualAngkas ? (row.target_angkas || null) : null,
           realisasi_k: row.realisasi_k || 0,
           realisasi_rp: row.realisasi_rp || 0,
           realisasi_fisik: row.realisasi_fisik || 0,
@@ -617,17 +699,31 @@ export const LaporanBulkInputPage: React.FC = () => {
         key: 'angkas',
         width: 150,
         sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
-        render: (_: any, record: LaporanRow) => (
-          <AngkasInput
-            value={record.angkas}
-            // If manual angkas, don't limit to target_angkas (use target_rp as soft limit)
-            targetAngkas={record.isManualAngkas ? record.target_rp : record.target_angkas}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
-            }
-          />
-        ),
+        render: (_: any, record: LaporanRow) => {
+          // Determine max value for angkas input
+          // If manual angkas with value entered: use that value
+          // If manual angkas without value: use target_rp as soft limit
+          // If auto-fill: use target_angkas from PDF
+          let maxAngkas: number | undefined;
+          if (record.isManualAngkas) {
+            maxAngkas = record.target_angkas && record.target_angkas > 0 
+              ? record.target_angkas 
+              : record.target_rp;
+          } else {
+            maxAngkas = record.target_angkas;
+          }
+          
+          return (
+            <AngkasInput
+              value={record.angkas}
+              targetAngkas={maxAngkas}
+              disabled={record.status === 'terkirim'}
+              onChange={(value) =>
+                handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'angkas', value)
+              }
+            />
+          );
+        },
       },
       {
         title: 'Target Pagu (Rp)',
@@ -646,14 +742,20 @@ export const LaporanBulkInputPage: React.FC = () => {
         width: 150,
         sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
         render: (_: any, record: LaporanRow) => {
-          // If manual angkas, show hint to user
+          // If manual angkas, show input box for user to enter target_angkas
           if (record.isManualAngkas) {
             return (
-              <div style={{ textAlign: 'center', color: '#faad14', fontSize: '11px' }}>
-                Input Manual
-              </div>
+              <TargetAngkasInput
+                value={record.target_angkas}
+                maxValue={record.target_rp} // target_rp as soft limit
+                disabled={record.status === 'terkirim'}
+                onChange={(value) =>
+                  handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'target_angkas', value)
+                }
+              />
             );
           }
+          // For single sumber anggaran, show auto-filled value from PDF (read-only)
           return (
             <div style={{ textAlign: 'right', color: record.target_angkas ? '#1890ff' : '#999' }}>
               {formatNumber(record.target_angkas || 0)}

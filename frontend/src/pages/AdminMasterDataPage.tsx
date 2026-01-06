@@ -19,6 +19,7 @@ import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { showError, logError } from '../utils/errorHandler';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -121,9 +122,9 @@ export const AdminMasterDataPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSatuanList(response.data);
-    } catch (error: any) {
-      console.error('Error loading satuan:', error);
-      message.error(error.response?.data?.message || 'Gagal memuat data satuan');
+    } catch (error: unknown) {
+      logError('loadSatuan', error);
+      showError(error, 'Gagal memuat data satuan');
     } finally {
       setLoading(false);
     }
@@ -142,7 +143,7 @@ export const AdminMasterDataPage: React.FC = () => {
     satuanForm.setFieldsValue({ satuannya: record.satuannya });
   };
 
-  const handleSatuanSubmit = async (values: any) => {
+  const handleSatuanSubmit = async (values: { satuannya: string }) => {
     try {
       if (satuanModalMode === 'create') {
         await axios.post(
@@ -161,8 +162,8 @@ export const AdminMasterDataPage: React.FC = () => {
       }
       setSatuanModalVisible(false);
       loadSatuan();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Gagal menyimpan satuan');
+    } catch (error: unknown) {
+      showError(error, 'Gagal menyimpan satuan');
     }
   };
 
@@ -173,8 +174,8 @@ export const AdminMasterDataPage: React.FC = () => {
       });
       message.success('Satuan berhasil dihapus');
       loadSatuan();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Gagal menghapus satuan');
+    } catch (error: unknown) {
+      showError(error, 'Gagal menghapus satuan');
     }
   };
 
@@ -192,9 +193,9 @@ export const AdminMasterDataPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAnggaranList(response.data);
-    } catch (error: any) {
-      console.error('Error loading sumber anggaran:', error);
-      message.error(error.response?.data?.message || 'Gagal memuat data sumber anggaran');
+    } catch (error: unknown) {
+      logError('loadAnggaran', error);
+      showError(error, 'Gagal memuat data sumber anggaran');
     } finally {
       setLoading(false);
     }
@@ -213,7 +214,7 @@ export const AdminMasterDataPage: React.FC = () => {
     anggaranForm.setFieldsValue({ sumber: record.sumber });
   };
 
-  const handleAnggaranSubmit = async (values: any) => {
+  const handleAnggaranSubmit = async (values: { sumber: string }) => {
     try {
       if (anggaranModalMode === 'create') {
         await axios.post(
@@ -232,8 +233,8 @@ export const AdminMasterDataPage: React.FC = () => {
       }
       setAnggaranModalVisible(false);
       loadAnggaran();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Gagal menyimpan sumber anggaran');
+    } catch (error: unknown) {
+      showError(error, 'Gagal menyimpan sumber anggaran');
     }
   };
 
@@ -244,8 +245,8 @@ export const AdminMasterDataPage: React.FC = () => {
       });
       message.success('Sumber anggaran berhasil dihapus');
       loadAnggaran();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Gagal menghapus sumber anggaran');
+    } catch (error: unknown) {
+      showError(error, 'Gagal menghapus sumber anggaran');
     }
   };
 
@@ -263,9 +264,9 @@ export const AdminMasterDataPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setKegiatanList(response.data);
-    } catch (error: any) {
-      console.error('Error loading kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal memuat data kegiatan');
+    } catch (error: unknown) {
+      logError('loadKegiatan', error);
+      showError(error, 'Gagal memuat data kegiatan');
     } finally {
       setLoading(false);
     }
@@ -305,9 +306,9 @@ export const AdminMasterDataPage: React.FC = () => {
       setKegiatanModalVisible(false);
       kegiatanForm.resetFields();
       loadKegiatan();
-    } catch (error: any) {
-      console.error('Error saving kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal menyimpan kegiatan');
+    } catch (error: unknown) {
+      logError('saveKegiatan', error);
+      showError(error, 'Gagal menyimpan kegiatan');
     }
   };
 
@@ -321,9 +322,9 @@ export const AdminMasterDataPage: React.FC = () => {
       message.success('Kegiatan berhasil dihapus');
       loadKegiatan();
       loadSubKegiatan(); // Refresh if any child deleted
-    } catch (error: any) {
-      console.error('Error deleting kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal menghapus kegiatan');
+    } catch (error: unknown) {
+      logError('deleteKegiatan', error);
+      showError(error, 'Gagal menghapus kegiatan');
     }
   };
 
@@ -341,9 +342,9 @@ export const AdminMasterDataPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSubKegiatanList(response.data);
-    } catch (error: any) {
-      console.error('Error loading sub kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal memuat data sub kegiatan');
+    } catch (error: unknown) {
+      logError('loadSubKegiatan', error);
+      showError(error, 'Gagal memuat data sub kegiatan');
     } finally {
       setLoading(false);
     }
@@ -383,9 +384,9 @@ export const AdminMasterDataPage: React.FC = () => {
       setSubModalVisible(false);
       subForm.resetFields();
       loadSubKegiatan();
-    } catch (error: any) {
-      console.error('Error saving sub kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal menyimpan sub kegiatan');
+    } catch (error: unknown) {
+      logError('saveSubKegiatan', error);
+      showError(error, 'Gagal menyimpan sub kegiatan');
     }
   };
 
@@ -398,9 +399,9 @@ export const AdminMasterDataPage: React.FC = () => {
       });
       message.success('Sub kegiatan berhasil dihapus');
       loadSubKegiatan();
-    } catch (error: any) {
-      console.error('Error deleting sub kegiatan:', error);
-      message.error(error.response?.data?.message || 'Gagal menghapus sub kegiatan');
+    } catch (error: unknown) {
+      logError('deleteSubKegiatan', error);
+      showError(error, 'Gagal menghapus sub kegiatan');
     }
   };
 

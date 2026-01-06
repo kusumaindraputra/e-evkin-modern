@@ -2,6 +2,17 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## Session Start (MANDATORY)
+
+**When starting ANY session**, you MUST check beads tasks first:
+
+```bash
+# Check for open tasks at session start
+& "C:\Users\kusum\AppData\Roaming\npm\bd.exe" list -s open --no-pager
+```
+
+If there are open tasks, prioritize them. If no tasks, ask user what to work on.
+
 ## Quick Reference
 
 ```bash

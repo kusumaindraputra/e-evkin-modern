@@ -1,7 +1,7 @@
 
 import request from 'supertest';
-import app from '../app';
-import { User, SubKegiatanTarget, sequelize } from '../models';
+import app from '../../app';
+import { User, SubKegiatanTarget, sequelize } from '../../models';
 import * as XLSX from 'xlsx';
 import path from 'path';
 import fs from 'fs';

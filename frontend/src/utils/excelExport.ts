@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { formatCurrencyWithPrefix, formatPercentage } from './formatters';
 
 export interface ExcelExportData {
   fileName: string;
@@ -84,21 +85,16 @@ export const exportToExcel = (exportData: ExcelExportData) => {
 
 /**
  * Format Rupiah currency
+ * @deprecated Use formatCurrencyWithPrefix from formatters.ts instead
  */
 export const formatRupiahForExcel = (value: number): string => {
-  if (!value) return 'Rp 0';
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatCurrencyWithPrefix(value);
 };
 
 /**
  * Format percentage
+ * @deprecated Use formatPercentage from formatters.ts instead
  */
 export const formatPercentageForExcel = (value: number): string => {
-  if (!value && value !== 0) return '0%';
-  return `${value.toFixed(2)}%`;
+  return formatPercentage(value);
 };

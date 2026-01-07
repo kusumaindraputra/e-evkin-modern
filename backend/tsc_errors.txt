@@ -1,0 +1,13 @@
+src/controllers/laporan.controller.ts(35,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(51,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(72,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(90,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(108,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(132,18): error TS7030: Not all code paths return a value.
+src/controllers/laporan.controller.ts(149,18): error TS7030: Not all code paths return a value.
+src/services/laporan.service.ts(1,14): error TS6133: 'Transaction' is declared but its value is never read.
+src/services/laporan.service.ts(170,7): error TS2322: Type 'string' is not assignable to type '"menunggu" | "terkirim" | "diverifikasi" | "ditolak" | "tersimpan" | undefined'.
+src/services/laporan.service.ts(395,26): error TS2345: Argument of type 'Partial<CreateLaporanParams>' is not assignable to parameter of type '{ id?: string | Fn | Col | Literal | undefined; user_id?: string | Fn | Col | Literal | undefined; id_kegiatan?: number | Fn | Col | Literal | undefined; ... 19 more ...; updated_at?: Date | ... 3 more ... | undefined; }'.
+  Types of property 'status' are incompatible.
+    Type 'string | undefined' is not assignable to type 'Fn | Col | Literal | "menunggu" | "terkirim" | "diverifikasi" | "ditolak" | "tersimpan" | undefined'.
+      Type 'string' is not assignable to type 'Fn | Col | Literal | "menunggu" | "terkirim" | "diverifikasi" | "ditolak" | "tersimpan" | undefined'.

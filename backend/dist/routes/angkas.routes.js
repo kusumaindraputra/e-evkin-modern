@@ -359,25 +359,38 @@ router.get('/', auth_1.authenticate, async (req, res) => {
                 latestAngkas.set(key, angkas);
             }
         }
-        // Step 3: Build result - all targets with angkas values (or zeros)
-        // NOTE: Angkas matching is based on user_id + id_sub_kegiatan only (NOT id_sumber_anggaran)
-        // This is because PDF angkas may have different sumber_anggaran than targets
+        // Step 3: Identify multi-sumber sub_kegiatan per user
+        // For these, we should NOT auto-fill angkas (user must input manually)
+        const sumberCountMap = new Map(); // user_id-id_sub_kegiatan -> count of sumber_anggaran
+        for (const target of latestTargets.values()) {
+            const key = `${target.user_id}-${target.id_sub_kegiatan}`;
+            sumberCountMap.set(key, (sumberCountMap.get(key) || 0) + 1);
+        }
+        // Step 4: Build result - all targets with angkas values (or zeros)
+        // For multi-sumber sub_kegiatan: hasAngkas=false, bulanan/total stay zero
+        // For single-sumber sub_kegiatan: populate angkas from PDF data
         const result = [];
         for (const target of latestTargets.values()) {
             const bulanan = Array(12).fill(0);
             let total = 0;
             let hasAngkas = false;
-            // Fill in angkas values for each month
-            // Match by user_id + id_sub_kegiatan + bulan (ignore id_sumber_anggaran)
-            for (let bulan = 1; bulan <= 12; bulan++) {
-                // Direct lookup using the same key format
-                const key = `${target.user_id}-${target.id_sub_kegiatan}-${bulan}`;
-                const foundAngkas = latestAngkas.get(key);
-                if (foundAngkas) {
-                    const nilai = Number(foundAngkas.getDataValue('nilai')) || 0;
-                    bulanan[bulan - 1] = nilai;
-                    total += nilai;
-                    hasAngkas = true;
+            // Check if this sub_kegiatan has multiple sumber_anggaran for this user
+            const sumberKey = `${target.user_id}-${target.id_sub_kegiatan}`;
+            const sumberCount = sumberCountMap.get(sumberKey) || 1;
+            const isManualAngkas = sumberCount > 1;
+            // Only populate angkas for single-sumber sub_kegiatan
+            // Multi-sumber requires manual input (we can't split PDF angkas)
+            if (!isManualAngkas) {
+                // Fill in angkas values for each month
+                for (let bulan = 1; bulan <= 12; bulan++) {
+                    const key = `${target.user_id}-${target.id_sub_kegiatan}-${bulan}`;
+                    const foundAngkas = latestAngkas.get(key);
+                    if (foundAngkas) {
+                        const nilai = Number(foundAngkas.getDataValue('nilai')) || 0;
+                        bulanan[bulan - 1] = nilai;
+                        total += nilai;
+                        hasAngkas = true;
+                    }
                 }
             }
             result.push({
@@ -392,6 +405,7 @@ router.get('/', auth_1.authenticate, async (req, res) => {
                 bulanan,
                 total,
                 hasAngkas,
+                isManualAngkas,
             });
         }
         // Sort by puskesmas name, then sub kegiatan
@@ -762,6 +776,7 @@ router.get('/history/all', auth_1.authenticate, async (req, res) => {
                 id: record.id,
                 bulan: record.bulan,
                 nilai: Number(record.nilai),
+                sumberAnggaran: record.sumberAnggaran,
                 creator: record.creator,
                 created_at: record.created_at,
             });

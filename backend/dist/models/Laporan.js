@@ -70,6 +70,11 @@ Laporan.init({
         type: sequelize_1.DataTypes.BIGINT,
         allowNull: false,
     },
+    target_angkas: {
+        type: sequelize_1.DataTypes.BIGINT,
+        allowNull: true, // null = auto from PDF, value = manual input
+        defaultValue: null,
+    },
     realisasi_k: {
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,

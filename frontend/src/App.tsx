@@ -4,6 +4,7 @@ import { Spin } from 'antd';
 import { LoginPage } from './pages/LoginPage';
 import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy load dashboard (shared between roles)
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -61,6 +62,19 @@ const RootRedirect = () => {
   return <Navigate to={redirectTo} replace />;
 };
 
+// Wrapper for lazy loaded pages
+const PageWrapper = ({ component: Component, layout = true }: { component: React.ComponentType, layout?: boolean }) => {
+  const content = (
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingFallback />}>
+        <Component />
+      </Suspense>
+    </ErrorBoundary>
+  );
+
+  return layout ? <Layout>{content}</Layout> : content;
+};
+
 function App() {
   return (
     <BrowserRouter basename="/e-evkin">
@@ -81,11 +95,7 @@ function App() {
           path="/dashboard"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <DashboardPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={DashboardPage} />
             </AdminRoute>
           }
         />
@@ -93,11 +103,7 @@ function App() {
           path="/laporan"
           element={
             <PuskesmasRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <LaporanBulkInputPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={LaporanBulkInputPage} />
             </PuskesmasRoute>
           }
         />
@@ -105,11 +111,7 @@ function App() {
           path="/laporan-old"
           element={
             <PuskesmasRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <LaporanPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={LaporanPage} />
             </PuskesmasRoute>
           }
         />
@@ -117,11 +119,7 @@ function App() {
           path="/cara-pengisian"
           element={
             <PuskesmasRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <CaraPengisianPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={CaraPengisianPage} />
             </PuskesmasRoute>
           }
         />
@@ -129,11 +127,7 @@ function App() {
           path="/target-kinerja"
           element={
             <PuskesmasRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <PuskesmasTargetKinerjaPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={PuskesmasTargetKinerjaPage} />
             </PuskesmasRoute>
           }
         />
@@ -143,11 +137,7 @@ function App() {
           path="/admin/master-data"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminMasterDataPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminMasterDataPage} />
             </AdminRoute>
           }
         />
@@ -155,11 +145,7 @@ function App() {
           path="/admin/kegiatan"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminKegiatanPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminKegiatanPage} />
             </AdminRoute>
           }
         />
@@ -167,11 +153,7 @@ function App() {
           path="/admin/puskesmas"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminPuskesmasPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminPuskesmasPage} />
             </AdminRoute>
           }
         />
@@ -179,11 +161,7 @@ function App() {
           path="/admin/puskesmas-config"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminPuskesmasConfigPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminPuskesmasConfigPage} />
             </AdminRoute>
           }
         />
@@ -191,11 +169,7 @@ function App() {
           path="/admin/laporan-sub-kegiatan"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminLaporanSubKegiatanPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminLaporanSubKegiatanPage} />
             </AdminRoute>
           }
         />
@@ -203,11 +177,7 @@ function App() {
           path="/admin/laporan-sumber-anggaran"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminLaporanSumberAnggaranPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminLaporanSumberAnggaranPage} />
             </AdminRoute>
           }
         />
@@ -215,11 +185,7 @@ function App() {
           path="/admin/target"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminTargetPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminTargetPage} />
             </AdminRoute>
           }
         />
@@ -227,11 +193,7 @@ function App() {
           path="/admin/target-kinerja"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminTargetKinerjaPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminTargetKinerjaPage} />
             </AdminRoute>
           }
         />
@@ -239,11 +201,7 @@ function App() {
           path="/admin/angkas"
           element={
             <AdminRoute>
-              <Layout>
-                <Suspense fallback={<LoadingFallback />}>
-                  <AdminAngkasUploadPage />
-                </Suspense>
-              </Layout>
+              <PageWrapper component={AdminAngkasUploadPage} />
             </AdminRoute>
           }
         />

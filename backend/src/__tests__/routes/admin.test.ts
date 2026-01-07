@@ -99,57 +99,57 @@ describe('Admin Routes Security Tests', () => {
     });
   });
 
-  describe('PUT /api/admin/laporan/:id/verify - Verify Single Laporan', () => {
+  describe('PUT /api/admin/laporan/:id/return - Return Single Laporan', () => {
     it('should return 401 without token', async () => {
       const response = await request(app)
-        .put('/api/admin/laporan/some-id/verify')
-        .send({ status: 'diverifikasi' });
-      
+        .put('/api/admin/laporan/some-id/return')
+        .send({ catatan: 'Please fix' });
+
       expect(response.status).toBe(401);
     });
 
     it('should return 403 for puskesmas user', async () => {
       const response = await request(app)
-        .put('/api/admin/laporan/some-id/verify')
+        .put('/api/admin/laporan/some-id/return')
         .set('Authorization', `Bearer ${puskesmasToken}`)
-        .send({ status: 'diverifikasi' });
+        .send({ catatan: 'Please fix' });
 
       expect(response.status).toBe(403);
     });
 
-    it('should require valid status', async () => {
+    it('should return 404 for non-existent laporan', async () => {
       const response = await request(app)
-        .put('/api/admin/laporan/some-id/verify')
+        .put('/api/admin/laporan/00000000-0000-0000-0000-000000000000/return')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ status: 'invalid-status' });
+        .send({ catatan: 'Please fix' });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(404);
     });
   });
 
-  describe('POST /api/admin/laporan/bulk-verify - Bulk Verify', () => {
+  describe('POST /api/admin/laporan/bulk-return - Bulk Return', () => {
     it('should return 401 without token', async () => {
       const response = await request(app)
-        .post('/api/admin/laporan/bulk-verify')
-        .send({ 
-          user_id: puskesmasUser.id,
+        .post('/api/admin/laporan/bulk-return')
+        .send({
+          userId: puskesmasUser.id,
           bulan: 'Januari',
           tahun: 2025,
-          status: 'diverifikasi'
+          catatan: 'Please review'
         });
-      
+
       expect(response.status).toBe(401);
     });
 
     it('should return 403 for puskesmas user', async () => {
       const response = await request(app)
-        .post('/api/admin/laporan/bulk-verify')
+        .post('/api/admin/laporan/bulk-return')
         .set('Authorization', `Bearer ${puskesmasToken}`)
-        .send({ 
-          user_id: puskesmasUser.id,
+        .send({
+          userId: puskesmasUser.id,
           bulan: 'Januari',
           tahun: 2025,
-          status: 'diverifikasi'
+          catatan: 'Please review'
         });
 
       expect(response.status).toBe(403);
@@ -157,9 +157,9 @@ describe('Admin Routes Security Tests', () => {
 
     it('should require all fields', async () => {
       const response = await request(app)
-        .post('/api/admin/laporan/bulk-verify')
+        .post('/api/admin/laporan/bulk-return')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ 
+        .send({
           bulan: 'Januari',
           tahun: 2025
         });

@@ -11,8 +11,8 @@ class LaporanController {
                 bulan: req.query.bulan,
                 tahun: req.query.tahun ? parseInt(req.query.tahun) : undefined,
                 status: req.query.status,
-                page: parseInt(req.query.page),
-                limit: parseInt(req.query.limit),
+                page: req.query.page ? parseInt(req.query.page) : undefined,
+                limit: req.query.limit ? parseInt(req.query.limit) : undefined,
                 // Admin can filter by specific user_id
                 ...(req.user?.role === 'admin' && req.query.user_id ? { user_id: req.query.user_id } : {})
             });
@@ -20,9 +20,9 @@ class LaporanController {
                 data: result.rows,
                 pagination: {
                     total: result.count,
-                    page: parseInt(req.query.page) || 1,
-                    limit: parseInt(req.query.limit) || 50,
-                    totalPages: Math.ceil(result.count / (parseInt(req.query.limit) || 50))
+                    page: req.query.page ? parseInt(req.query.page) : 1,
+                    limit: req.query.limit ? parseInt(req.query.limit) : 50,
+                    totalPages: Math.ceil(result.count / (req.query.limit ? parseInt(req.query.limit) : 50))
                 }
             });
         }
@@ -33,8 +33,10 @@ class LaporanController {
     }
     static async findById(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const laporan = await laporan_service_1.LaporanService.findById(req.params.id, req.user.id, req.user.role);
             res.json(laporan);
         }
@@ -52,8 +54,10 @@ class LaporanController {
     }
     static async create(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const payload = { ...req.body };
             // Security: Puskesmas creates for themselves
             if (req.user.role === 'puskesmas') {
@@ -73,8 +77,10 @@ class LaporanController {
     }
     static async bulkCreate(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const result = await laporan_service_1.LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
             res.status(201).json({
                 success: true,
@@ -91,8 +97,10 @@ class LaporanController {
     }
     static async bulkUpsert(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const result = await laporan_service_1.LaporanService.bulkUpsert(req.body.laporanArray, req.user.id, req.user.role);
             res.status(200).json({
                 success: true,
@@ -109,8 +117,10 @@ class LaporanController {
     }
     static async update(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const result = await laporan_service_1.LaporanService.update({
                 id: req.params.id,
                 user_id: req.user.id,
@@ -136,8 +146,10 @@ class LaporanController {
     }
     static async delete(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             await laporan_service_1.LaporanService.delete(req.params.id, req.user.id, req.user.role);
             res.json({ message: 'Laporan deleted successfully' });
         }
@@ -155,11 +167,14 @@ class LaporanController {
     }
     static async submit(req, res) {
         try {
-            if (!req.user)
-                return res.status(401).json({ error: 'Unauthorized' });
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
             const { bulan, tahun, user_id } = req.body;
             if (!bulan || !tahun) {
-                return res.status(400).json({ error: 'Missing required fields', message: 'bulan and tahun are required' });
+                res.status(400).json({ error: 'Missing required fields', message: 'bulan and tahun are required' });
+                return;
             }
             const count = await laporan_service_1.LaporanService.submit(bulan, tahun, req.user.id, req.user.role, user_id);
             res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });

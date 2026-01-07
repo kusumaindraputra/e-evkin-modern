@@ -8,7 +8,7 @@ interface CreateLaporanParams {
     realisasi_k?: number;
     realisasi_rp?: number;
     angkas?: number;
-    status?: string;
+    status?: any;
     [key: string]: any;
 }
 interface UpdateLaporanParams {

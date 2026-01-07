@@ -127,7 +127,7 @@ class LaporanService {
             ...params,
             id_kegiatan,
             id_satuan,
-            status
+            status: status
         });
     }
     static async bulkCreate(laporanArray, requesterId, requesterRole) {
@@ -135,20 +135,37 @@ class LaporanService {
             throw new Error('laporanArray harus berupa array dan tidak boleh kosong');
         }
         const userId = requesterRole === 'puskesmas' ? requesterId : laporanArray[0].user_id;
+        // OPTIMIZATION: Pre-fetch targets to avoid N+1 queries
+        const subKegiatanIds = [...new Set(laporanArray.map((d) => d.id_sub_kegiatan).filter(Boolean))];
+        const tahunValues = [...new Set(laporanArray.map((d) => d.tahun).filter(Boolean))];
+        const sumberAnggaranIds = [...new Set(laporanArray.map((d) => d.id_sumber_anggaran).filter(Boolean))];
+        const targetMap = new Map();
+        if (subKegiatanIds.length > 0 && tahunValues.length > 0 && sumberAnggaranIds.length > 0) {
+            const targets = await models_1.SubKegiatanTarget.findAll({
+                where: {
+                    user_id: userId,
+                    id_sub_kegiatan: { [sequelize_1.Op.in]: subKegiatanIds },
+                    id_sumber_anggaran: { [sequelize_1.Op.in]: sumberAnggaranIds },
+                    bulan: null,
+                    tahun: { [sequelize_1.Op.in]: tahunValues },
+                },
+                order: [['created_at', 'DESC']],
+            });
+            for (const t of targets) {
+                // Create unique key for lookup
+                const key = `${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
+                // Store only the latest target (due to order DESC) if duplicates exist logic
+                if (!targetMap.has(key))
+                    targetMap.set(key, t);
+            }
+        }
+        const processedData = [];
         for (const data of laporanArray) {
             if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
                 throw new Error('Setiap laporan harus memiliki id_sub_kegiatan dan id_sumber_anggaran');
             }
-            const target = await models_1.SubKegiatanTarget.findOne({
-                where: {
-                    user_id: userId,
-                    id_sub_kegiatan: data.id_sub_kegiatan,
-                    id_sumber_anggaran: data.id_sumber_anggaran,
-                    bulan: null,
-                    tahun: data.tahun,
-                },
-                order: [['created_at', 'DESC']],
-            });
+            const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
+            const target = targetMap.get(targetKey);
             if (!target) {
                 throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${data.tahun}. Hubungi admin.`);
             }
@@ -158,13 +175,13 @@ class LaporanService {
             if (data.angkas !== undefined && data.realisasi_rp > data.angkas) {
                 throw new Error(`Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
             }
+            processedData.push({
+                ...data,
+                user_id: userId,
+                status: data.status || 'tersimpan',
+            });
         }
-        const laporanData = laporanArray.map((data) => ({
-            ...data,
-            user_id: userId,
-            status: data.status || 'tersimpan',
-        }));
-        return models_1.Laporan.bulkCreate(laporanData, { validate: true, returning: true });
+        return models_1.Laporan.bulkCreate(processedData, { validate: true, returning: true });
     }
     static async bulkUpsert(laporanArray, requesterId, requesterRole) {
         const transaction = await models_1.Laporan.sequelize.transaction();
@@ -251,7 +268,7 @@ class LaporanService {
                         user_id: userId,
                         id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
                         id_satuan: data.id_satuan || target.id_satuan,
-                        status: data.status || 'tersimpan',
+                        status: (data.status || 'tersimpan'),
                     };
                     if (data.id) {
                         const [updatedCount] = await models_1.Laporan.update(laporanData, {

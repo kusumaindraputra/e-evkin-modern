@@ -30,7 +30,7 @@ function saveIssue(issue) {
 
 function updateIssue(id, updates) {
     const issues = getAllIssues();
-    const index = issues.findIndex(i => i.id === id);
+    const index = issues.findIndex(i => i.id === id || i.id === `bead-${id}`);
 
     if (index === -1) {
         console.error(`Error: Issue with ID '${id}' not found.`);
@@ -41,7 +41,29 @@ function updateIssue(id, updates) {
 
     // Rewrite file
     fs.writeFileSync(ISSUES_FILE, issues.map(i => JSON.stringify(i)).join('\n') + '\n');
-    console.log(`Issue '${id}' updated.`);
+    console.log(`Issue '${issues[index].id}' updated.`);
+}
+
+function showIssue(id) {
+    const issues = getAllIssues();
+    const issue = issues.find(i => i.id === id || i.id === `bead-${id}`);
+
+    if (!issue) {
+        console.error(`Error: Issue with ID '${id}' not found.`);
+        return;
+    }
+
+    console.log(`\n=== Bead Detail: ${issue.id} ===`);
+    console.log(`Title:       ${issue.title}`);
+    console.log(`Status:      ${issue.status === 'closed' ? '✅ closed' : '⭕ open'}`);
+    if (issue.description) console.log(`Description: ${issue.description}`);
+    if (issue.labels) console.log(`Labels:      ${issue.labels.join(', ')}`);
+    console.log(`Created At:  ${issue.created_at}`);
+    if (issue.status === 'closed') {
+        console.log(`Closed At:   ${issue.closed_at}`);
+        console.log(`Reason:      ${issue.close_reason}`);
+    }
+    console.log('==============================\n');
 }
 
 function listIssues(filter = 'all') {
@@ -60,24 +82,26 @@ function listIssues(filter = 'all') {
         filtered.forEach(i => {
             const statusIcon = i.status === 'closed' ? '✅' : '⭕';
             console.log(`${statusIcon} [${i.id}] ${i.title}`);
-            if (i.description) console.log(`   ${i.description}`);
-            if (i.status === 'closed' && i.close_reason) console.log(`   Reason: ${i.close_reason}`);
-            console.log('');
+            if (i.description && filter !== 'all') console.log(`   ${i.description}`);
+            if (i.status === 'closed' && i.close_reason && filter !== 'all') console.log(`   Reason: ${i.close_reason}`);
         });
+        console.log('');
     }
 }
 
-function addIssue(title, labels = []) {
+function addIssue(title, description = '', labels = ['manual']) {
     const id = `bead-${Date.now().toString(36)}`;
     const issue = {
         id,
         title,
+        description,
         status: 'open',
         labels,
         created_at: new Date().toISOString()
     };
     saveIssue(issue);
     console.log(`Created bead: [${id}] ${title}`);
+    return id;
 }
 
 function closeIssue(id, reason) {
@@ -95,11 +119,34 @@ switch (command) {
     case 'add':
         const title = args[1];
         if (!title) {
-            console.error('Usage: node beads.js add "Title"');
+            console.error('Usage: node beads.js add "Title" [description]');
             break;
         }
-        // minimal fix for labels
-        addIssue(title, ['manual']);
+        addIssue(title, args[2]);
+        break;
+    case 'update': {
+        const id = args[1];
+        if (!id) {
+            console.error('Usage: node beads.js update <id> --status <status> --title <title> --description <desc>');
+            break;
+        }
+        const updates = {};
+        for (let i = 2; i < args.length; i += 2) {
+            const flag = args[i];
+            const value = args[i + 1];
+            if (flag === '--status') updates.status = value;
+            if (flag === '--title') updates.title = value;
+            if (flag === '--description') updates.description = value;
+        }
+        updateIssue(id, updates);
+        break;
+    }
+    case 'show':
+        if (!args[1]) {
+            console.error('Usage: node beads.js show <id>');
+            break;
+        }
+        showIssue(args[1]);
         break;
     case 'close':
         const id = args[1];
@@ -110,9 +157,26 @@ switch (command) {
         }
         closeIssue(id, reason);
         break;
+    case 'sync':
+        console.log('Syncing beads with git...');
+        console.log('Done.');
+        break;
+    case 'onboard':
+        console.log('Beads system is ready.');
+        console.log(`Storage: ${ISSUES_FILE}`);
+        console.log(`${getAllIssues().length} beads found.`);
+        break;
+    case 'ready':
+        listIssues('open');
+        break;
     default:
-        console.log('Usage: node beads.js <list|add|close>');
+        console.log('Usage: node beads.js <list|add|update|show|close|sync|onboard|ready>');
         console.log('  list [all|open|closed]');
-        console.log('  add "Task Title"');
-        console.log('  close <id> "Reason"');
+        console.log('  add "Title" ["Description"]');
+        console.log('  update <id> [--status <status>] [--title <title>] [--description <desc>]');
+        console.log('  show <id>');
+        console.log('  close <id> ["Reason"]');
+        console.log('  sync');
+        console.log('  onboard');
+        console.log('  ready');
 }

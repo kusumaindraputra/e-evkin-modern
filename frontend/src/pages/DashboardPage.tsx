@@ -276,16 +276,11 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      {/* Header with Chat Widget inline */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 200 }}>
-          <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
-          <Text type="secondary" style={{ fontSize: 13 }}>Selamat datang, {user?.nama}! 👋</Text>
-        </div>
-        {/* AI Chat Widget - Compact inline */}
-        <div style={{ flex: 1, maxWidth: 500, minWidth: 280 }}>
-          <ChatWidget compact={true} />
-        </div>
+      <div style={{ marginBottom: 24 }}>
+        <Title level={3}>Dashboard</Title>
+        <Text type="secondary">
+          Selamat datang, {user?.nama}! 👋
+        </Text>
       </div>
 
       {/* Statistics Cards */}
@@ -630,6 +625,13 @@ export const DashboardPage: React.FC = () => {
             </Card>
           </Col>
         )}
+      </Row>
+
+      {/* AI Chat Widget - Di bagian paling bawah */}
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        <Col xs={24}>
+          <ChatWidget compact={false} />
+        </Col>
       </Row>
 
       {/* Modal Detail Puskesmas Melaporkan */}

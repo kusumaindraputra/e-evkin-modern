@@ -109,8 +109,10 @@ describe('Master Data Routes Tests', () => {
     let testSatuan: any;
 
     beforeEach(async () => {
+      // Use timestamp + random to ensure uniqueness
+      const uniqueId = 80000 + Date.now() % 10000 + Math.floor(Math.random() * 1000);
       testSatuan = await Satuan.create({
-        id_satuan: 9001 + Math.floor(Math.random() * 1000),
+        id_satuan: uniqueId,
         satuannya: `Update Test ${Date.now()}`
       });
     });
@@ -163,8 +165,10 @@ describe('Master Data Routes Tests', () => {
     let testSatuan: any;
 
     beforeEach(async () => {
+      // Use timestamp + random to ensure uniqueness
+      const uniqueId = 90000 + Date.now() % 10000 + Math.floor(Math.random() * 1000);
       testSatuan = await Satuan.create({
-        id_satuan: 9501 + Math.floor(Math.random() * 1000),
+        id_satuan: uniqueId,
         satuannya: `Delete Test ${Date.now()}`
       });
     });

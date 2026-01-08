@@ -162,9 +162,26 @@ switch (command) {
         console.log('Done.');
         break;
     case 'onboard':
-        console.log('Beads system is ready.');
-        console.log(`Storage: ${ISSUES_FILE}`);
-        console.log(`${getAllIssues().length} beads found.`);
+        console.log('\n🔮 === BEADS TASK MANAGER ===');
+        console.log('E-EVKIN Modern - Health Center Performance Evaluation System\n');
+        console.log(`📁 Storage: ${ISSUES_FILE}`);
+        const allIssues = getAllIssues();
+        const openIssues = allIssues.filter(i => i.status !== 'closed');
+        const closedIssues = allIssues.filter(i => i.status === 'closed');
+        console.log(`📊 Total: ${allIssues.length} beads (${openIssues.length} open, ${closedIssues.length} closed)\n`);
+        
+        if (openIssues.length > 0) {
+            console.log('⭕ OPEN TASKS:');
+            openIssues.slice(0, 5).forEach(i => console.log(`   [${i.id}] ${i.title}`));
+            if (openIssues.length > 5) console.log(`   ... and ${openIssues.length - 5} more`);
+        }
+        
+        console.log('\n📝 Quick Commands:');
+        console.log('   npm run beads list       - Show all beads');
+        console.log('   npm run beads add "Task" - Add new task');
+        console.log('   npm run beads close <id> - Complete task');
+        console.log('   npm run beads ready      - Show open tasks');
+        console.log('\n✅ Beads ready!\n');
         break;
     case 'ready':
         listIssues('open');

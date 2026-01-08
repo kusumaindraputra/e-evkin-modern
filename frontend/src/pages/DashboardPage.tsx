@@ -276,15 +276,17 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={3}>Dashboard</Title>
-        <Text type="secondary">
-          Selamat datang, {user?.nama}! 👋
-        </Text>
+      {/* Header with Chat Widget inline */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 200 }}>
+          <Title level={4} style={{ margin: 0 }}>Dashboard</Title>
+          <Text type="secondary" style={{ fontSize: 13 }}>Selamat datang, {user?.nama}! 👋</Text>
+        </div>
+        {/* AI Chat Widget - Compact inline */}
+        <div style={{ flex: 1, maxWidth: 500, minWidth: 280 }}>
+          <ChatWidget compact={true} />
+        </div>
       </div>
-
-      {/* AI Chat Widget */}
-      <ChatWidget compact={true} />
 
       {/* Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>

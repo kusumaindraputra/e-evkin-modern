@@ -52,6 +52,9 @@ Thumbs.db
 *.sqlite3
 *.db
 
+# Database backups (keep scripts, ignore data)
+backend/backups/
+
 # Temporary files
 tmp/
 temp/

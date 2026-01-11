@@ -1,26 +1,5 @@
-// Mock canvas module to prevent native module loading errors
-jest.mock('canvas', () => ({
-  createCanvas: jest.fn(() => ({
-    getContext: jest.fn(() => ({
-      fillRect: jest.fn(),
-      drawImage: jest.fn(),
-      getImageData: jest.fn(),
-      putImageData: jest.fn(),
-      createImageData: jest.fn(),
-      setTransform: jest.fn(),
-      resetTransform: jest.fn(),
-      measureText: jest.fn(() => ({ width: 0 })),
-      fillText: jest.fn(),
-      strokeText: jest.fn(),
-    })),
-    toBuffer: jest.fn(() => Buffer.from('')),
-    toDataURL: jest.fn(() => ''),
-  })),
-  loadImage: jest.fn(() => Promise.resolve({})),
-}));
-
 // Mock pdfjs-dist to prevent canvas dependency issues
-jest.mock('pdfjs-dist', () => ({
+jest.mock('pdfjs-dist/legacy/build/pdf.js', () => ({
   getDocument: jest.fn(() => ({
     promise: Promise.resolve({
       numPages: 1,

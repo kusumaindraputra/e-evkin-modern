@@ -13,18 +13,16 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const LaporanPage = lazy(() => import('./pages/LaporanPage'));
 const LaporanBulkInputPage = lazy(() => import('./pages/LaporanBulkInputPage'));
 const CaraPengisianPage = lazy(() => import('./pages/CaraPengisianPage'));
-const PuskesmasTargetKinerjaPage = lazy(() => import('./pages/PuskesmasTargetKinerjaPage'));
+const PuskesmasTargetPage = lazy(() => import('./pages/PuskesmasTargetPage'));
 
 // Lazy load admin pages for code splitting
 const AdminMasterDataPage = lazy(() => import('./pages/AdminMasterDataPage'));
-const AdminKegiatanPage = lazy(() => import('./pages/AdminKegiatanPage'));
 const AdminPuskesmasPage = lazy(() => import('./pages/AdminPuskesmasPage'));
-const AdminLaporanSubKegiatanPage = lazy(() => import('./pages/AdminLaporanSubKegiatanPage'));
-const AdminLaporanSumberAnggaranPage = lazy(() => import('./pages/AdminLaporanSumberAnggaranPage'));
 const AdminPuskesmasConfigPage = lazy(() => import('./pages/AdminPuskesmasConfigPage'));
-const AdminTargetPage = lazy(() => import('./pages/AdminTargetPage'));
-const AdminTargetKinerjaPage = lazy(() => import('./pages/AdminTargetKinerjaPage'));
-const AdminAngkasUploadPage = lazy(() => import('./pages/AdminAngkasUploadPage'));
+// Consolidated pages
+const AdminTargetUploadPage = lazy(() => import('./pages/AdminTargetUploadPage'));
+const AdminTargetEditPage = lazy(() => import('./pages/AdminTargetEditPage'));
+const AdminLaporanPage = lazy(() => import('./pages/AdminLaporanPage'));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -123,13 +121,23 @@ function App() {
             </PuskesmasRoute>
           }
         />
+        {/* Consolidated Target & Angkas page */}
         <Route
-          path="/target-kinerja"
+          path="/target"
           element={
             <PuskesmasRoute>
-              <PageWrapper component={PuskesmasTargetKinerjaPage} />
+              <PageWrapper component={PuskesmasTargetPage} />
             </PuskesmasRoute>
           }
+        />
+        {/* Legacy routes - redirect to new consolidated page */}
+        <Route
+          path="/target-kinerja"
+          element={<Navigate to="/target?tab=target-kinerja" replace />}
+        />
+        <Route
+          path="/angkas"
+          element={<Navigate to="/target?tab=angkas" replace />}
         />
 
         {/* Admin routes */}
@@ -141,13 +149,10 @@ function App() {
             </AdminRoute>
           }
         />
+        {/* Legacy kegiatan route - redirect to master-data */}
         <Route
           path="/admin/kegiatan"
-          element={
-            <AdminRoute>
-              <PageWrapper component={AdminKegiatanPage} />
-            </AdminRoute>
-          }
+          element={<Navigate to="/admin/master-data" replace />}
         />
         <Route
           path="/admin/puskesmas"
@@ -165,45 +170,57 @@ function App() {
             </AdminRoute>
           }
         />
+        {/* Consolidated Admin Laporan page */}
         <Route
-          path="/admin/laporan-sub-kegiatan"
+          path="/admin/laporan"
           element={
             <AdminRoute>
-              <PageWrapper component={AdminLaporanSubKegiatanPage} />
+              <PageWrapper component={AdminLaporanPage} />
             </AdminRoute>
           }
+        />
+        {/* Legacy laporan routes - redirect to new page */}
+        <Route
+          path="/admin/laporan-sub-kegiatan"
+          element={<Navigate to="/admin/laporan" replace />}
         />
         <Route
           path="/admin/laporan-sumber-anggaran"
+          element={<Navigate to="/admin/laporan" replace />}
+        />
+        {/* NEW: Consolidated Target & Angkas pages */}
+        <Route
+          path="/admin/target-upload"
           element={
             <AdminRoute>
-              <PageWrapper component={AdminLaporanSumberAnggaranPage} />
+              <PageWrapper component={AdminTargetUploadPage} />
             </AdminRoute>
           }
         />
         <Route
-          path="/admin/target"
+          path="/admin/target-edit"
           element={
             <AdminRoute>
-              <PageWrapper component={AdminTargetPage} />
+              <PageWrapper component={AdminTargetEditPage} />
             </AdminRoute>
           }
+        />
+        {/* Legacy routes - redirect to new pages */}
+        <Route
+          path="/admin/target"
+          element={<Navigate to="/admin/target-upload" replace />}
         />
         <Route
           path="/admin/target-kinerja"
-          element={
-            <AdminRoute>
-              <PageWrapper component={AdminTargetKinerjaPage} />
-            </AdminRoute>
-          }
+          element={<Navigate to="/admin/target-edit" replace />}
         />
         <Route
           path="/admin/angkas"
-          element={
-            <AdminRoute>
-              <PageWrapper component={AdminAngkasUploadPage} />
-            </AdminRoute>
-          }
+          element={<Navigate to="/admin/target-upload" replace />}
+        />
+        <Route
+          path="/admin/angkas-manual"
+          element={<Navigate to="/admin/target-edit" replace />}
         />
 
         {/* Catch all - redirect to dashboard */}

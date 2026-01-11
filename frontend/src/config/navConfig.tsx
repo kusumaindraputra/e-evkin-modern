@@ -6,8 +6,8 @@ import {
     TeamOutlined,
     AppstoreOutlined,
     AimOutlined,
-    DollarOutlined,
-    FilePdfOutlined,
+    UploadOutlined,
+    EditOutlined,
     QuestionCircleOutlined,
 } from '@ant-design/icons';
 import React from 'react';
@@ -28,9 +28,9 @@ export const NAV_ITEMS: NavItem[] = [
         roles: ['puskesmas'],
     },
     {
-        key: '/target-kinerja',
+        key: '/target',
         icon: <AimOutlined />,
-        label: 'Target Kinerja',
+        label: 'Target & Angkas',
         roles: ['puskesmas'],
     },
     {
@@ -48,15 +48,9 @@ export const NAV_ITEMS: NavItem[] = [
         roles: ['admin'],
     },
     {
-        key: '/admin/laporan-sub-kegiatan',
+        key: '/admin/laporan',
         icon: <BarChartOutlined />,
-        label: 'Laporan Per Sub Kegiatan',
-        roles: ['admin'],
-    },
-    {
-        key: '/admin/laporan-sumber-anggaran',
-        icon: <BarChartOutlined />,
-        label: 'Laporan Per Sumber Anggaran',
+        label: 'Laporan Kinerja',
         roles: ['admin'],
     },
     {
@@ -66,33 +60,22 @@ export const NAV_ITEMS: NavItem[] = [
         roles: ['admin'],
     },
     {
-        key: '/admin/kegiatan',
-        icon: <AppstoreOutlined />,
-        label: 'Kegiatan',
-        roles: ['admin'],
-    },
-    {
         key: '/admin/puskesmas-config',
         icon: <AppstoreOutlined />,
         label: 'Konfigurasi Sub Kegiatan',
         roles: ['admin'],
     },
+    // NEW: Consolidated Target & Angkas
     {
-        key: '/admin/target',
-        icon: <DollarOutlined />,
-        label: 'Target Anggaran',
+        key: '/admin/target-upload',
+        icon: <UploadOutlined />,
+        label: 'Upload Target & Angkas',
         roles: ['admin'],
     },
     {
-        key: '/admin/target-kinerja',
-        icon: <AimOutlined />,
-        label: 'Target Kinerja',
-        roles: ['admin'],
-    },
-    {
-        key: '/admin/angkas',
-        icon: <FilePdfOutlined />,
-        label: 'Target Angkas',
+        key: '/admin/target-edit',
+        icon: <EditOutlined />,
+        label: 'Edit Target & Angkas',
         roles: ['admin'],
     },
     {

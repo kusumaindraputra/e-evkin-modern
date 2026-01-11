@@ -15,10 +15,11 @@
     "declarationMap": true,
     "sourceMap": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": false, // Disabled: Express handlers often have unused req/res
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-  "typeRoots": ["./node_modules/@types", "../node_modules/@types", "./src/types"],
+    "isolatedModules": true,
+    "typeRoots": ["./node_modules/@types", "../node_modules/@types", "./src/types"],
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],

@@ -19,9 +19,9 @@ module.exports = {
       tsconfig: {
         esModuleInterop: true,
         skipLibCheck: true,
+        isolatedModules: true,
         types: ['jest', 'node'],
       },
-      isolatedModules: true,
     }],
   },
 };

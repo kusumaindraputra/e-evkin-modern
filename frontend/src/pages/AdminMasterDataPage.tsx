@@ -14,12 +14,13 @@ import {
   Card,
   Typography,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 import { showError, logError } from '../utils/errorHandler';
+import { SubKegiatanSumberAnggaranModal } from '../components/SubKegiatanSumberAnggaranModal';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -79,6 +80,10 @@ export const AdminMasterDataPage: React.FC = () => {
   const [subModalVisible, setSubModalVisible] = useState(false);
   const [editingSub, setEditingSub] = useState<SubKegiatan | null>(null);
   const [subForm] = Form.useForm();
+
+  // Sub Kegiatan - Sumber Anggaran link modal
+  const [sumberAnggaranModalVisible, setSumberAnggaranModalVisible] = useState(false);
+  const [selectedSubKegiatan, setSelectedSubKegiatan] = useState<{ id: number; name: string } | null>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -572,9 +577,21 @@ export const AdminMasterDataPage: React.FC = () => {
     {
       title: 'Aksi',
       key: 'action',
-      width: 100,
+      width: 180,
       render: (_, record) => (
         <Space>
+          <Button
+            icon={<SettingOutlined />}
+            onClick={() => {
+              setSelectedSubKegiatan({
+                id: record.id_sub_kegiatan,
+                name: record.kegiatan,
+              });
+              setSumberAnggaranModalVisible(true);
+            }}
+            size="small"
+            title="Kelola Sumber Anggaran"
+          />
           <Button
             type="primary"
             icon={<EditOutlined />}
@@ -881,6 +898,20 @@ export const AdminMasterDataPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Sub Kegiatan - Sumber Anggaran Link Modal */}
+      <SubKegiatanSumberAnggaranModal
+        visible={sumberAnggaranModalVisible}
+        subKegiatanId={selectedSubKegiatan?.id || null}
+        subKegiatanName={selectedSubKegiatan?.name || ''}
+        onClose={() => {
+          setSumberAnggaranModalVisible(false);
+          setSelectedSubKegiatan(null);
+        }}
+        onSuccess={() => {
+          message.success('Sumber Anggaran berhasil diperbarui');
+        }}
+      />
     </div>
   );
 };

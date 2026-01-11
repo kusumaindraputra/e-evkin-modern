@@ -428,7 +428,7 @@ export const DashboardPage: React.FC = () => {
                     <Line 
                       type="monotone" 
                       dataKey="target_rp" 
-                      name="Target (Rp)" 
+                      name="Target Anggaran (Rp)" 
                       stroke="#1890ff" 
                       strokeWidth={2}
                       dot={{ fill: '#1890ff', r: 5 }}

@@ -191,10 +191,10 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
           <Col span={12}>
             <Card size="small">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="Target Pagu (Rp)">
+                <Descriptions.Item label="Target Anggaran (Rp)">
                   <Text strong>{formatNumber(laporan.target_rp)}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Anggaran Kas (Rp)">
+                <Descriptions.Item label="Angkas (Rp)">
                   <Text strong>{formatNumber(laporan.angkas)}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Realisasi Anggaran (Rp)">
@@ -208,7 +208,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
           <Col span={12}>
             <Card size="small" style={{ height: '100%' }}>
               <div style={{ marginBottom: 16 }}>
-                <Text type="secondary">Capaian Anggaran Kas</Text>
+                <Text type="secondary">Capaian Angkas</Text>
                 <Title level={4} style={{ margin: '4px 0', color: getProgressColor(capaianAnggaranKas) }}>
                   {capaianAnggaranKas}%
                 </Title>
@@ -219,7 +219,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
               </div>
               <Divider style={{ margin: '12px 0' }} />
               <div>
-                <Text type="secondary">Capaian Pagu Anggaran</Text>
+                <Text type="secondary">Capaian Anggaran</Text>
                 <Title level={4} style={{ margin: '4px 0', color: getProgressColor(capaianPagu) }}>
                   {capaianPagu}%
                 </Title>

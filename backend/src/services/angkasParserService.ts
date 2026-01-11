@@ -12,6 +12,9 @@
 // Use legacy build for Node.js compatibility
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 
+// Disable worker (not needed for server-side text extraction)
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
 export interface AngkasRow {
   kodeRekening: string;
   uraian: string;

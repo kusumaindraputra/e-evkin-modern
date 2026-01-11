@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table,
   Button,
@@ -30,6 +30,37 @@ import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
 const { Title } = Typography;
+
+// Pure functions moved outside component to prevent recreation on every render
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'diverifikasi':
+      return 'success';
+    case 'terkirim':
+      return 'processing';
+    case 'menunggu':
+      return 'warning';
+    case 'ditolak':
+      return 'error';
+    default:
+      return 'default';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'diverifikasi':
+      return 'Diverifikasi';
+    case 'terkirim':
+      return 'Terkirim';
+    case 'menunggu':
+      return 'Menunggu';
+    case 'ditolak':
+      return 'Ditolak';
+    default:
+      return status;
+  }
+};
 
 interface LaporanData {
   id: string;
@@ -120,11 +151,7 @@ export const LaporanPage: React.FC = () => {
     { value: 'ditolak', label: 'Ditolak' },
   ];
 
-  useEffect(() => {
-    loadLaporanData();
-  }, [filterBulan, filterTahun, filterStatus]);
-
-  const loadLaporanData = async (page = 1, pageSize = 10) => {
+  const loadLaporanData = useCallback(async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const params: any = {
@@ -157,33 +184,37 @@ export const LaporanPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterBulan, filterTahun, filterStatus, token]);
+
+  useEffect(() => {
+    loadLaporanData();
+  }, [loadLaporanData]);
 
   const handleTableChange = (paginationConfig: any) => {
     loadLaporanData(paginationConfig.current, paginationConfig.pageSize);
   };
 
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     setModalMode('create');
     setSelectedLaporan(null);
     setModalVisible(true);
-  };
+  }, []);
 
-  const handleEdit = (record: LaporanData) => {
+  const handleEdit = useCallback((record: LaporanData) => {
     setModalMode('edit');
     setSelectedLaporan({
       ...record,
       id_kegiatan: record.subKegiatan?.kegiatanParent?.id_kegiatan || record.id_kegiatan,
     });
     setModalVisible(true);
-  };
+  }, []);
 
-  const handleView = (record: LaporanData) => {
+  const handleView = useCallback((record: LaporanData) => {
     setDetailLaporan(record);
     setDetailModalVisible(true);
-  };
+  }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       await axios.delete(`${API_BASE_URL}/laporan/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -193,7 +224,7 @@ export const LaporanPage: React.FC = () => {
     } catch (error: any) {
       message.error(error.response?.data?.message || 'Gagal menghapus laporan');
     }
-  };
+  }, [token, loadLaporanData]);
 
   const handleSubmit = async (values: any) => {
     try {
@@ -286,37 +317,8 @@ export const LaporanPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'diverifikasi':
-        return 'success';
-      case 'terkirim':
-        return 'processing';
-      case 'menunggu':
-        return 'warning';
-      case 'ditolak':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'diverifikasi':
-        return 'Diverifikasi';
-      case 'terkirim':
-        return 'Terkirim';
-      case 'menunggu':
-        return 'Menunggu';
-      case 'ditolak':
-        return 'Ditolak';
-      default:
-        return status;
-    }
-  };
-
-  const columns: ColumnsType<LaporanData> = [
+  // Memoize columns to prevent recreation on every render
+  const columns: ColumnsType<LaporanData> = useMemo(() => [
     {
       title: 'NO',
       key: 'no',
@@ -376,49 +378,24 @@ export const LaporanPage: React.FC = () => {
       ),
       sorter: (a, b) => (a.subKegiatan?.indikator_kinerja || '').localeCompare(b.subKegiatan?.indikator_kinerja || ''),
     },
+    // Column order: Target Anggaran, Angkas (Target), Realisasi (Rp), Capaian Anggaran, Capaian Angkas, Target (K), Satuan, Realisasi (K), Capaian K, Realisasi Fisik
     {
-      title: 'Satuan',
-      key: 'satuan',
-      width: 100,
-      align: 'center',
-      render: (_, record) => record.satuan?.satuannya || '-',
-      sorter: (a, b) => (a.satuan?.satuannya || '').localeCompare(b.satuan?.satuannya || ''),
-    },
-    {
-      title: 'Target (K)',
-      dataIndex: 'target_k',
-      key: 'target_k',
-      width: 100,
+      title: 'Target Anggaran (Rp)',
+      dataIndex: 'target_rp',
+      key: 'target_rp',
+      width: 160,
       align: 'center',
       render: (val) => formatNumber(val),
-      sorter: (a, b) => a.target_k - b.target_k,
+      sorter: (a, b) => a.target_rp - b.target_rp,
     },
     {
-      title: 'Target Angkas (Rp)',
+      title: 'Angkas (Rp)',
       dataIndex: 'angkas',
       key: 'angkas',
       width: 150,
       align: 'center',
       render: (val) => formatNumber(val),
       sorter: (a, b) => a.angkas - b.angkas,
-    },
-    {
-      title: 'Target Pagu (Rp)',
-      dataIndex: 'target_rp',
-      key: 'target_rp',
-      width: 150,
-      align: 'center',
-      render: (val) => formatNumber(val),
-      sorter: (a, b) => a.target_rp - b.target_rp,
-    },
-    {
-      title: 'Realisasi (K)',
-      dataIndex: 'realisasi_k',
-      key: 'realisasi_k',
-      width: 100,
-      align: 'center',
-      render: (val) => formatNumber(val),
-      sorter: (a, b) => a.realisasi_k - b.realisasi_k,
     },
     {
       title: 'Realisasi (Rp)',
@@ -430,13 +407,62 @@ export const LaporanPage: React.FC = () => {
       sorter: (a, b) => a.realisasi_rp - b.realisasi_rp,
     },
     {
-      title: 'Realisasi Fisik (%)',
-      dataIndex: 'realisasi_fisik',
-      key: 'realisasi_fisik',
-      width: 120,
+      title: 'Capaian Anggaran (%)',
+      key: 'capaian_pagu',
+      width: 130,
       align: 'center',
-      render: (val) => formatPercentage(val),
-      sorter: (a, b) => a.realisasi_fisik - b.realisasi_fisik,
+      render: (_, record) => {
+        if (record.target_rp === 0) return '0,00';
+        const capaian = (record.realisasi_rp / record.target_rp) * 100;
+        return formatPercentage(capaian);
+      },
+      sorter: (a, b) => {
+        const aCapaian = a.target_rp === 0 ? 0 : (a.realisasi_rp / a.target_rp) * 100;
+        const bCapaian = b.target_rp === 0 ? 0 : (b.realisasi_rp / b.target_rp) * 100;
+        return aCapaian - bCapaian;
+      },
+    },
+    {
+      title: 'Capaian Angkas (%)',
+      key: 'capaian_angkas',
+      width: 130,
+      align: 'center',
+      render: (_, record) => {
+        if (record.angkas === 0) return '0,00';
+        const capaian = (record.realisasi_rp / record.angkas) * 100;
+        return formatPercentage(capaian);
+      },
+      sorter: (a, b) => {
+        const aCapaian = a.angkas === 0 ? 0 : (a.realisasi_rp / a.angkas) * 100;
+        const bCapaian = b.angkas === 0 ? 0 : (b.realisasi_rp / b.angkas) * 100;
+        return aCapaian - bCapaian;
+      },
+    },
+    {
+      title: 'Target (K)',
+      dataIndex: 'target_k',
+      key: 'target_k',
+      width: 100,
+      align: 'center',
+      render: (val) => formatNumber(val),
+      sorter: (a, b) => a.target_k - b.target_k,
+    },
+    {
+      title: 'Satuan',
+      key: 'satuan',
+      width: 100,
+      align: 'center',
+      render: (_, record) => record.satuan?.satuannya || '-',
+      sorter: (a, b) => (a.satuan?.satuannya || '').localeCompare(b.satuan?.satuannya || ''),
+    },
+    {
+      title: 'Realisasi (K)',
+      dataIndex: 'realisasi_k',
+      key: 'realisasi_k',
+      width: 100,
+      align: 'center',
+      render: (val) => formatNumber(val),
+      sorter: (a, b) => a.realisasi_k - b.realisasi_k,
     },
     {
       title: 'Capaian K (%)',
@@ -455,36 +481,13 @@ export const LaporanPage: React.FC = () => {
       },
     },
     {
-      title: 'Capaian Angkas (%)',
-      key: 'capaian_angkas',
+      title: 'Realisasi Fisik (%)',
+      dataIndex: 'realisasi_fisik',
+      key: 'realisasi_fisik',
       width: 120,
       align: 'center',
-      render: (_, record) => {
-        if (record.angkas === 0) return '0,00';
-        const capaian = (record.realisasi_rp / record.angkas) * 100;
-        return formatPercentage(capaian);
-      },
-      sorter: (a, b) => {
-        const aCapaian = a.angkas === 0 ? 0 : (a.realisasi_rp / a.angkas) * 100;
-        const bCapaian = b.angkas === 0 ? 0 : (b.realisasi_rp / b.angkas) * 100;
-        return aCapaian - bCapaian;
-      },
-    },
-    {
-      title: 'Capaian Pagu (%)',
-      key: 'capaian_pagu',
-      width: 120,
-      align: 'center',
-      render: (_, record) => {
-        if (record.target_rp === 0) return '0,00';
-        const capaian = (record.realisasi_rp / record.target_rp) * 100;
-        return formatPercentage(capaian);
-      },
-      sorter: (a, b) => {
-        const aCapaian = a.target_rp === 0 ? 0 : (a.realisasi_rp / a.target_rp) * 100;
-        const bCapaian = b.target_rp === 0 ? 0 : (b.realisasi_rp / b.target_rp) * 100;
-        return aCapaian - bCapaian;
-      },
+      render: (val) => formatPercentage(val),
+      sorter: (a, b) => a.realisasi_fisik - b.realisasi_fisik,
     },
     {
       title: 'Status',
@@ -541,7 +544,7 @@ export const LaporanPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [pagination.current, pagination.pageSize, handleView, handleEdit, handleDelete]);
 
   return (
     <div>

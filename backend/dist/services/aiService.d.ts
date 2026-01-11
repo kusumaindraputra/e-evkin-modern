@@ -29,6 +29,10 @@ interface LaporanAnalysis {
                 realisasi: number;
                 satuan: string;
                 persentase: number;
+                realisasiRp: number;
+                targetRp: number;
+                permasalahan: string;
+                upaya: string;
             }>;
         };
     };
@@ -36,17 +40,26 @@ interface LaporanAnalysis {
         comparison: string;
         improvement: string;
     };
+    systemContext: {
+        totalPuskesmas: number;
+        totalKegiatan: number;
+        totalSubKegiatan: number;
+        sumberAnggaranList: string[];
+    };
 }
 /**
  * Aggregate laporan data untuk AI context
+ * Mengumpulkan seluruh data laporan puskesmas untuk analisis AI
  */
 export declare const aggregateLaporanData: () => Promise<LaporanAnalysis>;
 /**
  * Get AI insights dengan context laporan
+ * Asisten Analis Kinerja Puskesmas - Hanya menggunakan Bahasa Indonesia
  */
 export declare const getAIInsights: (userQuestion: string) => Promise<string>;
 /**
  * Get suggested questions untuk dashboard
+ * Pertanyaan yang disarankan dalam Bahasa Indonesia untuk analisis kinerja
  */
 export declare const getSuggestedQuestions: () => string[];
 export {};

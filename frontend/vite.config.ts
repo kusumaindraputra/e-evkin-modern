@@ -21,36 +21,35 @@ export default defineConfig({
         manualChunks: {
           // Vendor chunks
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-antd': ['antd'],
+          'vendor-antd': ['antd', '@ant-design/icons'],
           'vendor-axios': ['axios'],
           'vendor-zustand': ['zustand'],
+          'vendor-charts': ['recharts'],
           
           // Puskesmas pages chunk (lazy loaded)
           'puskesmas-pages': [
             './src/pages/LaporanPage.tsx',
             './src/pages/LaporanBulkInputPage.tsx',
             './src/pages/CaraPengisianPage.tsx',
+            './src/pages/PuskesmasTargetPage.tsx',
             './src/pages/PuskesmasTargetKinerjaPage.tsx',
-            './src/pages/DashboardPage.tsx',
+            './src/pages/PuskesmasAngkasPage.tsx',
           ],
           
           // Admin pages chunk (lazy loaded)
           'admin-pages': [
             './src/pages/AdminMasterDataPage.tsx',
-            './src/pages/AdminKegiatanPage.tsx',
             './src/pages/AdminPuskesmasPage.tsx',
-            './src/pages/AdminLaporanSubKegiatanPage.tsx',
-            './src/pages/AdminLaporanSumberAnggaranPage.tsx',
             './src/pages/AdminPuskesmasConfigPage.tsx',
-            './src/pages/AdminTargetPage.tsx',
-            './src/pages/AdminTargetKinerjaPage.tsx',
-            './src/pages/AdminAngkasUploadPage.tsx',
+            './src/pages/AdminTargetUploadPage.tsx',
+            './src/pages/AdminTargetEditPage.tsx',
+            './src/pages/AdminLaporanPage.tsx',
+            './src/pages/DashboardPage.tsx',
           ],
         },
       },
     },
-    // Increase chunk size warning limit temporarily (will optimize further)
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1200,
   },
 })
 

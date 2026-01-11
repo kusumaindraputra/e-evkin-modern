@@ -1,3 +1,13 @@
+// Suppress canvas polyfill warnings from pdfjs-dist (we only need text extraction)
+const originalWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+  const msg = args[0];
+  if (typeof msg === 'string' && msg.includes('Cannot polyfill')) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
+
 import app from './app';
 import { config } from './config';
 import sequelize from './config/database';

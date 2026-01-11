@@ -9,6 +9,7 @@ const models_1 = require("../models");
 const sequelize_1 = require("sequelize");
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
+const editPermission_1 = require("../middleware/editPermission");
 const angkasParserService_1 = require("../services/angkasParserService");
 const router = (0, express_1.Router)();
 // Configure multer for memory storage
@@ -811,6 +812,315 @@ router.get('/history/all', auth_1.authenticate, async (req, res) => {
     catch (error) {
         console.error('Error fetching comprehensive angkas history:', error);
         res.status(500).json({ error: 'Failed to fetch history', details: error.message });
+    }
+});
+/**
+ * PUT /api/angkas/manual
+ * Puskesmas manually update angkas values for a sub_kegiatan + sumber_anggaran combination
+ * Only allowed for sub_kegiatan with multiple sumber_anggaran (isManualAngkas = true)
+ * Creates new history records for each month
+ */
+router.put('/manual', auth_1.authenticate, (0, editPermission_1.checkEditPermission)('angkas'), async (req, res) => {
+    try {
+        const currentUser = req.user;
+        const { id_sub_kegiatan, id_sumber_anggaran, tahun, bulanan, catatan } = req.body;
+        // Validate required fields
+        if (!id_sub_kegiatan || !id_sumber_anggaran || !tahun || !bulanan) {
+            res.status(400).json({
+                success: false,
+                message: 'id_sub_kegiatan, id_sumber_anggaran, tahun, dan bulanan harus diisi'
+            });
+            return;
+        }
+        // Validate bulanan is array of 12 numbers
+        if (!Array.isArray(bulanan) || bulanan.length !== 12) {
+            res.status(400).json({
+                success: false,
+                message: 'bulanan harus berupa array dengan 12 nilai (Jan-Des)'
+            });
+            return;
+        }
+        // For puskesmas: verify they can only edit their own data
+        const targetUserId = currentUser.role === 'puskesmas' ? currentUser.id : req.body.user_id || currentUser.id;
+        if (currentUser.role === 'puskesmas') {
+            // Check if this sub_kegiatan has multiple sumber_anggaran (isManualAngkas)
+            const targetCount = await models_1.SubKegiatanTarget.count({
+                where: {
+                    user_id: targetUserId,
+                    id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                    tahun: parseInt(tahun),
+                    bulan: null, // yearly targets only
+                },
+                distinct: true,
+                col: 'id_sumber_anggaran',
+            });
+            if (targetCount <= 1) {
+                res.status(403).json({
+                    success: false,
+                    message: 'Anda hanya dapat mengedit angkas untuk sub kegiatan dengan lebih dari satu sumber anggaran. Sub kegiatan ini memiliki data angkas dari PDF.'
+                });
+                return;
+            }
+        }
+        // Verify sub_kegiatan exists
+        const subKegiatan = await models_1.SubKegiatan.findByPk(id_sub_kegiatan);
+        if (!subKegiatan) {
+            res.status(400).json({ success: false, message: 'Sub kegiatan tidak ditemukan' });
+            return;
+        }
+        // Verify sumber_anggaran exists
+        const sumberAnggaran = await models_1.SumberAnggaran.findByPk(id_sumber_anggaran);
+        if (!sumberAnggaran) {
+            res.status(400).json({ success: false, message: 'Sumber anggaran tidak ditemukan' });
+            return;
+        }
+        // Get existing latest values for comparison
+        const existingAngkas = await models_1.AnggaranKas.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                tahun: parseInt(tahun),
+            },
+            order: [['created_at', 'DESC']],
+        });
+        // Get latest value per month
+        const latestByMonth = new Map();
+        for (const record of existingAngkas) {
+            const bulan = record.getDataValue('bulan');
+            if (!latestByMonth.has(bulan)) {
+                latestByMonth.set(bulan, Number(record.getDataValue('nilai')) || 0);
+            }
+        }
+        // Create records for months with changed values
+        const recordsToCreate = [];
+        const changedMonths = [];
+        for (let bulan = 1; bulan <= 12; bulan++) {
+            const newValue = Number(bulanan[bulan - 1]) || 0;
+            const oldValue = latestByMonth.get(bulan) || 0;
+            // Only create new record if value changed
+            if (newValue !== oldValue) {
+                changedMonths.push(bulan);
+                recordsToCreate.push({
+                    user_id: targetUserId,
+                    id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                    id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                    kode_rekening: `MANUAL-${id_sub_kegiatan}-${id_sumber_anggaran}`,
+                    uraian: catatan || `Input manual: ${subKegiatan.kegiatan}`,
+                    tahun: parseInt(tahun),
+                    bulan,
+                    nilai: newValue,
+                    created_by: currentUser.id,
+                });
+            }
+        }
+        if (recordsToCreate.length === 0) {
+            res.json({
+                success: true,
+                message: 'Tidak ada perubahan nilai angkas',
+                updated: 0,
+            });
+            return;
+        }
+        // Bulk create new records
+        await models_1.AnggaranKas.bulkCreate(recordsToCreate);
+        res.json({
+            success: true,
+            message: `Berhasil menyimpan angkas untuk ${recordsToCreate.length} bulan`,
+            updated: recordsToCreate.length,
+            changedMonths,
+        });
+    }
+    catch (error) {
+        console.error('Error saving manual angkas:', error);
+        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: error.message });
+    }
+});
+/**
+ * PUT /api/angkas/admin/manual
+ * Admin can update angkas for any puskesmas, without multi-sumber restriction
+ */
+router.put('/admin/manual', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const currentUser = req.user;
+        const { user_id, id_sub_kegiatan, id_sumber_anggaran, tahun, bulanan, catatan } = req.body;
+        // Validate required fields
+        if (!user_id || !id_sub_kegiatan || !id_sumber_anggaran || !tahun || !bulanan) {
+            res.status(400).json({
+                success: false,
+                message: 'user_id, id_sub_kegiatan, id_sumber_anggaran, tahun, dan bulanan harus diisi'
+            });
+            return;
+        }
+        // Validate bulanan is array of 12 numbers
+        if (!Array.isArray(bulanan) || bulanan.length !== 12) {
+            res.status(400).json({
+                success: false,
+                message: 'bulanan harus berupa array dengan 12 nilai (Jan-Des)'
+            });
+            return;
+        }
+        // Verify user exists
+        const targetUser = await models_1.User.findByPk(user_id);
+        if (!targetUser) {
+            res.status(400).json({ success: false, message: 'User tidak ditemukan' });
+            return;
+        }
+        // Verify sub_kegiatan exists
+        const subKegiatan = await models_1.SubKegiatan.findByPk(id_sub_kegiatan);
+        if (!subKegiatan) {
+            res.status(400).json({ success: false, message: 'Sub kegiatan tidak ditemukan' });
+            return;
+        }
+        // Verify sumber_anggaran exists
+        const sumberAnggaran = await models_1.SumberAnggaran.findByPk(id_sumber_anggaran);
+        if (!sumberAnggaran) {
+            res.status(400).json({ success: false, message: 'Sumber anggaran tidak ditemukan' });
+            return;
+        }
+        // Get existing latest values for comparison
+        const existingAngkas = await models_1.AnggaranKas.findAll({
+            where: {
+                user_id,
+                id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                tahun: parseInt(tahun),
+            },
+            order: [['created_at', 'DESC']],
+        });
+        // Get latest value per month
+        const latestByMonth = new Map();
+        for (const record of existingAngkas) {
+            const bulan = record.getDataValue('bulan');
+            if (!latestByMonth.has(bulan)) {
+                latestByMonth.set(bulan, Number(record.getDataValue('nilai')) || 0);
+            }
+        }
+        // Create records for months with changed values
+        const recordsToCreate = [];
+        const changedMonths = [];
+        for (let bulan = 1; bulan <= 12; bulan++) {
+            const newValue = Number(bulanan[bulan - 1]) || 0;
+            const oldValue = latestByMonth.get(bulan) || 0;
+            // Only create new record if value changed
+            if (newValue !== oldValue) {
+                changedMonths.push(bulan);
+                recordsToCreate.push({
+                    user_id,
+                    id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                    id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                    kode_rekening: `ADMIN-MANUAL-${id_sub_kegiatan}-${id_sumber_anggaran}`,
+                    uraian: catatan || `Input manual oleh admin: ${subKegiatan.kegiatan}`,
+                    tahun: parseInt(tahun),
+                    bulan,
+                    nilai: newValue,
+                    created_by: currentUser.id,
+                });
+            }
+        }
+        if (recordsToCreate.length === 0) {
+            res.json({
+                success: true,
+                message: 'Tidak ada perubahan nilai angkas',
+                updated: 0,
+            });
+            return;
+        }
+        // Bulk create new records
+        await models_1.AnggaranKas.bulkCreate(recordsToCreate);
+        res.json({
+            success: true,
+            message: `Berhasil menyimpan angkas untuk ${recordsToCreate.length} bulan`,
+            updated: recordsToCreate.length,
+            changedMonths,
+        });
+    }
+    catch (error) {
+        console.error('Error saving admin manual angkas:', error);
+        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: error.message });
+    }
+});
+/**
+ * GET /api/angkas/manual/history
+ * Get history of manual angkas edits for a specific combination
+ * Groups by sumber_anggaran to show complete edit history
+ */
+router.get('/manual/history', auth_1.authenticate, async (req, res) => {
+    try {
+        const { user_id, id_sub_kegiatan, id_sumber_anggaran, tahun } = req.query;
+        const currentUser = req.user;
+        // Admin can view any user's history, puskesmas can only view their own
+        let targetUserId;
+        if (currentUser.role === 'puskesmas') {
+            targetUserId = currentUser.id;
+        }
+        else if (user_id) {
+            targetUserId = user_id;
+        }
+        else {
+            res.status(400).json({ success: false, message: 'user_id diperlukan untuk admin' });
+            return;
+        }
+        if (!id_sub_kegiatan || !id_sumber_anggaran) {
+            res.status(400).json({ success: false, message: 'id_sub_kegiatan dan id_sumber_anggaran diperlukan' });
+            return;
+        }
+        const targetTahun = tahun ? parseInt(tahun) : new Date().getFullYear();
+        // Get all records for this combination, ordered by created_at DESC
+        const allRecords = await models_1.AnggaranKas.findAll({
+            where: {
+                user_id: targetUserId,
+                id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                tahun: targetTahun,
+            },
+            include: [
+                { model: models_1.User, as: 'creator', attributes: ['id', 'nama', 'username'] },
+                { model: models_1.SubKegiatan, as: 'subKegiatan', attributes: ['id_sub_kegiatan', 'kegiatan', 'kode_sub'] },
+                { model: models_1.SumberAnggaran, as: 'sumberAnggaran', attributes: ['id_sumber', 'sumber'] },
+            ],
+            order: [['created_at', 'DESC'], ['bulan', 'ASC']],
+        });
+        // Group by created_at timestamp (batch edits)
+        const batchMap = new Map();
+        for (const record of allRecords) {
+            const createdAt = record.created_at.toISOString();
+            if (!batchMap.has(createdAt)) {
+                batchMap.set(createdAt, []);
+            }
+            batchMap.get(createdAt).push({
+                bulan: record.getDataValue('bulan'),
+                nilai: Number(record.getDataValue('nilai')),
+                uraian: record.getDataValue('uraian'),
+            });
+        }
+        // Convert to array with metadata
+        const history = Array.from(batchMap.entries()).map(([createdAt, records]) => {
+            const firstRecord = allRecords.find(r => r.created_at.toISOString() === createdAt);
+            return {
+                created_at: createdAt,
+                creator: firstRecord?.creator || null,
+                uraian: records[0]?.uraian || '',
+                bulanan: records.sort((a, b) => a.bulan - b.bulan),
+                total: records.reduce((sum, r) => sum + r.nilai, 0),
+            };
+        });
+        res.json({
+            success: true,
+            data: {
+                user_id: targetUserId,
+                id_sub_kegiatan: parseInt(id_sub_kegiatan),
+                id_sumber_anggaran: parseInt(id_sumber_anggaran),
+                tahun: targetTahun,
+                subKegiatan: allRecords[0]?.subKegiatan || null,
+                sumberAnggaran: allRecords[0]?.sumberAnggaran || null,
+                history,
+            },
+        });
+    }
+    catch (error) {
+        console.error('Error fetching manual angkas history:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil history', details: error.message });
     }
 });
 exports.default = router;

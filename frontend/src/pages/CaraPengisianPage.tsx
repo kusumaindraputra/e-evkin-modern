@@ -163,7 +163,7 @@ export const CaraPengisianPage: React.FC = () => {
 
           <div>
             <Paragraph>
-              <Text strong>4. Target Angkas (Rp)</Text> - Isi total anggaran kas yang dialokasikan dalam rupiah. Format angka otomatis (contoh: 5.000.000).
+              <Text strong>4. Target Angkas (Rp)</Text> - Total anggaran kas kumulatif hingga bulan yang dipilih (otomatis dari data angkas).
             </Paragraph>
           </div>
 
@@ -171,7 +171,7 @@ export const CaraPengisianPage: React.FC = () => {
 
           <div>
             <Paragraph>
-              <Text strong>5. Target Pagu (Rp)</Text> - Isi target dana yang akan direalisasikan dalam rupiah. Format angka otomatis.
+              <Text strong>5. Target Anggaran (Rp)</Text> - Target dana tahunan (pagu) yang akan direalisasikan dalam rupiah.
             </Paragraph>
           </div>
 
@@ -220,7 +220,7 @@ export const CaraPengisianPage: React.FC = () => {
           />
           <Alert
             message="Format Angka Otomatis"
-            description="Semua kolom angka (Target K, Angkas, Target Rp, Realisasi K, Realisasi Rp) menggunakan thousand separator otomatis (contoh: 1.000.000). Anda tidak perlu mengetik titik pemisah."
+            description="Semua kolom angka (Target K, Angkas, Target Anggaran, Realisasi K, Realisasi Rp) menggunakan thousand separator otomatis (contoh: 1.000.000). Anda tidak perlu mengetik titik pemisah."
             type="success"
             showIcon
             icon={<CheckCircleOutlined />}

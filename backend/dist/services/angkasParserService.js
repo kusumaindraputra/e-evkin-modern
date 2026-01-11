@@ -16,6 +16,8 @@ exports.findBestMatch = findBestMatch;
 exports.findPuskesmasUser = findPuskesmasUser;
 // Use legacy build for Node.js compatibility
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+// Disable worker (not needed for server-side text extraction)
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 // Pattern to match Puskesmas header line
 // Example: "1.02.0.00.0.00.01.0010   Puskesmas Jasinga   5.975.916.762,00..."
 // Example: "1.02.0.00.0.00.01.0050   Labkesda   ..." (no "Puskesmas" prefix)

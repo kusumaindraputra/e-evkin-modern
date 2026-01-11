@@ -3,6 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Suppress canvas polyfill warnings from pdfjs-dist (we only need text extraction)
+const originalWarn = console.warn;
+console.warn = (...args) => {
+    const msg = args[0];
+    if (typeof msg === 'string' && msg.includes('Cannot polyfill')) {
+        return;
+    }
+    originalWarn.apply(console, args);
+};
 const app_1 = __importDefault(require("./app"));
 const config_1 = require("./config");
 const database_1 = __importDefault(require("./config/database"));

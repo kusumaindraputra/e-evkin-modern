@@ -347,17 +347,25 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             order: [['created_at', 'DESC']],
         });
         // Get latest angkas per combination (user_id + id_sub_kegiatan + bulan)
-        // NOTE: We ignore id_sumber_anggaran because PDF angkas uses different sumber than targets
+        // For single-sumber: key by user_id + id_sub_kegiatan + bulan
+        // For multi-sumber: key by user_id + id_sub_kegiatan + id_sumber_anggaran + bulan
         const latestAngkas = new Map();
+        const latestAngkasWithSumber = new Map();
         for (const angkas of allAngkas) {
             // Use getDataValue to get actual values (avoid Sequelize getter issues with public class fields)
             const userId = angkas.getDataValue('user_id');
             const subKegId = angkas.getDataValue('id_sub_kegiatan');
+            const sumberId = angkas.getDataValue('id_sumber_anggaran');
             const bulan = angkas.getDataValue('bulan');
-            // Key without id_sumber_anggaran - match by user + subkegiatan + bulan only
-            const key = `${userId}-${subKegId}-${bulan}`;
-            if (!latestAngkas.has(key)) {
-                latestAngkas.set(key, angkas);
+            // Key without id_sumber_anggaran - for single-sumber sub_kegiatan
+            const keyNoSumber = `${userId}-${subKegId}-${bulan}`;
+            if (!latestAngkas.has(keyNoSumber)) {
+                latestAngkas.set(keyNoSumber, angkas);
+            }
+            // Key with id_sumber_anggaran - for multi-sumber (manual) sub_kegiatan
+            const keyWithSumber = `${userId}-${subKegId}-${sumberId}-${bulan}`;
+            if (!latestAngkasWithSumber.has(keyWithSumber)) {
+                latestAngkasWithSumber.set(keyWithSumber, angkas);
             }
         }
         // Step 3: Identify multi-sumber sub_kegiatan per user
@@ -379,19 +387,24 @@ router.get('/', auth_1.authenticate, async (req, res) => {
             const sumberKey = `${target.user_id}-${target.id_sub_kegiatan}`;
             const sumberCount = sumberCountMap.get(sumberKey) || 1;
             const isManualAngkas = sumberCount > 1;
-            // Only populate angkas for single-sumber sub_kegiatan
-            // Multi-sumber requires manual input (we can't split PDF angkas)
-            if (!isManualAngkas) {
-                // Fill in angkas values for each month
-                for (let bulan = 1; bulan <= 12; bulan++) {
-                    const key = `${target.user_id}-${target.id_sub_kegiatan}-${bulan}`;
-                    const foundAngkas = latestAngkas.get(key);
-                    if (foundAngkas) {
-                        const nilai = Number(foundAngkas.getDataValue('nilai')) || 0;
-                        bulanan[bulan - 1] = nilai;
-                        total += nilai;
-                        hasAngkas = true;
-                    }
+            // Fill in angkas values for each month
+            for (let bulan = 1; bulan <= 12; bulan++) {
+                let foundAngkas;
+                if (isManualAngkas) {
+                    // For multi-sumber: use key with id_sumber_anggaran
+                    const keyWithSumber = `${target.user_id}-${target.id_sub_kegiatan}-${target.id_sumber_anggaran}-${bulan}`;
+                    foundAngkas = latestAngkasWithSumber.get(keyWithSumber);
+                }
+                else {
+                    // For single-sumber: use key without id_sumber_anggaran (PDF data may have different sumber)
+                    const keyNoSumber = `${target.user_id}-${target.id_sub_kegiatan}-${bulan}`;
+                    foundAngkas = latestAngkas.get(keyNoSumber);
+                }
+                if (foundAngkas) {
+                    const nilai = Number(foundAngkas.getDataValue('nilai')) || 0;
+                    bulanan[bulan - 1] = nilai;
+                    total += nilai;
+                    hasAngkas = true;
                 }
             }
             result.push({
@@ -1084,7 +1097,13 @@ router.get('/manual/history', auth_1.authenticate, async (req, res) => {
         // Group by created_at timestamp (batch edits)
         const batchMap = new Map();
         for (const record of allRecords) {
-            const createdAt = record.created_at.toISOString();
+            // Access createdAt from dataValues (Sequelize aliases created_at as createdAt)
+            const createdAtRaw = record.dataValues?.createdAt;
+            if (!createdAtRaw)
+                continue; // Skip if no createdAt
+            const createdAt = createdAtRaw instanceof Date
+                ? createdAtRaw.toISOString()
+                : new Date(createdAtRaw).toISOString();
             if (!batchMap.has(createdAt)) {
                 batchMap.set(createdAt, []);
             }
@@ -1096,7 +1115,15 @@ router.get('/manual/history', auth_1.authenticate, async (req, res) => {
         }
         // Convert to array with metadata
         const history = Array.from(batchMap.entries()).map(([createdAt, records]) => {
-            const firstRecord = allRecords.find(r => r.created_at.toISOString() === createdAt);
+            const firstRecord = allRecords.find(r => {
+                const recCreatedAtRaw = r.dataValues?.createdAt;
+                if (!recCreatedAtRaw)
+                    return false;
+                const recCreatedAt = recCreatedAtRaw instanceof Date
+                    ? recCreatedAtRaw.toISOString()
+                    : new Date(recCreatedAtRaw).toISOString();
+                return recCreatedAt === createdAt;
+            });
             return {
                 created_at: createdAt,
                 creator: firstRecord?.creator || null,

@@ -602,7 +602,7 @@ const AdminTargetUploadPage: React.FC = () => {
                   </Button>
                 </div>
                 <Table columns={targetColumns} dataSource={targets} rowKey="id" loading={targetLoading}
-                  scroll={{ x: 1400, y: 500 }} pagination={{ pageSize: targetPageSize, current: targetCurrentPage, onChange: (page) => setTargetCurrentPage(page) }}
+                  scroll={{ x: 1400, y: 500 }} sticky pagination={{ pageSize: targetPageSize, current: targetCurrentPage, onChange: (page) => setTargetCurrentPage(page) }}
                 />
               </>
             ),
@@ -631,7 +631,7 @@ const AdminTargetUploadPage: React.FC = () => {
                 <Table columns={angkasColumns}
                   dataSource={angkasData.filter(r => filters.angkasStatus === 'uploaded' ? r.hasAngkas : filters.angkasStatus === 'not_uploaded' ? !r.hasAngkas : true)}
                   rowKey={(r) => `${r.user_id}-${r.id_sub_kegiatan}-${r.id_sumber_anggaran}`}
-                  loading={angkasLoading} scroll={{ x: 2400, y: 500 }} pagination={{ showSizeChanger: true }}
+                  loading={angkasLoading} scroll={{ x: 2400, y: 500 }} sticky pagination={{ showSizeChanger: true }}
                 />
               </>
             ),

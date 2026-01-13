@@ -1,10 +1,11 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/e-evkin/',
+  base: '/',
   server: {
     port: 5173,
     proxy: {
@@ -25,7 +26,7 @@ export default defineConfig({
           'vendor-axios': ['axios'],
           'vendor-zustand': ['zustand'],
           'vendor-charts': ['recharts'],
-          
+
           // Puskesmas pages chunk (lazy loaded)
           'puskesmas-pages': [
             './src/pages/LaporanPage.tsx',
@@ -35,7 +36,7 @@ export default defineConfig({
             './src/pages/PuskesmasTargetKinerjaPage.tsx',
             './src/pages/PuskesmasAngkasPage.tsx',
           ],
-          
+
           // Admin pages chunk (lazy loaded)
           'admin-pages': [
             './src/pages/AdminMasterDataPage.tsx',
@@ -50,6 +51,11 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1200,
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    // setupFiles: './src/setupTests.ts',
   },
 })
 

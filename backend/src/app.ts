@@ -45,6 +45,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'E-EVKIN API Microservice is running', version: '1.0.0' });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/puskesmas', puskesmasRoutes);

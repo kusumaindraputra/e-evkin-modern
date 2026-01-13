@@ -615,7 +615,7 @@ const AdminTargetEditPage: React.FC = () => {
               <>
                 <PermissionConfigCard scope="target_kinerja" form={permFormTarget} saving={savingPermTarget} loadingStatus={loadingPermTargetStatus} />
                 <Table columns={targetColumns} dataSource={targetData} rowKey="id" loading={targetLoading}
-                  scroll={{ x: 1500, y: 500 }} pagination={{ pageSize: targetPageSize, current: targetCurrentPage, onChange: (page) => setTargetCurrentPage(page) }}
+                  scroll={{ x: 1500, y: 500 }} sticky pagination={{ pageSize: targetPageSize, current: targetCurrentPage, onChange: (page) => setTargetCurrentPage(page) }}
                 />
               </>
             ),
@@ -630,7 +630,7 @@ const AdminTargetEditPage: React.FC = () => {
                   * <Tag color="orange">Multi-Sumber</Tag> = Puskesmas dapat input manual | Admin dapat edit semua data
                 </p>
                 <Table columns={angkasColumns} dataSource={angkasData} rowKey={(r) => `${r.user_id}-${r.id_sub_kegiatan}-${r.id_sumber_anggaran}`}
-                  loading={angkasLoading} scroll={{ x: 1400, y: 500 }}
+                  loading={angkasLoading} scroll={{ x: 1400, y: 500 }} sticky
                   pagination={{ pageSize: angkasPageSize, current: angkasCurrentPage, onChange: (page) => setAngkasCurrentPage(page) }}
                 />
               </>
@@ -701,12 +701,12 @@ const AdminTargetEditPage: React.FC = () => {
           </div>
         )}
         {selectedAngkas && (
-          <div style={{ 
-            marginBottom: 16, 
-            padding: 12, 
-            background: isValidAngkasTotal() ? '#f6ffed' : '#fff2e8', 
+          <div style={{
+            marginBottom: 16,
+            padding: 12,
+            background: isValidAngkasTotal() ? '#f6ffed' : '#fff2e8',
             border: `1px solid ${isValidAngkasTotal() ? '#b7eb8f' : '#ffbb96'}`,
-            borderRadius: 6 
+            borderRadius: 6
           }}>
             <Row gutter={16}>
               <Col span={8}>
@@ -724,10 +724,10 @@ const AdminTargetEditPage: React.FC = () => {
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#888', fontSize: 12 }}>Selisih</div>
-                  <div style={{ 
-                    fontSize: 16, 
-                    fontWeight: 'bold', 
-                    color: getAngkasSelisih() === 0 ? '#52c41a' : '#fa541c' 
+                  <div style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: getAngkasSelisih() === 0 ? '#52c41a' : '#fa541c'
                   }}>
                     {getAngkasSelisih() > 0 ? '+' : ''}{formatNumber(getAngkasSelisih())}
                   </div>

@@ -219,6 +219,7 @@ export const AdminPuskesmasPage: React.FC = () => {
           loading={loading}
           pagination={{ pageSize: 10, showTotal: (total) => `Total ${total} puskesmas` }}
           scroll={{ x: 1200, y: 500 }}
+          sticky
         />
       </Card>
 
@@ -257,9 +258,9 @@ export const AdminPuskesmasPage: React.FC = () => {
               editingUser
                 ? []
                 : [
-                    { required: true, message: 'Password wajib diisi' },
-                    { min: 6, message: 'Password minimal 6 karakter' },
-                  ]
+                  { required: true, message: 'Password wajib diisi' },
+                  { min: 6, message: 'Password minimal 6 karakter' },
+                ]
             }
           >
             <Input.Password placeholder="Minimal 6 karakter" />

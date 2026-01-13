@@ -75,7 +75,7 @@ const PageWrapper = ({ component: Component, layout = true }: { component: React
 
 function App() {
   return (
-    <BrowserRouter basename="/e-evkin">
+    <BrowserRouter basename="/">
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -130,15 +130,7 @@ function App() {
             </PuskesmasRoute>
           }
         />
-        {/* Legacy routes - redirect to new consolidated page */}
-        <Route
-          path="/target-kinerja"
-          element={<Navigate to="/target?tab=target-kinerja" replace />}
-        />
-        <Route
-          path="/angkas"
-          element={<Navigate to="/target?tab=angkas" replace />}
-        />
+
 
         {/* Admin routes */}
         <Route
@@ -149,11 +141,7 @@ function App() {
             </AdminRoute>
           }
         />
-        {/* Legacy kegiatan route - redirect to master-data */}
-        <Route
-          path="/admin/kegiatan"
-          element={<Navigate to="/admin/master-data" replace />}
-        />
+
         <Route
           path="/admin/puskesmas"
           element={
@@ -179,15 +167,7 @@ function App() {
             </AdminRoute>
           }
         />
-        {/* Legacy laporan routes - redirect to new page */}
-        <Route
-          path="/admin/laporan-sub-kegiatan"
-          element={<Navigate to="/admin/laporan" replace />}
-        />
-        <Route
-          path="/admin/laporan-sumber-anggaran"
-          element={<Navigate to="/admin/laporan" replace />}
-        />
+
         {/* NEW: Consolidated Target & Angkas pages */}
         <Route
           path="/admin/target-upload"
@@ -205,23 +185,7 @@ function App() {
             </AdminRoute>
           }
         />
-        {/* Legacy routes - redirect to new pages */}
-        <Route
-          path="/admin/target"
-          element={<Navigate to="/admin/target-upload" replace />}
-        />
-        <Route
-          path="/admin/target-kinerja"
-          element={<Navigate to="/admin/target-edit" replace />}
-        />
-        <Route
-          path="/admin/angkas"
-          element={<Navigate to="/admin/target-upload" replace />}
-        />
-        <Route
-          path="/admin/angkas-manual"
-          element={<Navigate to="/admin/target-edit" replace />}
-        />
+
 
         {/* Catch all - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

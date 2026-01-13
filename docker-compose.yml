@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: e-evkin-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-e_evkin}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - e-evkin-network
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: e-evkin-backend
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-e_evkin}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      - postgres
+    ports:
+      - "5000:5000"
+    networks:
+      - e-evkin-network
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: e-evkin-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - e-evkin-network
+    restart: always
+
+networks:
+  e-evkin-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -129,7 +129,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Load sub kegiatan
-      const subKegiatanRes = await axios.get(`${API_BASE_URL}/kegiatan/kegiatan`, { 
+      const subKegiatanRes = await axios.get(`${API_BASE_URL}/kegiatan/kegiatan`, {
         headers,
         params: { include: 'sub' },
       });
@@ -172,7 +172,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
     setLoading(true);
     try {
       const params: any = {};
-      
+
       if (filters.id_sub_kegiatan && filters.id_sub_kegiatan !== undefined) {
         params.id_sub_kegiatan = filters.id_sub_kegiatan;
       }
@@ -197,7 +197,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             const satuanInfo = satuanList.find(s => s.value === target.id_satuan);
             // Find sumber anggaran name
             const sumberInfo = sumberAnggaranList.find(s => s.value === target.id_sumber_anggaran);
-            
+
             return {
               ...target,
               satuan: satuanInfo ? { id_satuan: satuanInfo.value, satuannya: satuanInfo.label } : null,
@@ -281,7 +281,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (!selectedTarget) return;
 
       setSaving(true);
@@ -489,7 +489,8 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           rowKey="id"
           loading={loading}
           scroll={{ x: 1200, y: 500 }}
-          pagination={{ 
+          sticky
+          pagination={{
             pageSize: pageSize,
             showSizeChanger: false,
             current: currentPage,

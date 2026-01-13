@@ -119,7 +119,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
       const headers = { Authorization: `Bearer ${token}` };
 
       // Load sub kegiatan
-      const subKegiatanRes = await axios.get(`${API_BASE_URL}/kegiatan/kegiatan`, { 
+      const subKegiatanRes = await axios.get(`${API_BASE_URL}/kegiatan/kegiatan`, {
         headers,
         params: { include: 'sub' },
       });
@@ -156,7 +156,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
     setLoading(true);
     try {
       const params: any = { tahun: filters.tahun };
-      
+
       if (filters.id_sub_kegiatan) {
         params.id_sub_kegiatan = filters.id_sub_kegiatan;
       }
@@ -264,7 +264,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (!selectedRecord) return;
 
       setSaving(true);
@@ -478,7 +478,8 @@ export const PuskesmasAngkasPage: React.FC = () => {
           rowKey={(record) => `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
           loading={loading}
           scroll={{ x: 1200, y: 500 }}
-          pagination={{ 
+          sticky
+          pagination={{
             pageSize: pageSize,
             showSizeChanger: false,
             current: currentPage,
@@ -525,12 +526,12 @@ export const PuskesmasAngkasPage: React.FC = () => {
         )}
 
         {selectedRecord && (
-          <div style={{ 
-            marginBottom: 16, 
-            padding: 12, 
-            background: isValidTotal() ? '#f6ffed' : '#fff2e8', 
+          <div style={{
+            marginBottom: 16,
+            padding: 12,
+            background: isValidTotal() ? '#f6ffed' : '#fff2e8',
             border: `1px solid ${isValidTotal() ? '#b7eb8f' : '#ffbb96'}`,
-            borderRadius: 6 
+            borderRadius: 6
           }}>
             <Row gutter={16}>
               <Col span={8}>
@@ -548,10 +549,10 @@ export const PuskesmasAngkasPage: React.FC = () => {
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ color: '#888', fontSize: 12 }}>Selisih</div>
-                  <div style={{ 
-                    fontSize: 16, 
-                    fontWeight: 'bold', 
-                    color: getSelisih() === 0 ? '#52c41a' : '#fa541c' 
+                  <div style={{
+                    fontSize: 16,
+                    fontWeight: 'bold',
+                    color: getSelisih() === 0 ? '#52c41a' : '#fa541c'
                   }}>
                     {getSelisih() > 0 ? '+' : ''}{formatNumber(getSelisih())}
                   </div>
@@ -559,9 +560,9 @@ export const PuskesmasAngkasPage: React.FC = () => {
               </Col>
             </Row>
             {!isValidTotal() && (
-              <Alert 
-                type="warning" 
-                message="Total angkas harus sama dengan target anggaran untuk dapat menyimpan" 
+              <Alert
+                type="warning"
+                message="Total angkas harus sama dengan target anggaran untuk dapat menyimpan"
                 style={{ marginTop: 12 }}
                 showIcon
               />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Typography, Progress, Space, Spin, Select, Modal, Table } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Progress, Space, Spin, Select, Modal, Table, Skeleton } from 'antd';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -26,6 +26,14 @@ import {
 } from 'recharts';
 
 const { Title, Text } = Typography;
+
+// Skeleton component for chart loading
+const ChartSkeleton = ({ height = 400 }: { height?: number }) => (
+  <div style={{ height, padding: 20 }}>
+    <Skeleton.Input active style={{ width: '100%', height: 20, marginBottom: 20 }} />
+    <Skeleton active paragraph={{ rows: 8 }} />
+  </div>
+);
 
 interface BudgetData {
   bulan: string;
@@ -450,9 +458,7 @@ export const DashboardPage: React.FC = () => {
           <Col xs={24}>
             <Card title="Grafik Realisasi Anggaran Year to Date" variant="borderless">
               {loadingBudget ? (
-                <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Spin size="large" />
-                </div>
+                <ChartSkeleton height={500} />
               ) : budgetData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={500}>
                   <LineChart data={budgetData}>
@@ -527,9 +533,7 @@ export const DashboardPage: React.FC = () => {
               }
             >
               {loadingTop10 ? (
-                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Spin size="large" />
-                </div>
+                <ChartSkeleton height={400} />
               ) : top10Data.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart 
@@ -609,9 +613,7 @@ export const DashboardPage: React.FC = () => {
               }
             >
               {loadingBottom10 ? (
-                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Spin size="large" />
-                </div>
+                <ChartSkeleton height={400} />
               ) : bottom10Data.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart 
@@ -691,9 +693,7 @@ export const DashboardPage: React.FC = () => {
               }
             >
               {loadingMonthly ? (
-                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Spin size="large" />
-                </div>
+                <ChartSkeleton height={400} />
               ) : monthlyBudgetData.length > 0 ? (
                 <Row gutter={[16, 16]}>
                   {monthlyBudgetData.map((item, index) => (

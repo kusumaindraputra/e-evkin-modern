@@ -5,6 +5,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { config } from './config';
+import { setupSwagger } from './config/swagger';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth.routes';
@@ -40,6 +41,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
 
+// Swagger API Documentation
+setupSwagger(app);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -47,7 +51,11 @@ app.get('/health', (req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
-  res.json({ message: 'E-EVKIN API Microservice is running', version: '1.0.0' });
+  res.json({ 
+    message: 'E-EVKIN API Microservice is running', 
+    version: '1.0.0',
+    docs: '/api-docs'
+  });
 });
 
 // API routes

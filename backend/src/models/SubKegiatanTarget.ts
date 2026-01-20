@@ -122,6 +122,7 @@ SubKegiatanTarget.init(
     underscored: true,
     indexes: [
       {
+        name: 'skt_lookup_idx',
         fields: ['user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'bulan', 'tahun'],
       },
       {

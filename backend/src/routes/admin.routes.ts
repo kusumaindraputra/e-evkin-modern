@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Laporan, User, SubKegiatan, Kegiatan } from '../models';
 import { authenticate } from '../middleware/auth';
 import { Op, QueryTypes } from 'sequelize';
-import { getDashboardStats, getBudgetMonthly, getTop10Absorption } from '../services/dashboardService';
+import { getDashboardStats, getBudgetMonthly, getTop10Absorption, getBottom10Absorption } from '../services/dashboardService';
 
 const router = Router();
 
@@ -342,6 +342,39 @@ router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, re
   } catch (error: any) {
     console.error('Top 10 absorption error:', error);
     res.status(500).json({ message: 'Gagal mengambil data top 10 penyerapan', error: error.message });
+  }
+});
+
+// Get bottom 10 budget absorption for dashboard - CACHED
+router.get('/dashboard/bottom-10-absorption', authenticate, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userRole = (req as any).user?.role;
+    if (userRole !== 'admin') {
+      res.status(403).json({ message: 'Access denied. Admin only.' });
+      return;
+    }
+
+    const { tahun, bulan } = req.query;
+    const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
+    const currentMonth = bulan as string;
+
+    if (!currentMonth) {
+      res.status(400).json({ message: 'Bulan parameter is required' });
+      return;
+    }
+
+    // Use cached dashboard service
+    const processedData = await getBottom10Absorption(currentYear, currentMonth);
+
+    res.status(200).json({
+      message: 'Bottom 10 absorption data retrieved successfully',
+      data: processedData,
+      tahun: currentYear,
+      bulan: currentMonth
+    });
+  } catch (error: any) {
+    console.error('Bottom 10 absorption error:', error);
+    res.status(500).json({ message: 'Gagal mengambil data bottom 10 penyerapan', error: error.message });
   }
 });
 

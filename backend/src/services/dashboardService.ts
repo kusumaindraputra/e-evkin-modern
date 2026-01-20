@@ -17,6 +17,8 @@ export const DASHBOARD_CACHE_KEYS = {
     `dashboard:budget_monthly:${tahun}:${bulan}`,
   TOP_10_ABSORPTION: (tahun: number, bulan: string) => 
     `dashboard:top10:${tahun}:${bulan}`,
+  BOTTOM_10_ABSORPTION: (tahun: number, bulan: string) => 
+    `dashboard:bottom10:${tahun}:${bulan}`,
   BUDGET_YTD: (tahun: number) => 
     `dashboard:budget_ytd:${tahun}`,
   PUSKESMAS_REPORTING: (tahun: number, bulan?: string) => 
@@ -208,6 +210,53 @@ export async function getTop10Absorption(tahun: number, bulan: string): Promise<
 }
 
 /**
+ * Get bottom 10 budget absorption with caching
+ */
+export async function getBottom10Absorption(tahun: number, bulan: string): Promise<PuskesmasAbsorption[]> {
+  const cacheKey = DASHBOARD_CACHE_KEYS.BOTTOM_10_ABSORPTION(tahun, bulan);
+  
+  return cacheService.getOrFetch(cacheKey, async () => {
+    const query = `
+      SELECT 
+        u.username as puskesmas_nama,
+        CAST(SUM(l.target_rp) AS DECIMAL) as target_rp,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) as realisasi_rp,
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END as persentase
+      FROM laporan l
+      INNER JOIN users u ON l.user_id = u.id
+      WHERE l.tahun = :tahun 
+        AND l.bulan = :bulan
+        AND l.status = 'terkirim'
+        AND u.role = 'puskesmas'
+      GROUP BY u.username
+      HAVING SUM(l.target_rp) > 0
+      ORDER BY 
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END ASC,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) ASC
+      LIMIT 10
+    `;
+
+    const bottom10Data = await Laporan.sequelize!.query(query, {
+      replacements: { tahun, bulan },
+      type: QueryTypes.SELECT
+    }) as any[];
+
+    return bottom10Data.map((item: any) => ({
+      puskesmas: item.puskesmas_nama,
+      target_rp: parseFloat(item.target_rp) || 0,
+      realisasi_rp: parseFloat(item.realisasi_rp) || 0,
+      persentase: Math.round((parseFloat(item.persentase) || 0) * 100) / 100
+    }));
+  }, DASHBOARD_TTL);
+}
+
+/**
  * Invalidate dashboard cache when laporan data changes
  */
 export function invalidateDashboardCache(tahun?: number): void {
@@ -215,6 +264,7 @@ export function invalidateDashboardCache(tahun?: number): void {
     cacheService.invalidatePattern(`dashboard:stats:${tahun}`);
     cacheService.invalidatePattern(`dashboard:budget_monthly:${tahun}`);
     cacheService.invalidatePattern(`dashboard:top10:${tahun}`);
+    cacheService.invalidatePattern(`dashboard:bottom10:${tahun}`);
     cacheService.invalidatePattern(`dashboard:budget_ytd:${tahun}`);
     cacheService.invalidatePattern(`dashboard:puskesmas_reporting:${tahun}`);
   } else {
@@ -226,6 +276,7 @@ export default {
   getDashboardStats,
   getBudgetMonthly,
   getTop10Absorption,
+  getBottom10Absorption,
   invalidateDashboardCache,
   DASHBOARD_CACHE_KEYS,
 };

@@ -335,7 +335,6 @@ export const AdminLaporanPage: React.FC = () => {
           dataIndex: ['sub_kegiatan', 'kode_sub'],
           key: 'kode_sub',
           width: 180,
-          fixed: 'left' as const,
           sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) => 
             (a.sub_kegiatan?.kode_sub || '').localeCompare(b.sub_kegiatan?.kode_sub || ''),
         },
@@ -365,7 +364,6 @@ export const AdminLaporanPage: React.FC = () => {
           dataIndex: ['sumber_anggaran', 'sumber'],
           key: 'sumber',
           width: 200,
-          fixed: 'left' as const,
           render: (text: string) => <strong>{text}</strong>,
           sorter: (a: AggregatedReportSumberAnggaran, b: AggregatedReportSumberAnggaran) => 
             (a.sumber_anggaran?.sumber || '').localeCompare(b.sumber_anggaran?.sumber || ''),

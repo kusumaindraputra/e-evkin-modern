@@ -510,8 +510,8 @@ const AdminTargetUploadPage: React.FC = () => {
   ];
 
   const angkasColumns = [
-    { title: 'Status', key: 'status', width: 90, fixed: 'left' as const, render: (_: any, record: AngkasRecord) => record.hasAngkas ? <Tag color="green">Uploaded</Tag> : <Tag color="red">Belum</Tag> },
-    { title: 'Puskesmas', dataIndex: ['puskesmas', 'nama'], key: 'puskesmas', width: 130, fixed: 'left' as const },
+    { title: 'Status', key: 'status', width: 90, render: (_: any, record: AngkasRecord) => record.hasAngkas ? <Tag color="green">Uploaded</Tag> : <Tag color="red">Belum</Tag> },
+    { title: 'Puskesmas', dataIndex: ['puskesmas', 'nama'], key: 'puskesmas', width: 130 },
     {
       title: 'Sub Kegiatan', key: 'subKegiatan', width: 180, ellipsis: true,
       render: (_: any, record: AngkasRecord) => (

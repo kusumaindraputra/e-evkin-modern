@@ -49,6 +49,13 @@ interface Top10AbsorptionData {
   persentase: number;
 }
 
+interface Bottom10AbsorptionData {
+  puskesmas: string;
+  target_rp: number;
+  realisasi_rp: number;
+  persentase: number;
+}
+
 interface DashboardStats {
   totalLaporan: number;
   tersimpan: number;
@@ -74,6 +81,7 @@ export const DashboardPage: React.FC = () => {
   const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
   const [monthlyBudgetData, setMonthlyBudgetData] = useState<MonthlyBudgetData[]>([]);
   const [top10Data, setTop10Data] = useState<Top10AbsorptionData[]>([]);
+  const [bottom10Data, setBottom10Data] = useState<Bottom10AbsorptionData[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalLaporan: 0,
     tersimpan: 0,
@@ -85,6 +93,7 @@ export const DashboardPage: React.FC = () => {
   const [loadingBudget, setLoadingBudget] = useState(false);
   const [loadingMonthly, setLoadingMonthly] = useState(false);
   const [loadingTop10, setLoadingTop10] = useState(false);
+  const [loadingBottom10, setLoadingBottom10] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [totalStats, setTotalStats] = useState({
     totalTarget: 0,
@@ -117,6 +126,12 @@ export const DashboardPage: React.FC = () => {
     currentDate.toLocaleString('id-ID', { month: 'long' })
   );
 
+  // Filter for bottom 10
+  const [bottom10Year, setBottom10Year] = useState(currentDate.getFullYear());
+  const [bottom10Month, setBottom10Month] = useState(
+    currentDate.toLocaleString('id-ID', { month: 'long' })
+  );
+
   const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -130,6 +145,7 @@ export const DashboardPage: React.FC = () => {
       fetchDashboardStats();
       fetchMonthlyBudget();
       fetchTop10Absorption();
+      fetchBottom10Absorption();
     }
   }, [user]);
 
@@ -144,6 +160,12 @@ export const DashboardPage: React.FC = () => {
       fetchTop10Absorption();
     }
   }, [top10Year, top10Month]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchBottom10Absorption();
+    }
+  }, [bottom10Year, bottom10Month]);
 
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -247,6 +269,25 @@ export const DashboardPage: React.FC = () => {
       console.error('Error fetching top 10 absorption:', error);
     } finally {
       setLoadingTop10(false);
+    }
+  };
+
+  const fetchBottom10Absorption = async () => {
+    setLoadingBottom10(true);
+    try {
+      // Fetch bottom 10 absorption data
+      const response = await axios.get(
+        `${API_BASE_URL}/admin/dashboard/bottom-10-absorption?tahun=${bottom10Year}&bulan=${bottom10Month}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setBottom10Data(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching bottom 10 absorption:', error);
+    } finally {
+      setLoadingBottom10(false);
     }
   };
 
@@ -536,6 +577,88 @@ export const DashboardPage: React.FC = () => {
           </Col>
         )}
 
+        {/* Bottom 10 Penyerapan Anggaran - Admin Only */}
+        {user?.role === 'admin' && (
+          <Col xs={24}>
+            <Card 
+              title="Bottom 10 Puskesmas - Penyerapan Anggaran Terendah"
+              variant="borderless"
+              extra={
+                <Space>
+                  <Select
+                    value={bottom10Month}
+                    onChange={setBottom10Month}
+                    style={{ width: 120 }}
+                    size="small"
+                  >
+                    {months.map(month => (
+                      <Select.Option key={month} value={month}>{month}</Select.Option>
+                    ))}
+                  </Select>
+                  <Select
+                    value={bottom10Year}
+                    onChange={setBottom10Year}
+                    style={{ width: 90 }}
+                    size="small"
+                  >
+                    {years.map(year => (
+                      <Select.Option key={year} value={year}>{year}</Select.Option>
+                    ))}
+                  </Select>
+                </Space>
+              }
+            >
+              {loadingBottom10 ? (
+                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Spin size="large" />
+                </div>
+              ) : bottom10Data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart 
+                    data={bottom10Data} 
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      type="number" 
+                      domain={[0, 100]}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="puskesmas" 
+                      width={200}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'Penyerapan') return `${value.toFixed(2)}%`;
+                        return value;
+                      }}
+                      labelStyle={{ color: '#000', fontSize: 12 }}
+                      contentStyle={{ fontSize: 12 }}
+                    />
+                    <Legend />
+                    <Bar dataKey="persentase" name="Penyerapan" radius={[0, 8, 8, 0]}>
+                      {bottom10Data.map((entry, index) => (
+                        <Cell 
+                          key={`cell-bottom-${index}`} 
+                          fill={entry.persentase >= 70 ? '#faad14' : entry.persentase >= 50 ? '#fa8c16' : '#ff4d4f'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text type="secondary">Tidak ada data penyerapan anggaran untuk periode ini</Text>
+                </div>
+              )}
+            </Card>
+          </Col>
+        )}
+
         {/* Monthly Budget Chart - Admin Only */}
         {user?.role === 'admin' && (
           <Col xs={24}>
@@ -611,17 +734,6 @@ export const DashboardPage: React.FC = () => {
                   <Text type="secondary">Tidak ada data untuk bulan ini</Text>
                 </div>
               )}
-            </Card>
-          </Col>
-        )}
-
-        {/* Performance Chart - Hidden when admin */}
-        {user?.role !== 'admin' && (
-          <Col xs={24} lg={16}>
-            <Card title="Grafik Kinerja Bulanan" variant="borderless">
-              <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Text type="secondary">Grafik akan ditampilkan di sini (Recharts)</Text>
-              </div>
             </Card>
           </Col>
         )}

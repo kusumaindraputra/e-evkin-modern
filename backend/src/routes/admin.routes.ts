@@ -17,13 +17,18 @@ router.get('/verifikasi', authenticate, async (req: Request, res: Response): Pro
 
     const { puskesmas, bulan, tahun, page = 1, pageSize = 10 } = req.query;
 
+    // Validate and parse numeric parameters
+    const parsedTahun = tahun ? parseInt(tahun as string, 10) : undefined;
+    const parsedPage = parseInt(page as string, 10) || 1;
+    const parsedPageSize = parseInt(pageSize as string, 10) || 10;
+
     // Build where clause
     const where: any = {
       status: 'terkirim' // Only show submitted reports
     };
 
     if (bulan) where.bulan = bulan;
-    if (tahun) where.tahun = parseInt(tahun as string);
+    if (parsedTahun && !isNaN(parsedTahun)) where.tahun = parsedTahun;
 
     // User filter
     const userWhere: any = {};
@@ -31,8 +36,8 @@ router.get('/verifikasi', authenticate, async (req: Request, res: Response): Pro
       userWhere.nama_puskesmas = { [Op.like]: `%${puskesmas}%` };
     }
 
-    const offset = (parseInt(page as string) - 1) * parseInt(pageSize as string);
-    const limit = parseInt(pageSize as string);
+    const offset = (parsedPage - 1) * parsedPageSize;
+    const limit = parsedPageSize;
 
     // Query laporan with grouping
     const { rows, count } = await Laporan.findAndCountAll({

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
-import axios from 'axios';
-import API_BASE_URL from '../config/api';
+import apiClient from '../utils/apiClient';
 
 interface LaporanRow {
   id_sub_kegiatan: number;
@@ -42,17 +41,11 @@ export const useLaporanData = ({ userId, token, bulan, tahun }: UseLaporanDataPr
 
     setLoading(true);
     try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-
       // Load sub kegiatan yang punya target di tahun ini
-      const assignmentsRes = await axios.get(
-        `${API_BASE_URL}/target/assigned?tahun=${tahun}`,
-        config
-      );
+      const assignmentsRes = await apiClient.get(`/target/assigned?tahun=${tahun}`);
 
       // Load existing laporan for this month
-      const laporanRes = await axios.get(`${API_BASE_URL}/laporan`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const laporanRes = await apiClient.get('/laporan', {
         params: { bulan, tahun, limit: 1000 },
       });
 

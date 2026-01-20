@@ -15,11 +15,16 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
   try {
     const { bulan, tahun, id_sub_kegiatan, status } = req.query;
 
-    // Build where clause
+    // Build where clause with validation
     const whereClause: any = {};
     if (bulan) whereClause.bulan = bulan;
-    if (tahun) whereClause.tahun = Number(tahun);
-    if (id_sub_kegiatan) whereClause.id_sub_kegiatan = Number(id_sub_kegiatan);
+    
+    const parsedTahun = tahun ? Number(tahun) : undefined;
+    if (parsedTahun && !isNaN(parsedTahun)) whereClause.tahun = parsedTahun;
+    
+    const parsedSubKegiatan = id_sub_kegiatan ? Number(id_sub_kegiatan) : undefined;
+    if (parsedSubKegiatan && !isNaN(parsedSubKegiatan)) whereClause.id_sub_kegiatan = parsedSubKegiatan;
+    
     if (status) whereClause.status = status;
 
     // Get aggregated data

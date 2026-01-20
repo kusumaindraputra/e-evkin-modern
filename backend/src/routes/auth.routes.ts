@@ -89,8 +89,17 @@ router.get('/me', async (req: Request, res: Response) => {
 });
 
 // Logout (client-side handled, just for API completeness)
-router.post('/logout', (req: Request, res: Response) => {
-  res.json({ message: 'Logout successful' });
+router.post('/logout', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Clear any server-side session if exists (future enhancement)
+    res.json({ message: 'Logout successful' });
+  } catch (error: any) {
+    console.error('Logout error:', error);
+    res.status(500).json({ 
+      message: 'Logout failed', 
+      error: error.message 
+    });
+  }
 });
 
 export default router;

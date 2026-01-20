@@ -8,7 +8,42 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
 const config_1 = require("../config");
 const router = (0, express_1.Router)();
-// Login
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -79,8 +114,18 @@ router.get('/me', async (req, res) => {
     }
 });
 // Logout (client-side handled, just for API completeness)
-router.post('/logout', (req, res) => {
-    res.json({ message: 'Logout successful' });
+router.post('/logout', async (req, res) => {
+    try {
+        // Clear any server-side session if exists (future enhancement)
+        res.json({ message: 'Logout successful' });
+    }
+    catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            message: 'Logout failed',
+            error: error.message
+        });
+    }
 });
 exports.default = router;
 //# sourceMappingURL=auth.routes.js.map

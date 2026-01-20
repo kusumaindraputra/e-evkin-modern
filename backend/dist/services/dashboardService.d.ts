@@ -8,6 +8,7 @@ export declare const DASHBOARD_CACHE_KEYS: {
     STATS: (tahun: number, bulan?: string) => string;
     BUDGET_MONTHLY: (tahun: number, bulan: string) => string;
     TOP_10_ABSORPTION: (tahun: number, bulan: string) => string;
+    BOTTOM_10_ABSORPTION: (tahun: number, bulan: string) => string;
     BUDGET_YTD: (tahun: number) => string;
     PUSKESMAS_REPORTING: (tahun: number, bulan?: string) => string;
 };
@@ -52,6 +53,10 @@ export declare function getBudgetMonthly(tahun: number, bulan: string): Promise<
  */
 export declare function getTop10Absorption(tahun: number, bulan: string): Promise<PuskesmasAbsorption[]>;
 /**
+ * Get bottom 10 budget absorption with caching
+ */
+export declare function getBottom10Absorption(tahun: number, bulan: string): Promise<PuskesmasAbsorption[]>;
+/**
  * Invalidate dashboard cache when laporan data changes
  */
 export declare function invalidateDashboardCache(tahun?: number): void;
@@ -59,11 +64,13 @@ declare const _default: {
     getDashboardStats: typeof getDashboardStats;
     getBudgetMonthly: typeof getBudgetMonthly;
     getTop10Absorption: typeof getTop10Absorption;
+    getBottom10Absorption: typeof getBottom10Absorption;
     invalidateDashboardCache: typeof invalidateDashboardCache;
     DASHBOARD_CACHE_KEYS: {
         STATS: (tahun: number, bulan?: string) => string;
         BUDGET_MONTHLY: (tahun: number, bulan: string) => string;
         TOP_10_ABSORPTION: (tahun: number, bulan: string) => string;
+        BOTTOM_10_ABSORPTION: (tahun: number, bulan: string) => string;
         BUDGET_YTD: (tahun: number) => string;
         PUSKESMAS_REPORTING: (tahun: number, bulan?: string) => string;
     };

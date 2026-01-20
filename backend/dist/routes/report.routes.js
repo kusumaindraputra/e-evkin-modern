@@ -17,14 +17,16 @@ const router = (0, express_1.Router)();
 router.get('/by-sub-kegiatan', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
         const { bulan, tahun, id_sub_kegiatan, status } = req.query;
-        // Build where clause
+        // Build where clause with validation
         const whereClause = {};
         if (bulan)
             whereClause.bulan = bulan;
-        if (tahun)
-            whereClause.tahun = Number(tahun);
-        if (id_sub_kegiatan)
-            whereClause.id_sub_kegiatan = Number(id_sub_kegiatan);
+        const parsedTahun = tahun ? Number(tahun) : undefined;
+        if (parsedTahun && !isNaN(parsedTahun))
+            whereClause.tahun = parsedTahun;
+        const parsedSubKegiatan = id_sub_kegiatan ? Number(id_sub_kegiatan) : undefined;
+        if (parsedSubKegiatan && !isNaN(parsedSubKegiatan))
+            whereClause.id_sub_kegiatan = parsedSubKegiatan;
         if (status)
             whereClause.status = status;
         // Get aggregated data

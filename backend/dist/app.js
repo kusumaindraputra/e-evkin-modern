@@ -10,6 +10,7 @@ const compression_1 = __importDefault(require("compression"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 require("express-async-errors");
 const config_1 = require("./config");
+const swagger_1 = require("./config/swagger");
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
@@ -41,9 +42,19 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
 app.use((0, compression_1.default)());
+// Swagger API Documentation
+(0, swagger_1.setupSwagger)(app);
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+// Root route
+app.get('/', (req, res) => {
+    res.json({
+        message: 'E-EVKIN API Microservice is running',
+        version: '1.0.0',
+        docs: '/api-docs'
+    });
 });
 // API routes
 app.use('/api/auth', auth_routes_1.default);

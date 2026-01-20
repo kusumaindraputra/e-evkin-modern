@@ -14,6 +14,7 @@ console.warn = (...args) => {
 };
 const app_1 = __importDefault(require("./app"));
 const config_1 = require("./config");
+const logger_1 = __importDefault(require("./utils/logger"));
 const database_1 = __importDefault(require("./config/database"));
 require("./models"); // Import models to load associations
 const startServer = async () => {
@@ -21,18 +22,17 @@ const startServer = async () => {
         // Test database connection
         await database_1.default.authenticate();
         console.log('✅ Database connected successfully');
-        // Note: sync({ alter: true }) disabled due to index naming conflicts with existing database
-        // Use proper migrations for schema changes instead
-        // To create missing tables only (safe), uncomment: await sequelize.sync({ force: false });
-        console.log('ℹ️  Database sync disabled - using existing schema');
+        // Create tables if they don't exist
+        await database_1.default.sync({ force: false });
+        console.log('✅ Database synchronized');
         // Start server
         app_1.default.listen(config_1.config.port, () => {
-            console.log(`🚀 Server running on port ${config_1.config.port}`);
-            console.log(`📍 Environment: ${config_1.config.env}`);
+            logger_1.default.info(`🚀 Server running on port ${config_1.config.port}`);
+            logger_1.default.info(`📍 Environment: ${config_1.config.env}`);
         });
     }
     catch (error) {
-        console.error('❌ Unable to start server:', error);
+        logger_1.default.error('❌ Unable to start server:', error);
         process.exit(1);
     }
 };

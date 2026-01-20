@@ -15,21 +15,25 @@ router.get('/verifikasi', auth_1.authenticate, async (req, res) => {
             return;
         }
         const { puskesmas, bulan, tahun, page = 1, pageSize = 10 } = req.query;
+        // Validate and parse numeric parameters
+        const parsedTahun = tahun ? parseInt(tahun, 10) : undefined;
+        const parsedPage = parseInt(page, 10) || 1;
+        const parsedPageSize = parseInt(pageSize, 10) || 10;
         // Build where clause
         const where = {
             status: 'terkirim' // Only show submitted reports
         };
         if (bulan)
             where.bulan = bulan;
-        if (tahun)
-            where.tahun = parseInt(tahun);
+        if (parsedTahun && !isNaN(parsedTahun))
+            where.tahun = parsedTahun;
         // User filter
         const userWhere = {};
         if (puskesmas) {
             userWhere.nama_puskesmas = { [sequelize_1.Op.like]: `%${puskesmas}%` };
         }
-        const offset = (parseInt(page) - 1) * parseInt(pageSize);
-        const limit = parseInt(pageSize);
+        const offset = (parsedPage - 1) * parsedPageSize;
+        const limit = parsedPageSize;
         // Query laporan with grouping
         const { rows, count } = await models_1.Laporan.findAndCountAll({
             where,
@@ -304,6 +308,35 @@ router.get('/dashboard/top-10-absorption', auth_1.authenticate, async (req, res)
     catch (error) {
         console.error('Top 10 absorption error:', error);
         res.status(500).json({ message: 'Gagal mengambil data top 10 penyerapan', error: error.message });
+    }
+});
+// Get bottom 10 budget absorption for dashboard - CACHED
+router.get('/dashboard/bottom-10-absorption', auth_1.authenticate, async (req, res) => {
+    try {
+        const userRole = req.user?.role;
+        if (userRole !== 'admin') {
+            res.status(403).json({ message: 'Access denied. Admin only.' });
+            return;
+        }
+        const { tahun, bulan } = req.query;
+        const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
+        const currentMonth = bulan;
+        if (!currentMonth) {
+            res.status(400).json({ message: 'Bulan parameter is required' });
+            return;
+        }
+        // Use cached dashboard service
+        const processedData = await (0, dashboardService_1.getBottom10Absorption)(currentYear, currentMonth);
+        res.status(200).json({
+            message: 'Bottom 10 absorption data retrieved successfully',
+            data: processedData,
+            tahun: currentYear,
+            bulan: currentMonth
+        });
+    }
+    catch (error) {
+        console.error('Bottom 10 absorption error:', error);
+        res.status(500).json({ message: 'Gagal mengambil data bottom 10 penyerapan', error: error.message });
     }
 });
 // Get budget realization year to date for dashboard

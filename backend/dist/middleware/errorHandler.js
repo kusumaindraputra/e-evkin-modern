@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.errorHandler = exports.AppError = void 0;
+const logger_1 = __importDefault(require("../utils/logger"));
 class AppError extends Error {
     statusCode;
     isOperational;
@@ -19,7 +23,7 @@ const errorHandler = (err, _req, res, _next) => {
             message: err.message,
         });
     }
-    console.error('ERROR 💥:', err);
+    logger_1.default.error('ERROR 💥:', err);
     return res.status(500).json({
         status: 'error',
         message: 'Something went wrong!',

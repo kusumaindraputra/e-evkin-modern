@@ -10,6 +10,7 @@ exports.DASHBOARD_CACHE_KEYS = void 0;
 exports.getDashboardStats = getDashboardStats;
 exports.getBudgetMonthly = getBudgetMonthly;
 exports.getTop10Absorption = getTop10Absorption;
+exports.getBottom10Absorption = getBottom10Absorption;
 exports.invalidateDashboardCache = invalidateDashboardCache;
 const models_1 = require("../models");
 const sequelize_1 = require("sequelize");
@@ -19,6 +20,7 @@ exports.DASHBOARD_CACHE_KEYS = {
     STATS: (tahun, bulan) => `dashboard:stats:${tahun}:${bulan || 'all'}`,
     BUDGET_MONTHLY: (tahun, bulan) => `dashboard:budget_monthly:${tahun}:${bulan}`,
     TOP_10_ABSORPTION: (tahun, bulan) => `dashboard:top10:${tahun}:${bulan}`,
+    BOTTOM_10_ABSORPTION: (tahun, bulan) => `dashboard:bottom10:${tahun}:${bulan}`,
     BUDGET_YTD: (tahun) => `dashboard:budget_ytd:${tahun}`,
     PUSKESMAS_REPORTING: (tahun, bulan) => `dashboard:puskesmas_reporting:${tahun}:${bulan || 'all'}`,
 };
@@ -163,6 +165,49 @@ async function getTop10Absorption(tahun, bulan) {
     }, DASHBOARD_TTL);
 }
 /**
+ * Get bottom 10 budget absorption with caching
+ */
+async function getBottom10Absorption(tahun, bulan) {
+    const cacheKey = exports.DASHBOARD_CACHE_KEYS.BOTTOM_10_ABSORPTION(tahun, bulan);
+    return cacheService_1.cacheService.getOrFetch(cacheKey, async () => {
+        const query = `
+      SELECT 
+        u.username as puskesmas_nama,
+        CAST(SUM(l.target_rp) AS DECIMAL) as target_rp,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) as realisasi_rp,
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END as persentase
+      FROM laporan l
+      INNER JOIN users u ON l.user_id = u.id
+      WHERE l.tahun = :tahun 
+        AND l.bulan = :bulan
+        AND l.status = 'terkirim'
+        AND u.role = 'puskesmas'
+      GROUP BY u.username
+      HAVING SUM(l.target_rp) > 0
+      ORDER BY 
+        CASE 
+          WHEN SUM(l.target_rp) > 0 THEN (CAST(SUM(l.realisasi_rp) AS DECIMAL) / CAST(SUM(l.target_rp) AS DECIMAL)) * 100
+          ELSE 0
+        END ASC,
+        CAST(SUM(l.realisasi_rp) AS DECIMAL) ASC
+      LIMIT 10
+    `;
+        const bottom10Data = await models_1.Laporan.sequelize.query(query, {
+            replacements: { tahun, bulan },
+            type: sequelize_1.QueryTypes.SELECT
+        });
+        return bottom10Data.map((item) => ({
+            puskesmas: item.puskesmas_nama,
+            target_rp: parseFloat(item.target_rp) || 0,
+            realisasi_rp: parseFloat(item.realisasi_rp) || 0,
+            persentase: Math.round((parseFloat(item.persentase) || 0) * 100) / 100
+        }));
+    }, DASHBOARD_TTL);
+}
+/**
  * Invalidate dashboard cache when laporan data changes
  */
 function invalidateDashboardCache(tahun) {
@@ -170,6 +215,7 @@ function invalidateDashboardCache(tahun) {
         cacheService_1.cacheService.invalidatePattern(`dashboard:stats:${tahun}`);
         cacheService_1.cacheService.invalidatePattern(`dashboard:budget_monthly:${tahun}`);
         cacheService_1.cacheService.invalidatePattern(`dashboard:top10:${tahun}`);
+        cacheService_1.cacheService.invalidatePattern(`dashboard:bottom10:${tahun}`);
         cacheService_1.cacheService.invalidatePattern(`dashboard:budget_ytd:${tahun}`);
         cacheService_1.cacheService.invalidatePattern(`dashboard:puskesmas_reporting:${tahun}`);
     }
@@ -181,6 +227,7 @@ exports.default = {
     getDashboardStats,
     getBudgetMonthly,
     getTop10Absorption,
+    getBottom10Absorption,
     invalidateDashboardCache,
     DASHBOARD_CACHE_KEYS: exports.DASHBOARD_CACHE_KEYS,
 };

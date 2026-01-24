@@ -608,14 +608,21 @@ export const LaporanBulkInputPage: React.FC = () => {
       {
         title: 'Sub Kegiatan',
         key: 'sub_kegiatan',
-        width: 280,
+        width: 320,
         fixed: 'left' as const,
-        render: (_: any, record: LaporanRow) => (
-          <div>
-            <Tag color="blue">{record.kode_sub}</Tag>
-            <div style={{ marginTop: 4 }}>{record.kegiatan}</div>
-          </div>
-        ),
+        render: (_: any, record: LaporanRow) => {
+          const sumber = referenceData.sumberAnggaran.find((sa) => sa.value === record.id_sumber_anggaran);
+          const simplifiedSumber = formatSumberAnggaran(sumber?.label);
+          return (
+            <div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <Tag color="blue">{record.kode_sub}</Tag>
+                <Tag color="green">{simplifiedSumber}</Tag>
+              </div>
+              <div style={{ marginTop: 4 }}>{record.kegiatan}</div>
+            </div>
+          );
+        },
         sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
       },
       {
@@ -627,18 +634,6 @@ export const LaporanBulkInputPage: React.FC = () => {
           <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
         ),
         sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
-      },
-      {
-        title: 'Sumber Anggaran',
-        key: 'id_sumber_anggaran',
-        width: 160,
-        render: (_: any, record: LaporanRow) => (
-          <SumberAnggaranCell
-            id_sumber_anggaran={record.id_sumber_anggaran}
-            sumberAnggaran={referenceData.sumberAnggaran}
-          />
-        ),
-        sorter: (a, b) => (a.id_sumber_anggaran || 0) - (b.id_sumber_anggaran || 0),
       },
       // Column order: Target Anggaran, Target Angkas, Realisasi (Rp), Target (K), Satuan, Realisasi (K)
       {

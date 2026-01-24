@@ -34,7 +34,7 @@ interface LaporanRow {
   kegiatan: string;
   indikator_kinerja: string;
   id_kegiatan: number;
-  
+
   // Form fields
   id_sumber_anggaran?: number;
   id_satuan?: number; // Read-only dari admin target
@@ -46,11 +46,11 @@ interface LaporanRow {
   realisasi_fisik?: number;
   permasalahan?: string;
   upaya?: string;
-  
+
   // Existing laporan data
   laporan_id?: string;
   status?: string;
-  
+
   // Angkas handling flag
   // true = user must enter target_angkas manually (multiple sumber anggaran per sub kegiatan)
   // false = target_angkas auto-filled from PDF upload (single sumber anggaran)
@@ -220,15 +220,15 @@ const StatusTag = memo(({ status }: StatusTagProps) => {
     status === 'terkirim'
       ? 'processing'
       : status === 'tersimpan'
-      ? 'default'
-      : 'warning';
+        ? 'default'
+        : 'warning';
 
   const label =
     status === 'tersimpan'
       ? 'Tersimpan'
       : status === 'terkirim'
-      ? 'Terkirim'
-      : status;
+        ? 'Terkirim'
+        : status;
 
   return <Tag color={color}>{label}</Tag>;
 });
@@ -266,11 +266,11 @@ export const LaporanBulkInputPage: React.FC = () => {
     sumberAnggaran: [],
     satuan: [],
   });
-  
+
   // Refs to prevent double-loading in React StrictMode
   const referenceDataLoaded = useRef(false);
   const loadDataInProgress = useRef(false);
-  
+
   // Filters
   const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
   const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
@@ -279,7 +279,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     // Skip if already loaded (prevents double-loading in React StrictMode)
     if (referenceDataLoaded.current) return;
     referenceDataLoaded.current = true;
-    
+
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -302,7 +302,7 @@ export const LaporanBulkInputPage: React.FC = () => {
 
   const loadData = useCallback(async () => {
     if (!user || !filterBulan || !filterTahun) return;
-    
+
     // Prevent concurrent requests (React StrictMode double-invokes effects)
     if (loadDataInProgress.current) return;
     loadDataInProgress.current = true;
@@ -341,8 +341,8 @@ export const LaporanBulkInputPage: React.FC = () => {
       const existingLaporan = Array.isArray(laporanRes.data.data)
         ? laporanRes.data.data
         : Array.isArray(laporanRes.data)
-        ? laporanRes.data
-        : [];
+          ? laporanRes.data
+          : [];
 
       // Create map of angkas by sub_kegiatan ONLY (for single-sumber sub kegiatan)
       // PDF angkas may have different sumber_anggaran than targets
@@ -372,29 +372,29 @@ export const LaporanBulkInputPage: React.FC = () => {
       // Map target data to rows (NEW FORMAT)
       const targetData = assignmentsRes.data.data || [];
       const mappedRows: LaporanRow[] = [];
-      
+
       // For each sub kegiatan with targets
       for (const item of targetData) {
         const subKegiatan = item.subKegiatan;
         const targets = item.targets || [];
-        
+
         if (targets.length === 0) continue; // Skip jika tidak ada target
-        
+
         const subKegiatanId = subKegiatan.id_sub_kegiatan;
-        
+
         // isManualAngkas from backend: true if multiple sumber anggaran
         // When true, puskesmas must input angkas manually (PDF angkas can't be split)
         // When false, angkas is auto-filled from PDF upload
         const isManualAngkas = item.isManualAngkas || false;
-        
+
         // Create one row for each target (each sumber anggaran)
         targets.forEach((target: TargetData) => {
           const idSumberAnggaran = target.id_sumber_anggaran;
-          
+
           // Find existing laporan for this sub kegiatan + sumber anggaran combo
           const existing = existingLaporan.find(
-            (l: ExistingLaporan) => 
-              l.id_sub_kegiatan === subKegiatanId && 
+            (l: ExistingLaporan) =>
+              l.id_sub_kegiatan === subKegiatanId &&
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
@@ -417,20 +417,20 @@ export const LaporanBulkInputPage: React.FC = () => {
             kegiatan: subKegiatan.kegiatan,
             indikator_kinerja: subKegiatan.indikator_kinerja,
             id_kegiatan: 0,
-            
+
             // Pre-fill sumber anggaran (readonly, dari target)
             id_sumber_anggaran: idSumberAnggaran,
-            
+
             // Target dan satuan dari admin (READ-ONLY)
             // Use default satuan (1=Orang) if not set in target
             target_k: target.target_k || 0,
             target_rp: Number(target.target_rp) || 0,
             target_angkas: targetAngkas,
             id_satuan: target.id_satuan || 1, // Default to "Orang" if not set
-            
+
             // Flag for angkas handling
             isManualAngkas,
-            
+
             // Populate with existing data if available
             laporan_id: existing?.id,
             status: existing?.status,
@@ -501,7 +501,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     const missingAngkas = rowsToSave.filter(
       (row) => row.isManualAngkas && (!row.target_angkas || row.target_angkas <= 0)
     );
-    
+
     if (missingAngkas.length > 0) {
       const kodeList = [...new Set(missingAngkas.map(r => r.kode_sub))].join(', ');
       message.warning(`Angkas belum diinput untuk: ${kodeList}. Silakan input di halaman Target & Angkas terlebih dahulu.`);
@@ -545,15 +545,14 @@ export const LaporanBulkInputPage: React.FC = () => {
 
       const { results } = response.data;
       message.success(
-        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${
-          results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
+        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
         }`
       );
-      
+
       if (results.errors?.length > 0) {
         console.warn('Errors during save:', results.errors);
       }
-      
+
       loadData(); // Reload to get updated data
     } catch (error: any) {
       console.error('Error saving:', error);
@@ -605,19 +604,16 @@ export const LaporanBulkInputPage: React.FC = () => {
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: 'Kode',
-        dataIndex: 'kode_sub',
-        key: 'kode_sub',
-        width: 100,
-        align: 'center',
-        sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
-      },
-      {
         title: 'Sub Kegiatan',
-        dataIndex: 'kegiatan',
-        key: 'kegiatan',
-        width: 250,
-        sorter: (a, b) => a.kegiatan.localeCompare(b.kegiatan),
+        key: 'sub_kegiatan',
+        width: 280,
+        render: (_: any, record: LaporanRow) => (
+          <div>
+            <Tag color="blue">{record.kode_sub}</Tag>
+            <div style={{ marginTop: 4 }}>{record.kegiatan}</div>
+          </div>
+        ),
+        sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
       },
       {
         title: 'Indikator Kinerja',
@@ -783,7 +779,7 @@ export const LaporanBulkInputPage: React.FC = () => {
   const canSendReport = rows.length > 0 && rows.every(
     (row) => row.laporan_id && (row.status === 'tersimpan' || row.status === 'terkirim')
   );
-  
+
   // Check if there are unsaved changes (no laporan_id or missing required fields)
   const hasUnsavedChanges = rows.some(
     (row) => !row.laporan_id || (!row.id_sumber_anggaran && !row.id_satuan)

@@ -23,7 +23,7 @@ import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
-import { formatNumber, formatSumberAnggaran } from '../utils/formatters';
+import { formatNumber, formatSumberAnggaran, getSumberAnggaranColor } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -613,11 +613,12 @@ export const LaporanBulkInputPage: React.FC = () => {
         render: (_: any, record: LaporanRow) => {
           const sumber = referenceData.sumberAnggaran.find((sa) => sa.value === record.id_sumber_anggaran);
           const simplifiedSumber = formatSumberAnggaran(sumber?.label);
+          const sumberColor = getSumberAnggaranColor(simplifiedSumber);
           return (
             <div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 <Tag color="blue">{record.kode_sub}</Tag>
-                <Tag color="green">{simplifiedSumber}</Tag>
+                <Tag color={sumberColor}>{simplifiedSumber}</Tag>
               </div>
               <div style={{ marginTop: 4 }}>{record.kegiatan}</div>
             </div>

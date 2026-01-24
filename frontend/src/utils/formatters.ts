@@ -147,6 +147,7 @@ export const COLUMN_HEADERS = {
  * Full name → Abbreviated name
  */
 const SUMBER_ANGGARAN_MAP: Record<string, string> = {
+  // Original mappings
   'DAK Non Fisik': 'BOK',
   'APBD': 'PAD',
   'APBD Kabupaten': 'PAD',
@@ -155,6 +156,10 @@ const SUMBER_ANGGARAN_MAP: Record<string, string> = {
   'JKN': 'JKN',
   'Dana Kapitasi': 'JKN',
   'JKN (Dana Kapitasi)': 'JKN',
+  // Actual database values from Bojonggede
+  'Pendapatan dari BLUD': 'BLUD',
+  'DAK Non Fisik-Dana BOK-BOK Puskesmas': 'BOK',
+  'PENDAPATAN ASLI DAERAH (PAD)': 'PAD',
 };
 
 /**
@@ -165,4 +170,19 @@ const SUMBER_ANGGARAN_MAP: Record<string, string> = {
 export const formatSumberAnggaran = (label: string | null | undefined): string => {
   if (!label) return '-';
   return SUMBER_ANGGARAN_MAP[label] || label;
+};
+
+/**
+ * Get color for sumber anggaran tag
+ * @param simplifiedLabel - Simplified sumber anggaran label (BOK, PAD, BLUD, JKN)
+ * @returns Ant Design tag color
+ */
+export const getSumberAnggaranColor = (simplifiedLabel: string): string => {
+  switch (simplifiedLabel) {
+    case 'BOK': return 'green';
+    case 'PAD': return 'purple';
+    case 'BLUD': return 'orange';
+    case 'JKN': return 'cyan';
+    default: return 'default';
+  }
 };

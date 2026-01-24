@@ -1,359 +1,258 @@
 import React from 'react';
-import { Card, Typography, Divider, Alert, Space, List } from 'antd';
+import { Card, Typography, Alert, Space, List, Collapse, Tag, Steps } from 'antd';
 import {
   FileTextOutlined,
   EditOutlined,
-  CheckCircleOutlined,
   WarningOutlined,
+  AimOutlined,
+  SendOutlined,
+  SaveOutlined,
+  TableOutlined,
+  CalendarOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
+const { Panel } = Collapse;
 
 export const CaraPengisianPage: React.FC = () => {
   return (
     <div>
-      <Title level={3}>Panduan Pengisian Laporan Kinerja Puskesmas</Title>
+      <Title level={3}>Panduan Pengisian E-EVKIN</Title>
       <Paragraph type="secondary">
-        Halaman ini berisi panduan lengkap cara mengisi laporan evaluasi kinerja puskesmas.
+        Panduan lengkap penggunaan sistem E-EVKIN untuk pelaporan evaluasi kinerja puskesmas.
       </Paragraph>
 
       <Alert
-        message="Informasi Penting"
-        description="Sistem menggunakan input laporan berbasis tabel untuk semua sub kegiatan sekaligus. Pilih bulan dan tahun, lalu isi semua sub kegiatan yang telah dikonfigurasi untuk puskesmas Anda."
+        message="Fitur Utama Puskesmas"
+        description={
+          <Space direction="vertical" size={0}>
+            <Text><Tag color="blue">Laporan Kinerja</Tag> Input dan kirim laporan bulanan</Text>
+            <Text><Tag color="green">Target & Angkas</Tag> Lihat target anggaran dan alokasi kas</Text>
+            <Text><Tag color="orange">Cara Pengisian</Tag> Panduan penggunaan sistem (halaman ini)</Text>
+          </Space>
+        }
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
       />
 
-      <Card title="Langkah-Langkah Pengisian Laporan" style={{ marginBottom: 24 }}>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Title level={5}>
-              <FileTextOutlined style={{ marginRight: 8 }} />
-              1. Login ke Sistem
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Masuk menggunakan username dan password yang telah diberikan oleh Dinas Kesehatan.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>
-              <FileTextOutlined style={{ marginRight: 8 }} />
-              2. Akses Menu Laporan Kinerja
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Klik menu "Laporan Kinerja" pada sidebar untuk membuka halaman input laporan.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>
-              <EditOutlined style={{ marginRight: 8 }} />
-              3. Pilih Bulan dan Tahun
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Pilih bulan dan tahun periode laporan yang akan diisi menggunakan dropdown filter di bagian atas.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>
-              <EditOutlined style={{ marginRight: 8 }} />
-              4. Isi Data di Tabel
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Sistem akan menampilkan tabel berisi semua sub kegiatan yang telah dikonfigurasi. Isi data langsung pada kolom-kolom yang tersedia (Sumber Anggaran, Satuan, Target K, Angkas, Target Rp, Realisasi K, Realisasi Rp, Permasalahan, Upaya).
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>
-              <CheckCircleOutlined style={{ marginRight: 8 }} />
-              5. Simpan Data
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Klik tombol "Simpan" untuk menyimpan semua data. Status laporan akan menjadi "Tersimpan" dan masih bisa diedit.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>
-              <CheckCircleOutlined style={{ marginRight: 8 }} />
-              6. Kirim Laporan
-            </Title>
-            <Paragraph style={{ marginLeft: 28 }}>
-              Setelah semua data lengkap dan benar, klik tombol "Kirim Semua" untuk mengirim laporan ke Dinas Kesehatan. Status akan berubah menjadi "Terkirim" dan data tidak bisa diedit lagi.
-            </Paragraph>
-          </div>
-        </Space>
+      {/* Quick Start Guide */}
+      <Card title={<><CalendarOutlined /> Alur Kerja Bulanan</>} style={{ marginBottom: 24 }}>
+        <Steps
+          direction="vertical"
+          current={-1}
+          items={[
+            {
+              title: 'Cek Target & Angkas',
+              description: 'Pastikan target anggaran dan angkas sudah ter-upload oleh Dinkes untuk bulan berjalan.',
+              icon: <AimOutlined />,
+            },
+            {
+              title: 'Input Laporan Kinerja',
+              description: 'Pilih bulan/tahun, isi realisasi untuk setiap sub kegiatan yang telah dikonfigurasi.',
+              icon: <EditOutlined />,
+            },
+            {
+              title: 'Simpan Laporan',
+              description: 'Klik tombol "Simpan" untuk menyimpan data. Status menjadi "Tersimpan".',
+              icon: <SaveOutlined />,
+            },
+            {
+              title: 'Kirim ke Dinkes',
+              description: 'Setelah yakin data benar, klik "Kirim Semua" untuk mengirim ke Dinas Kesehatan.',
+              icon: <SendOutlined />,
+            },
+          ]}
+        />
       </Card>
 
-      <Card title="Penjelasan Field Laporan" style={{ marginBottom: 24 }}>
+      {/* Menu Target & Angkas */}
+      <Card
+        title={<><AimOutlined style={{ marginRight: 8 }} />Menu Target & Angkas</>}
+        style={{ marginBottom: 24 }}
+      >
         <Alert
-          message="Input Berbasis Tabel"
-          description="Sistem menggunakan tabel untuk input laporan. Semua sub kegiatan yang telah dikonfigurasi akan muncul dalam satu tabel. Anda dapat mengisi data langsung di kolom-kolom yang tersedia."
-          type="info"
+          message="Fitur Baru!"
+          description="Menu ini menampilkan data target anggaran (pagu) dan angkas (alokasi kas bulanan) yang telah di-upload oleh Admin Dinkes."
+          type="success"
           showIcon
           style={{ marginBottom: 16 }}
         />
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Title level={5}>Kolom yang Tidak Bisa Diedit (Informasi)</Title>
+        <Paragraph>
+          Di menu <Text strong>Target & Angkas</Text>, Anda dapat melihat:
+        </Paragraph>
+        <List
+          size="small"
+          dataSource={[
+            'Target Anggaran - Pagu tahunan per sub kegiatan dan sumber anggaran',
+            'Angkas (Anggaran Kas) - Alokasi bulanan (Jan-Des) untuk setiap sub kegiatan',
+            'Total angkas kumulatif hingga bulan yang dipilih',
+            'Perbandingan target vs angkas untuk monitoring penyerapan',
+          ]}
+          renderItem={(item) => <List.Item>• {item}</List.Item>}
+        />
+        <Alert
+          message="Catatan"
+          description="Data target dan angkas di-upload oleh Admin Dinkes via Excel/PDF. Jika ada ketidaksesuaian, hubungi Admin."
+          type="warning"
+          showIcon
+          style={{ marginTop: 16 }}
+        />
+      </Card>
+
+      {/* Menu Laporan Kinerja */}
+      <Card
+        title={<><FileTextOutlined style={{ marginRight: 8 }} />Menu Laporan Kinerja</>}
+        style={{ marginBottom: 24 }}
+      >
+        <Collapse defaultActiveKey={['1']} ghost>
+          <Panel header={<Text strong>1. Memilih Periode</Text>} key="1">
+            <Paragraph>
+              <CalendarOutlined style={{ marginRight: 8 }} />
+              Gunakan dropdown <Text code>Bulan</Text> dan <Text code>Tahun</Text> di bagian atas untuk memilih periode laporan.
+            </Paragraph>
+            <Alert
+              message="Tips"
+              description="Sistem akan otomatis memuat data yang sudah tersimpan jika ada."
+              type="info"
+              showIcon
+            />
+          </Panel>
+
+          <Panel header={<Text strong>2. Mengisi Data Tabel</Text>} key="2">
+            <Paragraph>
+              <TableOutlined style={{ marginRight: 8 }} />
+              Tabel akan menampilkan semua sub kegiatan yang dikonfigurasi untuk puskesmas Anda.
+            </Paragraph>
+            <Title level={5}>Kolom yang Harus Diisi:</Title>
             <List
               size="small"
               dataSource={[
-                'No - Nomor urut',
-                'Kode - Kode sub kegiatan',
-                'Kegiatan - Nama kegiatan parent',
-                'Sub Kegiatan - Nama sub kegiatan',
-                'Indikator - Indikator kinerja',
-                'Status - Status laporan (Belum Disimpan/Tersimpan/Terkirim)',
+                { field: 'Sumber Anggaran', desc: 'BLUD, DAK Non Fisik, APBD, atau JKN' },
+                { field: 'Satuan', desc: 'Orang, Dokumen, Kegiatan, Paket, dll' },
+                { field: 'Target (K)', desc: 'Target kuantitas (jumlah unit)' },
+                { field: 'Target Anggaran (Rp)', desc: 'Pagu tahunan dalam rupiah' },
+                { field: 'Realisasi (K)', desc: 'Realisasi kuantitas' },
+                { field: 'Realisasi (Rp)', desc: 'Realisasi anggaran dalam rupiah' },
+                { field: 'Permasalahan', desc: 'Kendala yang dihadapi (opsional)' },
+                { field: 'Upaya', desc: 'Solusi yang dilakukan (opsional)' },
               ]}
-              renderItem={(item) => <List.Item>• {item}</List.Item>}
+              renderItem={(item) => (
+                <List.Item>
+                  <Text strong>{item.field}</Text> - {item.desc}
+                </List.Item>
+              )}
             />
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Kolom yang Harus Diisi</Title>
-            <Paragraph>
-              <Text strong>1. Sumber Anggaran</Text> - Pilih dari dropdown:
-            </Paragraph>
-            <List
-              size="small"
-              dataSource={[
-                'BLUD Puskesmas',
-                'DAK Non Fisik',
-                'APBD Kabupaten',
-                'JKN (Dana Kapitasi)',
-              ]}
-              renderItem={(item) => <List.Item style={{ marginLeft: 20 }}>• {item}</List.Item>}
+            <Alert
+              message="Format Angka Otomatis"
+              description="Ketik angka biasa (misal: 1000000), sistem otomatis format menjadi 1.000.000"
+              type="success"
+              showIcon
+              style={{ marginTop: 16 }}
             />
-          </div>
+          </Panel>
 
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>2. Satuan</Text> - Pilih satuan yang sesuai dengan jenis kegiatan (contoh: Orang, Dokumen, Kegiatan, Paket, dll).
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>3. Target (K)</Text> - Isi jumlah target kuantitas kegiatan yang direncanakan. Format angka otomatis menggunakan thousand separator (contoh: 1.000).
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>4. Target Angkas (Rp)</Text> - Total anggaran kas kumulatif hingga bulan yang dipilih (otomatis dari data angkas).
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>5. Target Anggaran (Rp)</Text> - Target dana tahunan (pagu) yang akan direalisasikan dalam rupiah.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>6. Realisasi (K)</Text> - Isi jumlah realisasi kuantitas kegiatan yang sudah dilaksanakan. Format angka otomatis.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>7. Realisasi (Rp)</Text> - Isi jumlah dana yang sudah direalisasikan dalam rupiah. Format angka otomatis.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>8. Permasalahan</Text> - Jelaskan kendala atau permasalahan yang dihadapi dalam pelaksanaan kegiatan (jika ada). Kolom ini bersifat opsional.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Paragraph>
-              <Text strong>9. Upaya</Text> - Jelaskan upaya atau solusi yang telah/akan dilakukan untuk mengatasi permasalahan. Kolom ini bersifat opsional.
-            </Paragraph>
-          </div>
-        </Space>
+          <Panel header={<Text strong>3. Menyimpan & Mengirim</Text>} key="3">
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <div>
+                <Tag color="default">Simpan</Tag>
+                <Paragraph style={{ marginTop: 8 }}>
+                  Klik <Text strong>"Simpan"</Text> untuk menyimpan data. Status berubah ke <Tag color="orange">Tersimpan</Tag> dan masih bisa diedit.
+                </Paragraph>
+              </div>
+              <div>
+                <Tag color="blue">Kirim Semua</Tag>
+                <Paragraph style={{ marginTop: 8 }}>
+                  Klik <Text strong>"Kirim Semua"</Text> untuk mengirim ke Dinkes. Status berubah ke <Tag color="blue">Terkirim</Tag> dan tidak bisa diedit lagi.
+                </Paragraph>
+              </div>
+            </Space>
+          </Panel>
+        </Collapse>
       </Card>
 
-      <Card title="Tips Pengisian" style={{ marginBottom: 24 }}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Alert
-            message="Input Tabel Efisien"
-            description="Anda dapat mengisi beberapa baris sekaligus lalu klik Simpan. Tidak perlu menyimpan satu per satu."
-            type="success"
-            showIcon
-            icon={<CheckCircleOutlined />}
-          />
-          <Alert
-            message="Format Angka Otomatis"
-            description="Semua kolom angka (Target K, Angkas, Target Anggaran, Realisasi K, Realisasi Rp) menggunakan thousand separator otomatis (contoh: 1.000.000). Anda tidak perlu mengetik titik pemisah."
-            type="success"
-            showIcon
-            icon={<CheckCircleOutlined />}
-          />
-          <Alert
-            message="Akurasi Data"
-            description="Pastikan semua angka yang diinput sesuai dengan data riil di lapangan dan dokumen pendukung."
-            type="warning"
-            showIcon
-            icon={<WarningOutlined />}
-          />
-          <Alert
-            message="Kelengkapan"
-            description="Minimal harus mengisi Sumber Anggaran dan Satuan untuk setiap sub kegiatan yang akan dilaporkan."
-            type="warning"
-            showIcon
-            icon={<WarningOutlined />}
-          />
-          <Alert
-            message="Status Tersimpan vs Terkirim"
-            description="Data dengan status 'Tersimpan' masih bisa diedit. Setelah diklik 'Kirim Semua', status berubah menjadi 'Terkirim' dan tidak bisa diedit lagi kecuali dikembalikan oleh Admin."
-            type="info"
-            showIcon
-          />
-          <Alert
-            message="Data Otomatis Tersimpan"
-            description="Data yang telah disimpan akan otomatis muncul kembali saat Anda memilih bulan/tahun yang sama."
-            type="info"
-            showIcon
-          />
-        </Space>
-      </Card>
-
-      <Card title="Status Laporan">
+      {/* Status Laporan */}
+      <Card title="Status Laporan" style={{ marginBottom: 24 }}>
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <div>
-            <Text strong style={{ color: '#d9d9d9' }}>● Belum Disimpan:</Text>
-            <Paragraph style={{ marginLeft: 20 }}>
-              Data belum disimpan ke sistem. Baris dengan status ini akan hilang jika Anda menutup halaman tanpa menyimpan.
-            </Paragraph>
+            <Tag>Belum Disimpan</Tag>
+            <Text> - Data baru, belum tersimpan ke sistem</Text>
           </div>
-
           <div>
-            <Text strong style={{ color: '#595959' }}>● Tersimpan:</Text>
-            <Paragraph style={{ marginLeft: 20 }}>
-              Data sudah disimpan di sistem dan masih bisa diedit. Status ini muncul setelah Anda klik tombol "Simpan".
-            </Paragraph>
+            <Tag color="orange">Tersimpan</Tag>
+            <Text> - Data tersimpan, masih bisa diedit</Text>
           </div>
-
           <div>
-            <Text strong style={{ color: '#1890ff' }}>● Terkirim:</Text>
-            <Paragraph style={{ marginLeft: 20 }}>
-              Data sudah dikirim ke Dinas Kesehatan dan tidak bisa diedit lagi. Admin dapat melihat laporan Anda dan jika ada kesalahan, Admin dapat mengembalikan status ke "Tersimpan" untuk diperbaiki.
-            </Paragraph>
+            <Tag color="blue">Terkirim</Tag>
+            <Text> - Sudah dikirim ke Dinkes, tidak bisa diedit</Text>
+          </div>
+          <div>
+            <Tag color="green">Diverifikasi</Tag>
+            <Text> - Sudah diverifikasi oleh Admin Dinkes</Text>
           </div>
         </Space>
+
+        <Alert
+          message="Perlu Koreksi?"
+          description="Jika laporan sudah terkirim dan perlu dikoreksi, hubungi Admin Dinkes untuk mengembalikan status ke 'Tersimpan'."
+          type="info"
+          showIcon
+          style={{ marginTop: 16 }}
+        />
       </Card>
 
-      <Card title="Pertanyaan Umum (FAQ)" style={{ marginTop: 24 }}>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Title level={5}>Q: Bagaimana jika lupa password?</Title>
+      {/* FAQ */}
+      <Card title={<><InfoCircleOutlined /> Pertanyaan Umum (FAQ)</>} style={{ marginBottom: 24 }}>
+        <Collapse ghost>
+          <Panel header="Bagaimana jika lupa password?" key="1">
+            <Paragraph>Hubungi Administrator Dinas Kesehatan untuk reset password.</Paragraph>
+          </Panel>
+          <Panel header="Apakah bisa mengedit laporan yang sudah terkirim?" key="2">
             <Paragraph>
-              A: Hubungi administrator Dinas Kesehatan untuk reset password.
+              Tidak bisa langsung. Admin Dinkes dapat mengembalikan status dari "Terkirim" ke "Tersimpan"
+              agar Anda bisa memperbaiki data.
             </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Apakah bisa mengedit laporan yang sudah terkirim?</Title>
+          </Panel>
+          <Panel header="Bagaimana jika sub kegiatan tidak muncul?" key="3">
             <Paragraph>
-              A: Tidak bisa langsung diedit. Jika ada kesalahan, Admin Dinas Kesehatan dapat mengembalikan status laporan dari "Terkirim" ke "Tersimpan" sehingga Anda bisa memperbaiki dan mengirim ulang.
+              Hubungi Admin Dinkes untuk menambahkan sub kegiatan ke konfigurasi puskesmas Anda
+              di menu "Konfigurasi Sub Kegiatan".
             </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Apakah harus mengisi semua sub kegiatan?</Title>
+          </Panel>
+          <Panel header="Target dan Angkas tidak sesuai?" key="4">
             <Paragraph>
-              A: Tidak. Anda hanya perlu mengisi sub kegiatan yang memiliki aktivitas/realisasi pada periode bulan tersebut. Sub kegiatan yang tidak diisi tidak akan tersimpan.
+              Data target dan angkas di-upload oleh Admin Dinkes dari file Excel/PDF.
+              Jika ada ketidaksesuaian, hubungi Admin untuk melakukan koreksi di menu "Edit Target & Angkas".
             </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Bagaimana cara mengisi angka dengan format ribuan?</Title>
+          </Panel>
+          <Panel header="Apakah harus mengisi semua sub kegiatan?" key="5">
             <Paragraph>
-              A: Cukup ketik angka biasa (contoh: 1000000), sistem akan otomatis memformat menjadi 1.000.000 saat Anda berpindah ke kolom lain.
+              Tidak. Cukup isi sub kegiatan yang memiliki aktivitas/realisasi pada bulan tersebut.
+              Sub kegiatan yang tidak diisi akan tetap kosong.
             </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Apakah data yang sudah disimpan bisa dihapus?</Title>
+          </Panel>
+          <Panel header="Apa beda Target Anggaran dan Angkas?" key="6">
             <Paragraph>
-              A: Data tidak bisa dihapus, tetapi bisa dikosongkan dengan cara menghapus nilai di kolom-kolom tersebut lalu klik Simpan.
+              <Text strong>Target Anggaran (Pagu)</Text>: Total anggaran tahunan yang dialokasikan.
+              <br />
+              <Text strong>Angkas</Text>: Rencana pencairan/penggunaan anggaran per bulan.
+              Total angkas setahun = Target Anggaran.
             </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Bagaimana jika sub kegiatan yang saya butuhkan tidak muncul?</Title>
-            <Paragraph>
-              A: Hubungi Admin Dinas Kesehatan untuk menambahkan sub kegiatan ke dalam konfigurasi puskesmas Anda.
-            </Paragraph>
-          </div>
-
-          <Divider />
-
-          <div>
-            <Title level={5}>Q: Siapa yang bisa dihubungi jika ada kendala teknis?</Title>
-            <Paragraph>
-              A: Hubungi Tim IT Dinas Kesehatan Kabupaten Bogor melalui email atau telepon yang tertera di portal resmi.
-            </Paragraph>
-          </div>
-        </Space>
+          </Panel>
+        </Collapse>
       </Card>
 
+      {/* Contact */}
       <Alert
         message="Butuh Bantuan?"
-        description="Jika Anda masih mengalami kesulitan dalam pengisian laporan, silakan hubungi bagian Perencanaan dan Evaluasi Dinas Kesehatan Kabupaten Bogor."
+        description="Hubungi bagian Perencanaan dan Evaluasi Dinas Kesehatan Kabupaten Bogor untuk bantuan teknis."
         type="warning"
         showIcon
-        style={{ marginTop: 24 }}
+        icon={<WarningOutlined />}
       />
     </div>
   );
 };
-
 
 export default CaraPengisianPage;

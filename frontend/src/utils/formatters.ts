@@ -45,7 +45,7 @@ export const formatCurrencyWithPrefix = (value: number | string | null | undefin
  */
 export const formatCurrencyAbbreviated = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return '0';
-  
+
   if (value >= 1000000000) {
     return `${(value / 1000000000).toLocaleString(LOCALE, { maximumFractionDigits: 1 })}M`;
   }
@@ -66,9 +66,9 @@ export const formatCurrencyAbbreviated = (value: number | null | undefined): str
  */
 export const formatPercentage = (value: number | null | undefined, decimals: number = 2): string => {
   if (value === null || value === undefined) return '0,00%';
-  return `${value.toLocaleString(LOCALE, { 
-    minimumFractionDigits: decimals, 
-    maximumFractionDigits: decimals 
+  return `${value.toLocaleString(LOCALE, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
   })}%`;
 };
 
@@ -90,10 +90,10 @@ export const formatPercentageForExcel = (value: number | null | undefined): stri
  */
 export const formatDate = (
   dateString: string | Date | null | undefined,
-  options: Intl.DateTimeFormatOptions = { 
-    day: '2-digit', 
-    month: 'long', 
-    year: 'numeric' 
+  options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
   }
 ): string => {
   if (!dateString) return '-';
@@ -122,17 +122,17 @@ export const COLUMN_HEADERS = {
   // Physical targets/realizations
   TARGET_K: 'Target (K)',
   REALISASI_K: 'Realisasi (K)',
-  
+
   // Budget targets/realizations (Rp in header)
   TARGET_RP: 'Target (Rp)',
   REALISASI_RP: 'Realisasi (Rp)',
   TARGET_ANGKAS: 'Target Angkas (Rp)',
-  
+
   // Percentages
   CAPAIAN_K: 'Capaian K (%)',
   CAPAIAN_RP: 'Capaian Rp (%)',
   REALISASI_FISIK: 'Realisasi Fisik (%)',
-  
+
   // Aggregated columns
   TOTAL_TARGET_K: 'Total Target (K)',
   TOTAL_TARGET_RP: 'Total Target (Rp)',
@@ -141,3 +141,28 @@ export const COLUMN_HEADERS = {
   PERSENTASE_K: 'Persentase K (%)',
   PERSENTASE_RP: 'Persentase Rp (%)',
 } as const;
+
+/**
+ * Sumber Anggaran label mapping for simplified UI display
+ * Full name → Abbreviated name
+ */
+const SUMBER_ANGGARAN_MAP: Record<string, string> = {
+  'DAK Non Fisik': 'BOK',
+  'APBD': 'PAD',
+  'APBD Kabupaten': 'PAD',
+  'BLUD': 'BLUD',
+  'BLUD Puskesmas': 'BLUD',
+  'JKN': 'JKN',
+  'Dana Kapitasi': 'JKN',
+  'JKN (Dana Kapitasi)': 'JKN',
+};
+
+/**
+ * Format sumber anggaran label to simplified form
+ * @param label - Full sumber anggaran label from database
+ * @returns Simplified label (BOK, PAD, BLUD, JKN) or original if not mapped
+ */
+export const formatSumberAnggaran = (label: string | null | undefined): string => {
+  if (!label) return '-';
+  return SUMBER_ANGGARAN_MAP[label] || label;
+};

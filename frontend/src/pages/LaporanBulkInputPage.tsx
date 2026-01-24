@@ -23,7 +23,7 @@ import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatSumberAnggaran } from '../utils/formatters';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -98,9 +98,10 @@ interface SumberAnggaranCellProps {
 
 const SumberAnggaranCell = memo(({ id_sumber_anggaran, sumberAnggaran }: SumberAnggaranCellProps) => {
   const sumber = sumberAnggaran.find((sa) => sa.value === id_sumber_anggaran);
+  const simplifiedLabel = formatSumberAnggaran(sumber?.label);
   return (
     <div>
-      <Tag color="blue" style={{ margin: 0, whiteSpace: 'normal' }}>{sumber?.label || 'N/A'}</Tag>
+      <Tag color="blue" style={{ margin: 0, whiteSpace: 'normal' }}>{simplifiedLabel}</Tag>
     </div>
   );
 });

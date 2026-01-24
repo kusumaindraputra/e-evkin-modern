@@ -99,8 +99,8 @@ interface SumberAnggaranCellProps {
 const SumberAnggaranCell = memo(({ id_sumber_anggaran, sumberAnggaran }: SumberAnggaranCellProps) => {
   const sumber = sumberAnggaran.find((sa) => sa.value === id_sumber_anggaran);
   return (
-    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-      <Tag color="blue" style={{ margin: 0 }}>{sumber?.label || 'N/A'}</Tag>
+    <div>
+      <Tag color="blue" style={{ margin: 0, whiteSpace: 'normal' }}>{sumber?.label || 'N/A'}</Tag>
     </div>
   );
 });
@@ -628,8 +628,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       {
         title: 'Sumber Anggaran',
         key: 'id_sumber_anggaran',
-        width: 130,
-        ellipsis: true,
+        width: 160,
         render: (_: any, record: LaporanRow) => (
           <SumberAnggaranCell
             id_sumber_anggaran={record.id_sumber_anggaran}

@@ -601,12 +601,14 @@ export const LaporanBulkInputPage: React.FC = () => {
         key: 'no',
         width: 50,
         align: 'center',
+        fixed: 'left' as const,
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
         title: 'Sub Kegiatan',
         key: 'sub_kegiatan',
         width: 280,
+        fixed: 'left' as const,
         render: (_: any, record: LaporanRow) => (
           <div>
             <Tag color="blue">{record.kode_sub}</Tag>

@@ -364,7 +364,9 @@ export const AdminLaporanPage: React.FC = () => {
           dataIndex: ['sumber_anggaran', 'sumber'],
           key: 'sumber',
           width: 200,
-          render: (text: string) => <strong>{text}</strong>,
+          render: (text: string, record: AggregatedReportSumberAnggaran) => (
+            <strong>{text || record.sumber_anggaran?.sumber || '(Tidak ada data)'}</strong>
+          ),
           sorter: (a: AggregatedReportSumberAnggaran, b: AggregatedReportSumberAnggaran) =>
             (a.sumber_anggaran?.sumber || '').localeCompare(b.sumber_anggaran?.sumber || ''),
         },

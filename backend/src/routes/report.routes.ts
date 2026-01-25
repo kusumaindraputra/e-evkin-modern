@@ -18,13 +18,13 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
     // Build where clause with validation
     const whereClause: any = {};
     if (bulan) whereClause.bulan = bulan;
-    
+
     const parsedTahun = tahun ? Number(tahun) : undefined;
     if (parsedTahun && !isNaN(parsedTahun)) whereClause.tahun = parsedTahun;
-    
+
     const parsedSubKegiatan = id_sub_kegiatan ? Number(id_sub_kegiatan) : undefined;
     if (parsedSubKegiatan && !isNaN(parsedSubKegiatan)) whereClause.id_sub_kegiatan = parsedSubKegiatan;
-    
+
     if (status) whereClause.status = status;
 
     // Get aggregated data
@@ -56,9 +56,9 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
         },
       ],
       group: [
-        'Laporan.id_sub_kegiatan', 
-        'Laporan.bulan', 
-        'Laporan.tahun', 
+        'Laporan.id_sub_kegiatan',
+        'Laporan.bulan',
+        'Laporan.tahun',
         'subKegiatan.id_sub_kegiatan',
         'subKegiatan.id_kegiatan',
         'subKegiatan.kode_sub',
@@ -179,12 +179,13 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
           model: SumberAnggaran,
           as: 'sumberAnggaran',
           attributes: ['id_sumber', 'sumber'],
+          required: true, // Exclude records with NULL id_sumber_anggaran
         },
       ],
       group: [
-        'Laporan.id_sumber_anggaran', 
-        'Laporan.bulan', 
-        'Laporan.tahun', 
+        'Laporan.id_sumber_anggaran',
+        'Laporan.bulan',
+        'Laporan.tahun',
         'sumberAnggaran.id_sumber',
         'sumberAnggaran.sumber'
       ],

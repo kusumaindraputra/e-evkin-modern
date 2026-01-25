@@ -134,8 +134,8 @@ export const AdminLaporanPage: React.FC = () => {
       if (selectedYear) params.tahun = selectedYear;
       if (selectedMonth) params.bulan = selectedMonth;
 
-      const endpoint = groupBy === 'sub_kegiatan' 
-        ? '/report/by-sub-kegiatan' 
+      const endpoint = groupBy === 'sub_kegiatan'
+        ? '/report/by-sub-kegiatan'
         : '/report/by-sumber-anggaran';
 
       const response = await axios.get(`${API_BASE_URL}${endpoint}`, {
@@ -158,8 +158,8 @@ export const AdminLaporanPage: React.FC = () => {
     setDetailLoading(true);
     setDetailModalVisible(true);
     try {
-      const endpoint = groupBy === 'sub_kegiatan' 
-        ? '/report/by-sub-kegiatan/detail' 
+      const endpoint = groupBy === 'sub_kegiatan'
+        ? '/report/by-sub-kegiatan/detail'
         : '/report/by-sumber-anggaran/detail';
 
       const params: Record<string, unknown> = {
@@ -327,7 +327,7 @@ export const AdminLaporanPage: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: any[] = useMemo(() => {
     const commonCols = getCommonColumns(groupBy === 'sumber_anggaran');
-    
+
     if (groupBy === 'sub_kegiatan') {
       return [
         {
@@ -335,7 +335,7 @@ export const AdminLaporanPage: React.FC = () => {
           dataIndex: ['sub_kegiatan', 'kode_sub'],
           key: 'kode_sub',
           width: 180,
-          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) => 
+          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) =>
             (a.sub_kegiatan?.kode_sub || '').localeCompare(b.sub_kegiatan?.kode_sub || ''),
         },
         {
@@ -343,7 +343,7 @@ export const AdminLaporanPage: React.FC = () => {
           dataIndex: ['sub_kegiatan', 'kegiatan'],
           key: 'kegiatan',
           width: 300,
-          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) => 
+          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) =>
             (a.sub_kegiatan?.kegiatan || '').localeCompare(b.sub_kegiatan?.kegiatan || ''),
         },
         {
@@ -352,7 +352,7 @@ export const AdminLaporanPage: React.FC = () => {
           key: 'parent',
           width: 250,
           ellipsis: true,
-          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) => 
+          sorter: (a: AggregatedReportSubKegiatan, b: AggregatedReportSubKegiatan) =>
             (a.sub_kegiatan?.kegiatanParent?.kegiatan || '').localeCompare(b.sub_kegiatan?.kegiatanParent?.kegiatan || ''),
         },
         ...commonCols,
@@ -365,7 +365,7 @@ export const AdminLaporanPage: React.FC = () => {
           key: 'sumber',
           width: 200,
           render: (text: string) => <strong>{text}</strong>,
-          sorter: (a: AggregatedReportSumberAnggaran, b: AggregatedReportSumberAnggaran) => 
+          sorter: (a: AggregatedReportSumberAnggaran, b: AggregatedReportSumberAnggaran) =>
             (a.sumber_anggaran?.sumber || '').localeCompare(b.sumber_anggaran?.sumber || ''),
         },
         ...commonCols,
@@ -499,7 +499,7 @@ export const AdminLaporanPage: React.FC = () => {
         dataIndex: ['user', 'nama_puskesmas'],
         key: 'puskesmas',
         width: 200,
-        sorter: (a: DetailLaporan, b: DetailLaporan) => 
+        sorter: (a: DetailLaporan, b: DetailLaporan) =>
           (a.user?.nama_puskesmas || '').localeCompare(b.user?.nama_puskesmas || ''),
       },
     ];
@@ -510,7 +510,7 @@ export const AdminLaporanPage: React.FC = () => {
         dataIndex: ['subKegiatan', 'kegiatan'],
         key: 'sub_kegiatan',
         width: 250,
-        sorter: (a: DetailLaporan, b: DetailLaporan) => 
+        sorter: (a: DetailLaporan, b: DetailLaporan) =>
           (a.subKegiatan?.kegiatan || '').localeCompare(b.subKegiatan?.kegiatan || ''),
       });
     }
@@ -521,7 +521,7 @@ export const AdminLaporanPage: React.FC = () => {
         dataIndex: ['sumberAnggaran', 'sumber'],
         key: 'sumber',
         width: 150,
-        sorter: (a: DetailLaporan, b: DetailLaporan) => 
+        sorter: (a: DetailLaporan, b: DetailLaporan) =>
           (a.sumberAnggaran?.sumber || '').localeCompare(b.sumberAnggaran?.sumber || ''),
       });
     }
@@ -719,8 +719,8 @@ export const AdminLaporanPage: React.FC = () => {
       {/* Filters */}
       <Card style={{ marginBottom: 16 }}>
         <Space wrap>
-          <Radio.Group 
-            value={groupBy} 
+          <Radio.Group
+            value={groupBy}
             onChange={(e) => setGroupBy(e.target.value)}
             buttonStyle="solid"
           >
@@ -776,6 +776,7 @@ export const AdminLaporanPage: React.FC = () => {
       {/* Main Table */}
       <Card>
         <Table
+          key={`table-${groupBy}`}
           columns={columns}
           dataSource={reports as any[]}
           rowKey={getRowKey}

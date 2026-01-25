@@ -118,6 +118,11 @@ export const AdminLaporanPage: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<string | undefined>(undefined);
 
+  // Clear reports when groupBy changes to prevent data/column mismatch
+  useEffect(() => {
+    setReports([]);
+  }, [groupBy]);
+
   useEffect(() => {
     loadReports();
   }, [selectedYear, selectedMonth, groupBy]);

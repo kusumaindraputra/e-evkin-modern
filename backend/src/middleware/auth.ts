@@ -15,6 +15,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     (req as any).user = decoded;
     next();
   } catch (error: any) {
-    res.status(401).json({ message: 'Invalid token', error: error.message });
+    res.status(401).json({ message: 'Token tidak valid atau sudah kadaluarsa' });
   }
 };

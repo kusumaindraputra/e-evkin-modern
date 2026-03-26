@@ -183,6 +183,12 @@ Laporan.init(
       {
         fields: ['bulan', 'tahun'],
       },
+      {
+        fields: ['user_id', 'status', 'tahun'],
+      },
+      {
+        fields: ['tahun', 'status'],
+      },
     ],
   }
 );

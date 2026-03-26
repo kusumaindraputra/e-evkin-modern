@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import 'express-async-errors';
 import { config } from './config';
 import { setupSwagger } from './config/swagger';
-import { errorHandler } from './middleware/errorHandler';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth.routes';
 import puskesmasRoutes from './routes/puskesmas.routes';
@@ -78,6 +78,9 @@ app.use('/api/admin', chatRoutes);
 app.use('/api/target', targetRoutes);
 app.use('/api/target', targetUploadRoutes);
 app.use('/api/angkas', angkasRoutes);
+
+// 404 handler for unmatched routes
+app.use(notFoundHandler);
 
 // Error handling
 app.use(errorHandler);

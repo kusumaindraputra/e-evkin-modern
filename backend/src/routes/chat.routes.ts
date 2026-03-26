@@ -32,7 +32,7 @@ router.post('/chat', authenticate, authorizeAdmin, async (req: Request, res: Res
     console.error('Error in chat endpoint:', error);
     return res.status(500).json({
       error: 'Failed to get AI insights',
-      message: error.message,
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
     });
   }
 });
@@ -49,7 +49,7 @@ router.get('/suggested-questions', authenticate, authorizeAdmin, async (req: Req
     console.error('Error getting suggested questions:', error);
     res.status(500).json({
       error: 'Failed to get suggested questions',
-      message: error.message,
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
     });
   }
 });
@@ -66,7 +66,7 @@ router.get('/context', authenticate, authorizeAdmin, async (req: Request, res: R
     console.error('Error getting context:', error);
     res.status(500).json({
       error: 'Failed to get context',
-      message: error.message,
+      message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
     });
   }
 });

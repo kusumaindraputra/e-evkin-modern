@@ -10,7 +10,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     console.error('Puskesmas list error:', error);
     res.status(500).json({ 
       message: 'Gagal memuat daftar puskesmas', 
-      error: error.message 
+      error: process.env.NODE_ENV !== 'production' ? error.message : undefined
     });
   }
 });

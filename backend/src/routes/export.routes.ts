@@ -299,7 +299,7 @@ router.get('/laporan', authenticate, async (req: Request, res: Response): Promis
 
   } catch (error: any) {
     console.error('Export error:', error);
-    res.status(500).json({ message: 'Gagal export laporan', error: error.message });
+    res.status(500).json({ success: false, message: 'Gagal export laporan' });
   }
 });
 
@@ -697,7 +697,7 @@ router.get('/admin/laporan', authenticate, async (req: Request, res: Response): 
 
   } catch (error: any) {
     console.error('Admin export error:', error);
-    res.status(500).json({ message: 'Gagal export laporan', error: error.message });
+    res.status(500).json({ success: false, message: 'Gagal export laporan' });
   }
 });
 

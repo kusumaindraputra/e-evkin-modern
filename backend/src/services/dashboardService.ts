@@ -266,10 +266,253 @@ export function invalidateDashboardCache(tahun?: number): void {
     cacheService.invalidatePattern(`dashboard:top10:${tahun}`);
     cacheService.invalidatePattern(`dashboard:bottom10:${tahun}`);
     cacheService.invalidatePattern(`dashboard:budget_ytd:${tahun}`);
+    cacheService.invalidatePattern(`dashboard:chart:${tahun}`);
     cacheService.invalidatePattern(`dashboard:puskesmas_reporting:${tahun}`);
   } else {
     cacheService.invalidatePattern('dashboard:');
   }
+}
+
+/**
+ * Get budget YTD data with caching
+ */
+export async function getBudgetYTD(tahun: number): Promise<any[]> {
+  const cacheKey = DASHBOARD_CACHE_KEYS.BUDGET_YTD(tahun);
+
+  return cacheService.getOrFetch(cacheKey, async () => {
+    const budgetData = await Laporan.findAll({
+      attributes: [
+        'bulan',
+        [Laporan.sequelize!.fn('SUM', Laporan.sequelize!.col('target_rp')), 'target_rp'],
+        [Laporan.sequelize!.fn('SUM', Laporan.sequelize!.col('realisasi_rp')), 'realisasi_rp']
+      ],
+      where: {
+        tahun,
+        status: 'terkirim'
+      },
+      group: ['bulan'],
+      order: [
+        [Laporan.sequelize!.literal(`
+          CASE bulan
+            WHEN 'Januari' THEN 1
+            WHEN 'Februari' THEN 2
+            WHEN 'Maret' THEN 3
+            WHEN 'April' THEN 4
+            WHEN 'Mei' THEN 5
+            WHEN 'Juni' THEN 6
+            WHEN 'Juli' THEN 7
+            WHEN 'Agustus' THEN 8
+            WHEN 'September' THEN 9
+            WHEN 'Oktober' THEN 10
+            WHEN 'November' THEN 11
+            WHEN 'Desember' THEN 12
+          END
+        `), 'ASC']
+      ],
+      raw: true
+    });
+
+    return budgetData.map((item: any) => {
+      const targetRp = parseFloat(item.target_rp) || 0;
+      const realisasiRp = parseFloat(item.realisasi_rp) || 0;
+      const persentase = targetRp > 0 ? (realisasiRp / targetRp) * 100 : 0;
+      return {
+        bulan: item.bulan,
+        target_rp: targetRp,
+        realisasi_rp: realisasiRp,
+        persentase: Math.round(persentase * 100) / 100
+      };
+    });
+  }, DASHBOARD_TTL);
+}
+
+/**
+ * Get chart data with caching
+ */
+export async function getChartData(tahun: number, userId?: string, sumberAnggaranId?: number, subKegiatanId?: number): Promise<any> {
+  const cacheKey = `dashboard:chart:${tahun}:${userId || 'all'}:${sumberAnggaranId || 'all'}:${subKegiatanId || 'all'}`;
+
+  return cacheService.getOrFetch(cacheKey, async () => {
+    const { Op } = require('sequelize');
+    const { SubKegiatanTarget, AnggaranKas, SubKegiatan } = require('../models');
+
+    const targetFilter: any = { tahun };
+    const angkasFilter: any = { tahun };
+    const laporanFilter: any = {
+      tahun,
+      status: { [Op.in]: ['terkirim', 'menunggu', 'diverifikasi'] }
+    };
+
+    if (userId) {
+      targetFilter.user_id = userId;
+      angkasFilter.user_id = userId;
+      laporanFilter.user_id = userId;
+    }
+    if (sumberAnggaranId) {
+      targetFilter.id_sumber_anggaran = sumberAnggaranId;
+      angkasFilter.id_sumber_anggaran = sumberAnggaranId;
+      laporanFilter.id_sumber_anggaran = sumberAnggaranId;
+    }
+    if (subKegiatanId) {
+      targetFilter.id_sub_kegiatan = subKegiatanId;
+      angkasFilter.id_sub_kegiatan = subKegiatanId;
+      laporanFilter.id_sub_kegiatan = subKegiatanId;
+    }
+
+    const [allTargets, allAngkas, laporanData] = await Promise.all([
+      SubKegiatanTarget.findAll({
+        where: targetFilter,
+        include: [{ model: SubKegiatan, as: 'subKegiatan', attributes: ['id_sub_kegiatan', 'kegiatan'] }],
+        order: [['created_at', 'ASC']],
+        raw: true, nest: true
+      }),
+      AnggaranKas.findAll({
+        where: angkasFilter,
+        order: [['created_at', 'ASC']],
+        raw: true
+      }),
+      Laporan.findAll({
+        where: laporanFilter,
+        include: [{ model: SubKegiatan, as: 'subKegiatan', attributes: ['id_sub_kegiatan', 'kegiatan'] }],
+        raw: true, nest: true
+      })
+    ]);
+
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Helper: get anggaran valid at a specific month
+    const getAnggaranForMonth = (targets: any[], year: number, monthNum: number) => {
+      const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+      const grouped = new Map();
+      targets.forEach((t: any) => {
+        const createdAt = new Date(t.createdAt);
+        if (createdAt <= cutoffDate) {
+          const key = `${t.user_id}_${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
+          grouped.set(key, t);
+        }
+      });
+      return Array.from(grouped.values());
+    };
+
+    // Helper: cumulative angkas up to month
+    const getCumulativeAngkas = (angkas: any[], year: number, monthNum: number) => {
+      const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+      const latestPerKeyPerMonth = new Map();
+      angkas.forEach((a: any) => {
+        const createdAt = new Date(a.createdAt);
+        if (createdAt <= cutoffDate && a.bulan <= monthNum) {
+          const keyMonth = `${a.user_id}_${a.kode_rekening}_${a.id_sumber_anggaran}_${a.tahun}_${a.bulan}`;
+          latestPerKeyPerMonth.set(keyMonth, a);
+        }
+      });
+      let total = 0;
+      latestPerKeyPerMonth.forEach((record: any) => { total += Number(record.nilai) || 0; });
+      return total;
+    };
+
+    const rawData = months.map((monthName, index) => {
+      const monthNum = index + 1;
+      const targetsForMonth = getAnggaranForMonth(allTargets, tahun, monthNum);
+      const anggaranForMonth = targetsForMonth.reduce((sum: number, t: any) => sum + (Number(t.target_rp) || 0), 0);
+      const cumulativeAngkas = getCumulativeAngkas(allAngkas, tahun, monthNum);
+      const laporanForMonth = laporanData.filter((l: any) => l.bulan === monthName);
+      const realisasiRp = laporanForMonth.reduce((sum: number, l: any) => sum + (Number(l.realisasi_rp) || 0), 0);
+      const totalFisik = laporanForMonth.reduce((sum: number, l: any) => sum + (Number(l.realisasi_fisik) || 0), 0);
+      const countFisik = laporanForMonth.length;
+      const avgFisik = countFisik > 0 ? totalFisik / countFisik : 0;
+
+      return {
+        label: monthName,
+        anggaran: anggaranForMonth,
+        angkas: cumulativeAngkas,
+        realisasi_anggaran: realisasiRp,
+        realisasi_fisik: Math.round(avgFisik * 100) / 100
+      };
+    });
+
+    const processedData = rawData.map((data, index) => {
+      if (index === 0) return data;
+      const prevData = rawData.slice(0, index);
+      const cumulativeRealisasiAnggaran = prevData.reduce((sum, d) => sum + d.realisasi_anggaran, 0) + data.realisasi_anggaran;
+      const maxPrevFisik = Math.max(...prevData.map(d => d.realisasi_fisik), 0);
+      const cumulativeRealisasiFisik = Math.max(maxPrevFisik, data.realisasi_fisik);
+      return {
+        ...data,
+        realisasi_anggaran: cumulativeRealisasiAnggaran,
+        realisasi_fisik: Math.round(cumulativeRealisasiFisik * 100) / 100
+      };
+    });
+
+    if (processedData.length > 0) {
+      processedData[0] = rawData[0];
+    }
+
+    return {
+      data: processedData,
+      debug: {
+        targetsCount: allTargets.length,
+        angkasCount: allAngkas.length,
+        laporanCount: laporanData.length
+      }
+    };
+  }, CACHE_TTL.MEDIUM); // 5 minutes for chart data
+}
+
+/**
+ * Get puskesmas reporting details with caching
+ */
+export async function getPuskesmasReportingDetails(tahun: number, bulan?: string): Promise<any> {
+  const cacheKey = DASHBOARD_CACHE_KEYS.PUSKESMAS_REPORTING(tahun, bulan);
+
+  return cacheService.getOrFetch(cacheKey, async () => {
+    const { QueryTypes } = require('sequelize');
+
+    const laporanWhere: any = { tahun, status: 'terkirim' };
+    if (bulan) laporanWhere.bulan = bulan;
+
+    const allPuskesmas = await User.findAll({
+      where: { role: 'puskesmas' },
+      attributes: ['id', 'nama_puskesmas'],
+      order: [['nama_puskesmas', 'ASC']],
+      raw: true
+    });
+
+    const reportedLaporan = await Laporan.sequelize!.query(
+      `SELECT
+        l.user_id,
+        u.nama_puskesmas,
+        MAX(l.updated_at) as tanggal_lapor
+      FROM laporan l
+      INNER JOIN users u ON l.user_id = u.id
+      WHERE l.tahun = :tahun
+        AND l.status = 'terkirim'
+        ${bulan ? "AND l.bulan = :bulan" : ""}
+        AND u.role = 'puskesmas'
+      GROUP BY l.user_id, u.nama_puskesmas`,
+      {
+        replacements: { tahun, bulan },
+        type: QueryTypes.SELECT
+      }
+    ) as any[];
+
+    const reportedMap = new Map(
+      reportedLaporan.map(item => [item.user_id, { user_id: item.user_id, nama_puskesmas: item.nama_puskesmas, tanggal_lapor: item.tanggal_lapor }])
+    );
+
+    const sudahLapor: any[] = [];
+    const belumLapor: any[] = [];
+
+    allPuskesmas.forEach((puskesmas: any) => {
+      if (reportedMap.has(puskesmas.id)) {
+        const reported = reportedMap.get(puskesmas.id);
+        sudahLapor.push({ user_id: puskesmas.id, nama_puskesmas: puskesmas.nama_puskesmas, tanggal_lapor: reported?.tanggal_lapor });
+      } else {
+        belumLapor.push({ user_id: puskesmas.id, nama_puskesmas: puskesmas.nama_puskesmas });
+      }
+    });
+
+    return { sudahLapor, belumLapor };
+  }, DASHBOARD_TTL);
 }
 
 export default {
@@ -277,6 +520,9 @@ export default {
   getBudgetMonthly,
   getTop10Absorption,
   getBottom10Absorption,
+  getBudgetYTD,
+  getChartData,
+  getPuskesmasReportingDetails,
   invalidateDashboardCache,
   DASHBOARD_CACHE_KEYS,
 };

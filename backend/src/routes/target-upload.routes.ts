@@ -377,7 +377,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           row: group.rows[0],
           puskesmas: group.puskesmas,
           subKegiatan: group.subKegiatanNama,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : 'Processing error',
         });
       }
     }
@@ -392,7 +392,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     return res.status(500).json({
       success: false,
       message: 'Gagal upload file',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : 'Upload error',
     });
   }
 });

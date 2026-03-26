@@ -88,7 +88,7 @@ router.post('/login', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Login error:', error);
-    return res.status(500).json({ error: 'Login failed', message: error.message });
+    return res.status(500).json({ error: 'Login gagal. Silakan coba lagi.' });
   }
 });
 
@@ -130,9 +130,8 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
     res.json({ message: 'Logout successful' });
   } catch (error: any) {
     console.error('Logout error:', error);
-    res.status(500).json({ 
-      message: 'Logout failed', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Logout gagal',
     });
   }
 });

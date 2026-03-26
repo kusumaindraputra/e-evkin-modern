@@ -13,7 +13,7 @@ const router = Router();
 // GET laporan aggregated by sub kegiatan (admin only)
 router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
-    const { bulan, tahun, id_sub_kegiatan, status } = req.query;
+    const { bulan, tahun, id_sub_kegiatan, status, page, limit: limitParam } = req.query;
 
     // Build where clause with validation
     const whereClause: any = {};
@@ -26,6 +26,10 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
     if (parsedSubKegiatan && !isNaN(parsedSubKegiatan)) whereClause.id_sub_kegiatan = parsedSubKegiatan;
 
     if (status) whereClause.status = status;
+
+    // Pagination
+    const parsedPage = page ? Math.max(1, parseInt(page as string)) : undefined;
+    const parsedLimit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam as string))) : undefined;
 
     // Get aggregated data
     const aggregatedData = await Laporan.findAll({
@@ -71,6 +75,7 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
       ],
       order: [[sequelize.col('subKegiatan->kegiatanParent.kode'), 'ASC'], [sequelize.col('subKegiatan.kode_sub'), 'ASC']],
       raw: false,
+      ...(parsedLimit && parsedPage ? { limit: parsedLimit, offset: (parsedPage - 1) * parsedLimit } : {}),
     });
 
     // Calculate percentages
@@ -99,6 +104,9 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
       };
     });
 
+    if (parsedPage && parsedLimit) {
+      return res.json({ data: result, pagination: { page: parsedPage, limit: parsedLimit } });
+    }
     return res.json(result);
   } catch (error) {
     console.error('Error fetching laporan by sub kegiatan:', error);
@@ -151,7 +159,7 @@ router.get('/by-sub-kegiatan/detail', authenticate, authorizeAdmin, async (req: 
 // GET laporan aggregated by sumber anggaran (admin only)
 router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
-    const { bulan, tahun, id_sumber_anggaran, status } = req.query;
+    const { bulan, tahun, id_sumber_anggaran, status, page, limit: limitParam } = req.query;
 
     // Build where clause
     const whereClause: any = {};
@@ -159,6 +167,10 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
     if (tahun) whereClause.tahun = Number(tahun);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = Number(id_sumber_anggaran);
     if (status) whereClause.status = status;
+
+    // Pagination
+    const parsedPage = page ? Math.max(1, parseInt(page as string)) : undefined;
+    const parsedLimit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam as string))) : undefined;
 
     // Get aggregated data
     const aggregatedData = await Laporan.findAll({
@@ -191,6 +203,7 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
       ],
       order: [[sequelize.col('sumberAnggaran.sumber'), 'ASC']],
       raw: false,
+      ...(parsedLimit && parsedPage ? { limit: parsedLimit, offset: (parsedPage - 1) * parsedLimit } : {}),
     });
 
     // Calculate percentages
@@ -219,6 +232,9 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
       };
     });
 
+    if (parsedPage && parsedLimit) {
+      return res.json({ data: result, pagination: { page: parsedPage, limit: parsedLimit } });
+    }
     return res.json(result);
   } catch (error) {
     console.error('Error fetching laporan by sumber anggaran:', error);

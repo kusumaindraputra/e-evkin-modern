@@ -42,34 +42,28 @@ export const checkEditPermission = (scope: string) => {
       }
 
       // Get permission config: user-specific takes absolute priority over global
-      // Match exact bulan first, then fall back to null bulan (wildcard = all months)
+      // Single query fetches both user-specific and global, ordered so user-specific comes first
       const bulanCondition = bulan ? { [Op.or]: [bulan, null] } : null;
 
-      // First try user-specific permission
-      const userPermission = await PuskesmasEditPermission.findOne({
+      const permissions = await PuskesmasEditPermission.findAll({
         where: {
           scope,
           bulan: bulanCondition,
           tahun,
-          user_id: user.id,
+          user_id: { [Op.or]: [user.id, null] },
         },
-        order: [['bulan', 'DESC NULLS LAST'], ['created_at', 'DESC']],
+        order: [
+          // User-specific first (non-null user_id), then global (null)
+          [PuskesmasEditPermission.sequelize!.literal('CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END'), 'ASC'],
+          ['bulan', 'DESC NULLS LAST'],
+          ['created_at', 'DESC'],
+        ],
+        limit: 2, // At most one user-specific + one global
       });
 
-      // If user-specific exists, use it exclusively (even if restrictive)
-      // Only fall back to global if no user-specific permission exists
-      let permission = userPermission;
-      if (!permission) {
-        permission = await PuskesmasEditPermission.findOne({
-          where: {
-            scope,
-            bulan: bulanCondition,
-            tahun,
-            user_id: null,
-          },
-          order: [['bulan', 'DESC NULLS LAST'], ['created_at', 'DESC']],
-        });
-      }
+      // User-specific takes priority; fall back to global
+      const userPermission = permissions.find(p => p.user_id !== null);
+      const permission = userPermission || permissions.find(p => p.user_id === null) || null;
 
       if (!permission) {
         return res.status(403).json({ success: false, message: 'Pengeditan belum dibuka oleh admin untuk periode ini' });

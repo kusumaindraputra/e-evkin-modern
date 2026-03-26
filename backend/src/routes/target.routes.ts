@@ -65,7 +65,7 @@ router.get('/', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Gagal memuat data target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -145,7 +145,7 @@ router.get('/history/:id_sub_kegiatan', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal memuat history target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -200,7 +200,7 @@ router.get('/latest/:id_sub_kegiatan', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal memuat target terbaru',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -290,7 +290,7 @@ router.get('/assigned', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal memuat sub kegiatan yang punya target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -347,7 +347,7 @@ router.post('/', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal menyimpan target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -394,7 +394,7 @@ router.post('/bulk', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal menyimpan target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -489,7 +489,7 @@ router.put('/:id/kinerja', authenticate, checkEditPermission('target_kinerja'), 
     return res.status(500).json({
       success: false,
       message: 'Gagal memperbarui target kinerja',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -537,7 +537,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal menghapus target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -633,7 +633,7 @@ router.get('/admin', authenticate, authorizeAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Gagal memuat data target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -709,7 +709,7 @@ router.post('/admin', authenticate, authorizeAdmin, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal menyimpan target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -801,7 +801,7 @@ router.put('/admin/:id/target-kinerja', authenticate, authorizeAdmin, async (req
     return res.status(500).json({
       success: false,
       message: 'Gagal memperbarui target kinerja',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });
@@ -873,7 +873,7 @@ router.get('/admin/history', authenticate, authorizeAdmin, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Gagal memuat history target',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : undefined,
     });
   }
 });

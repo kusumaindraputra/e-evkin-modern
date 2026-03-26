@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
+import { config } from '../config';
 
 export class AppError extends Error {
   statusCode: number;
@@ -22,15 +23,25 @@ export const errorHandler = (
 ) => {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
-      status: 'error',
+      success: false,
       message: err.message,
     });
   }
 
-  logger.error('ERROR 💥:', err);
+  logger.error('ERROR:', err);
 
   return res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong!',
+    success: false,
+    message: config.env === 'production'
+      ? 'Terjadi kesalahan server. Silakan coba lagi.'
+      : err.message || 'Something went wrong!',
+  });
+};
+
+// 404 handler for unmatched routes
+export const notFoundHandler = (req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} tidak ditemukan`,
   });
 };

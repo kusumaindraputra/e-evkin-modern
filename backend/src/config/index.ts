@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === 'production' && jwtSecret === 'change-this-secret')
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '5000', 10),
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(s => s.trim()),
 
   database: {
     host: process.env.DB_HOST || 'localhost',

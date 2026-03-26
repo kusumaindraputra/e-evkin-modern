@@ -27,6 +27,9 @@ import angkasRoutes from './routes/angkas.routes';
 
 const app: Application = express();
 
+// Trust proxy (behind nginx)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({

@@ -140,7 +140,7 @@ export class LaporanService {
       order: [['created_at', 'DESC']],
     });
 
-    if (!target) {
+    if (!target || (target.target_k === 0 && target.target_rp === 0)) {
       throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahun}. Hubungi admin.`);
     }
 
@@ -149,8 +149,9 @@ export class LaporanService {
       throw new Error(`Realisasi kinerja (${realisasi_k}) tidak boleh melebihi target (${target.target_k})`);
     }
 
-    if (realisasi_rp !== undefined && realisasi_rp > target.target_rp) {
-      throw new Error(`Realisasi anggaran tidak boleh melebihi target pagu`);
+    const angkasValue = params.angkas;
+    if (angkasValue !== undefined && realisasi_rp !== undefined && realisasi_rp > angkasValue) {
+      throw new Error(`Realisasi anggaran (Rp ${realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${angkasValue?.toLocaleString('id-ID')})`);
     }
 
     // Auto-fill
@@ -215,7 +216,7 @@ export class LaporanService {
       const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
       const target = targetMap.get(targetKey);
 
-      if (!target) {
+      if (!target || (target.target_k === 0 && target.target_rp === 0)) {
         throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${data.tahun}. Hubungi admin.`);
       }
 
@@ -310,7 +311,7 @@ export class LaporanService {
           const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
           const target = targetMap.get(targetKey);
 
-          if (!target) {
+          if (!target || (target.target_k === 0 && target.target_rp === 0)) {
             results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
             results.skipped++;
             continue;
@@ -395,7 +396,7 @@ export class LaporanService {
       order: [['created_at', 'DESC']],
     });
 
-    if (!target) {
+    if (!target || (target.target_k === 0 && target.target_rp === 0)) {
       throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahunValue}. Hubungi admin.`);
     }
 

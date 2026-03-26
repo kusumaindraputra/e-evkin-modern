@@ -11,7 +11,6 @@ interface LaporanAttributes {
   target_k: number;
   angkas: number;
   target_rp: number;
-  target_angkas?: number | null; // Manual input for sub_kegiatan with multiple sumber_anggaran
   realisasi_k: number;
   realisasi_rp: number;
   realisasi_fisik: number;
@@ -40,7 +39,6 @@ class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes> implem
   declare target_k: number;
   declare angkas: number;
   declare target_rp: number;
-  declare target_angkas: number | null;
   declare realisasi_k: number;
   declare realisasi_rp: number;
   declare realisasi_fisik: number;
@@ -122,11 +120,6 @@ Laporan.init(
     target_rp: {
       type: DataTypes.BIGINT,
       allowNull: false,
-    },
-    target_angkas: {
-      type: DataTypes.BIGINT,
-      allowNull: true, // null = auto from PDF, value = manual input
-      defaultValue: null,
     },
     realisasi_k: {
       type: DataTypes.INTEGER,

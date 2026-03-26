@@ -508,10 +508,10 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
                 grouped.set(subKegiatanId, {
                     id_sub_kegiatan: subKegiatanId,
                     subKegiatan: record.subKegiatan,
-                    target_angkas: 0,
+                    angkas: 0,
                 });
             }
-            grouped.get(subKegiatanId).target_angkas += nilai;
+            grouped.get(subKegiatanId).angkas += nilai;
         }
         res.json({
             tahun: targetTahun,

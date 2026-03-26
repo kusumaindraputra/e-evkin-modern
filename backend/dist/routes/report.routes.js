@@ -176,6 +176,7 @@ router.get('/by-sumber-anggaran', auth_1.authenticate, authorize_1.authorizeAdmi
                     model: SumberAnggaran_1.default,
                     as: 'sumberAnggaran',
                     attributes: ['id_sumber', 'sumber'],
+                    required: true, // Exclude records with NULL id_sumber_anggaran
                 },
             ],
             group: [

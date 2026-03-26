@@ -8,13 +8,8 @@ import { getDashboardStats, getBudgetMonthly, getTop10Absorption, getBottom10Abs
 const router = Router();
 
 // Get all submitted laporan grouped by puskesmas for admin verification
-router.get('/verifikasi', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/verifikasi', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { puskesmas, bulan, tahun, page = 1, pageSize = 10 } = req.query;
 
@@ -107,13 +102,8 @@ router.get('/verifikasi', authenticate, async (req: Request, res: Response): Pro
 });
 
 // Get laporan detail for specific puskesmas + bulan + tahun
-router.get('/laporan/:userId/:bulan/:tahun', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/laporan/:userId/:bulan/:tahun', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { userId, bulan, tahun } = req.params;
     const { status, page = 1, pageSize = 50 } = req.query;
@@ -173,13 +163,8 @@ router.get('/laporan/:userId/:bulan/:tahun', authenticate, async (req: Request, 
 });
 
 // Return laporan back to puskesmas for correction
-router.put('/laporan/:id/return', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.put('/laporan/:id/return', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { id } = req.params;
     const { catatan } = req.body;
@@ -211,13 +196,8 @@ router.put('/laporan/:id/return', authenticate, async (req: Request, res: Respon
 });
 
 // Bulk return laporan back to puskesmas
-router.post('/laporan/bulk-return', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.post('/laporan/bulk-return', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { userId, bulan, tahun, catatan } = req.body;
 
@@ -252,13 +232,8 @@ router.post('/laporan/bulk-return', authenticate, async (req: Request, res: Resp
 });
 
 // Get dashboard statistics for admin (CACHED)
-router.get('/dashboard/stats', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/stats', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun, bulan } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
@@ -280,13 +255,8 @@ router.get('/dashboard/stats', authenticate, async (req: Request, res: Response)
 });
 
 // Get budget realization per month for dashboard (with month filter) - CACHED
-router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/budget-monthly', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun, bulan } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
@@ -314,13 +284,8 @@ router.get('/dashboard/budget-monthly', authenticate, async (req: Request, res: 
 });
 
 // Get top 10 budget absorption for dashboard - CACHED
-router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/top-10-absorption', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun, bulan } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
@@ -347,13 +312,8 @@ router.get('/dashboard/top-10-absorption', authenticate, async (req: Request, re
 });
 
 // Get bottom 10 budget absorption for dashboard - CACHED
-router.get('/dashboard/bottom-10-absorption', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/bottom-10-absorption', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun, bulan } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
@@ -380,13 +340,8 @@ router.get('/dashboard/bottom-10-absorption', authenticate, async (req: Request,
 });
 
 // Get budget realization year to date for dashboard
-router.get('/dashboard/budget-ytd', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/budget-ytd', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();
@@ -522,49 +477,6 @@ const getCumulativeAngkasForMonth = (allAngkas: any[], year: number, monthNum: n
   return total;
 };
 
-// Legacy helpers for backward compatibility
-const _getLatestTargets = async (whereClause: any) => {
-  const allTargets = await SubKegiatanTarget.findAll({
-    where: whereClause,
-    include: [{
-      model: SubKegiatan,
-      as: 'subKegiatan',
-      attributes: ['id_sub_kegiatan', 'kegiatan']
-    }],
-    order: [['created_at', 'DESC']],
-    raw: true,
-    nest: true
-  });
-
-  const grouped = new Map();
-  allTargets.forEach((t: any) => {
-    const key = `${t.user_id}_${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, t);
-    }
-  });
-
-  return Array.from(grouped.values());
-};
-
-const _getLatestAngkas = async (whereClause: any) => {
-  const allAngkas = await AnggaranKas.findAll({
-    where: whereClause,
-    order: [['created_at', 'DESC']],
-    raw: true
-  });
-
-  const grouped = new Map();
-  allAngkas.forEach((a: any) => {
-    const key = `${a.user_id}_${a.kode_rekening}_${a.id_sumber_anggaran}_${a.tahun}_${a.bulan}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, a);
-    }
-  });
-
-  return Array.from(grouped.values());
-};
-
 // Enhanced endpoint for chart data
 router.get('/dashboard/chart-data', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
@@ -691,13 +603,8 @@ router.get('/dashboard/chart-data', authenticate, authorizeAdmin, async (req: Re
 });
 
 // Get puskesmas reporting details (who has reported and who hasn't)
-router.get('/dashboard/puskesmas-reporting-details', authenticate, async (req: Request, res: Response): Promise<void> => {
+router.get('/dashboard/puskesmas-reporting-details', authenticate, authorizeAdmin, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userRole = (req as any).user?.role;
-    if (userRole !== 'admin') {
-      res.status(403).json({ message: 'Access denied. Admin only.' });
-      return;
-    }
 
     const { tahun, bulan } = req.query;
     const currentYear = tahun ? parseInt(tahun as string) : new Date().getFullYear();

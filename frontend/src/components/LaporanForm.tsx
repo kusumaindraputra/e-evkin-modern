@@ -440,14 +440,11 @@ const LaporanForm: React.FC<LaporanFormProps> = ({ initialValues, onSubmit, onCa
                   name={['sumberAnggaranData', sa.value, 'realisasi_rp']}
                   rules={[
                     { required: true, message: 'Isi realisasi anggaran!' },
-                    () => ({
+                    ({ getFieldValue }) => ({
                       validator(_, value) {
-                        const target = targetData[sa.value];
-                        if (!target) {
-                          return Promise.reject(new Error('Target belum diset untuk sumber anggaran ini'));
-                        }
-                        if (value > target.target_rp) {
-                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi target (${formatNumber(target.target_rp)})`));
+                        const angkasValue = getFieldValue(['sumberAnggaranData', sa.value, 'angkas']);
+                        if (angkasValue !== undefined && angkasValue !== null && value > angkasValue) {
+                          return Promise.reject(new Error(`Realisasi tidak boleh melebihi angkas (${formatNumber(angkasValue)})`));
                         }
                         return Promise.resolve();
                       },

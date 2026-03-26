@@ -9,7 +9,6 @@ interface LaporanAttributes {
     target_k: number;
     angkas: number;
     target_rp: number;
-    target_angkas?: number | null;
     realisasi_k: number;
     realisasi_rp: number;
     realisasi_fisik: number;
@@ -36,7 +35,6 @@ declare class Laporan extends Model<LaporanAttributes, LaporanCreationAttributes
     target_k: number;
     angkas: number;
     target_rp: number;
-    target_angkas: number | null;
     realisasi_k: number;
     realisasi_rp: number;
     realisasi_fisik: number;

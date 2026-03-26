@@ -40,7 +40,7 @@ interface LaporanRow {
   id_satuan?: number; // Read-only dari admin target
   target_k?: number; // Read-only dari admin
   target_rp?: number; // Read-only dari admin
-  target_angkas?: number; // From PDF for single sumber, or manual input for multiple sumber
+  angkas?: number; // From PDF for single sumber, or manual input for multiple sumber
   realisasi_k?: number;
   realisasi_rp?: number;
   realisasi_fisik?: number;
@@ -52,8 +52,8 @@ interface LaporanRow {
   status?: string;
 
   // Angkas handling flag
-  // true = user must enter target_angkas manually (multiple sumber anggaran per sub kegiatan)
-  // false = target_angkas auto-filled from PDF upload (single sumber anggaran)
+  // true = user must enter angkas manually (multiple sumber anggaran per sub kegiatan)
+  // false = angkas auto-filled from PDF upload (single sumber anggaran)
   isManualAngkas?: boolean;
 }
 
@@ -78,7 +78,7 @@ interface ExistingLaporan {
   id: string;
   id_sub_kegiatan: number;
   id_sumber_anggaran: number;
-  target_angkas: string | number | null;
+  angkas: string | number | null;
   realisasi_k: number;
   realisasi_rp: string | number;
   realisasi_fisik: string | number;
@@ -350,7 +350,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       const angkasMap = new Map<number, number>();
       if (angkasRes.data.data) {
         for (const item of angkasRes.data.data) {
-          angkasMap.set(item.id_sub_kegiatan, item.target_angkas || 0);
+          angkasMap.set(item.id_sub_kegiatan, item.angkas || 0);
         }
       }
 
@@ -399,17 +399,17 @@ export const LaporanBulkInputPage: React.FC = () => {
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
-          // Get target_angkas:
+          // Get angkas:
           // - For single sumber: from PDF angkas (by sub_kegiatan only)
           // - For multi sumber: from angkas page (by sub_kegiatan + sumber_anggaran)
-          let targetAngkas: number;
+          let angkasValue: number;
           if (isManualAngkas) {
             // Get cumulative angkas from angkas page (per sumber_anggaran)
             const angkasKey = `${subKegiatanId}-${idSumberAnggaran}`;
-            targetAngkas = angkasFullMap.get(angkasKey) || 0;
+            angkasValue = angkasFullMap.get(angkasKey) || 0;
           } else {
             // Auto-fill from PDF angkas (by sub_kegiatan only)
-            targetAngkas = angkasMap.get(subKegiatanId) || 0;
+            angkasValue = angkasMap.get(subKegiatanId) || 0;
           }
 
           mappedRows.push({
@@ -426,7 +426,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             // Use default satuan (1=Orang) if not set in target
             target_k: target.target_k || 0,
             target_rp: Number(target.target_rp) || 0,
-            target_angkas: targetAngkas,
+            angkas: angkasValue,
             id_satuan: target.id_satuan || 1, // Default to "Orang" if not set
 
             // Flag for angkas handling
@@ -500,7 +500,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     // Warn if multi-sumber sub kegiatan has no angkas data (should be input on angkas page first)
     const rowsToSave = rows.filter((row) => row.id_sumber_anggaran && row.id_satuan);
     const missingAngkas = rowsToSave.filter(
-      (row) => row.isManualAngkas && (!row.target_angkas || row.target_angkas <= 0)
+      (row) => row.isManualAngkas && (!row.angkas || row.angkas <= 0)
     );
 
     if (missingAngkas.length > 0) {
@@ -513,21 +513,16 @@ export const LaporanBulkInputPage: React.FC = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Prepare laporan array for bulk upsert
-      // target_angkas is not saved - it's always calculated from angkas page data
-      // angkas field is set to target_angkas value (angkas = how much can be spent this month)
       const laporanArray = rowsToSave
         .map((row) => ({
-          id: row.laporan_id, // Include ID for update detection
+          id: row.laporan_id,
           id_kegiatan: row.id_kegiatan,
           id_sub_kegiatan: row.id_sub_kegiatan,
           id_sumber_anggaran: row.id_sumber_anggaran,
           id_satuan: row.id_satuan,
           target_k: row.target_k || 0,
-          angkas: row.target_angkas || 0, // angkas = target_angkas (how much can be spent)
+          angkas: row.angkas || 0,
           target_rp: row.target_rp || 0,
-          // target_angkas no longer saved - pulled from angkas page
-          target_angkas: null,
           realisasi_k: row.realisasi_k || 0,
           realisasi_rp: row.realisasi_rp || 0,
           realisasi_fisik: row.realisasi_fisik || 0,
@@ -649,18 +644,15 @@ export const LaporanBulkInputPage: React.FC = () => {
         ),
       },
       {
-        title: 'Target Angkas (Rp)',
-        key: 'target_angkas',
+        title: 'Angkas (Rp)',
+        key: 'angkas',
         width: 150,
-        sorter: (a, b) => (a.target_angkas || 0) - (b.target_angkas || 0),
+        sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
         render: (_: any, record: LaporanRow) => {
-          // Target angkas is always read-only on laporan page
-          // - For single sumber: from PDF upload
-          // - For multi sumber: from angkas page (manual input there)
-          const hasAngkas = record.target_angkas && record.target_angkas > 0;
+          const hasAngkas = record.angkas && record.angkas > 0;
           return (
             <div style={{ textAlign: 'right' }}>
-              {formatNumber(record.target_angkas || 0)}
+              {formatNumber(record.angkas || 0)}
               {record.isManualAngkas && !hasAngkas && (
                 <div style={{ fontSize: '10px', color: '#fa8c16' }}>Belum diinput</div>
               )}
@@ -676,7 +668,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         render: (_: any, record: LaporanRow) => (
           <RealisasiRpInput
             value={record.realisasi_rp}
-            maxValue={record.target_angkas}
+            maxValue={record.angkas}
             disabled={record.status === 'terkirim'}
             onChange={(value) =>
               handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)

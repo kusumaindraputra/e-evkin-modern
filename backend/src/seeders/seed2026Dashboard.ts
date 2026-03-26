@@ -155,7 +155,6 @@ function generateLaporanData(targets: any[]) {
         id_satuan: target.id_satuan,
         target_k: monthlyTargetK * (bulanIndex + 1), // Cumulative
         target_rp: target.target_rp, // Yearly target
-        target_angkas: angkas, // Manual input sama dengan angkas
         angkas: angkas,
         realisasi_k: realisasiK,
         realisasi_rp: realisasiRp,

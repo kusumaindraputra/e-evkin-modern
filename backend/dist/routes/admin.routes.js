@@ -3,17 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const models_1 = require("../models");
 const auth_1 = require("../middleware/auth");
+const authorize_1 = require("../middleware/authorize");
 const sequelize_1 = require("sequelize");
 const dashboardService_1 = require("../services/dashboardService");
 const router = (0, express_1.Router)();
 // Get all submitted laporan grouped by puskesmas for admin verification
-router.get('/verifikasi', auth_1.authenticate, async (req, res) => {
+router.get('/verifikasi', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { puskesmas, bulan, tahun, page = 1, pageSize = 10 } = req.query;
         // Validate and parse numeric parameters
         const parsedTahun = tahun ? parseInt(tahun, 10) : undefined;
@@ -99,13 +95,8 @@ router.get('/verifikasi', auth_1.authenticate, async (req, res) => {
     }
 });
 // Get laporan detail for specific puskesmas + bulan + tahun
-router.get('/laporan/:userId/:bulan/:tahun', auth_1.authenticate, async (req, res) => {
+router.get('/laporan/:userId/:bulan/:tahun', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { userId, bulan, tahun } = req.params;
         const { status, page = 1, pageSize = 50 } = req.query;
         const where = {
@@ -160,13 +151,8 @@ router.get('/laporan/:userId/:bulan/:tahun', auth_1.authenticate, async (req, re
     }
 });
 // Return laporan back to puskesmas for correction
-router.put('/laporan/:id/return', auth_1.authenticate, async (req, res) => {
+router.put('/laporan/:id/return', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { id } = req.params;
         const { catatan } = req.body;
         const laporan = await models_1.Laporan.findByPk(id);
@@ -193,13 +179,8 @@ router.put('/laporan/:id/return', auth_1.authenticate, async (req, res) => {
     }
 });
 // Bulk return laporan back to puskesmas
-router.post('/laporan/bulk-return', auth_1.authenticate, async (req, res) => {
+router.post('/laporan/bulk-return', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { userId, bulan, tahun, catatan } = req.body;
         if (!userId || !bulan || !tahun) {
             res.status(400).json({ message: 'userId, bulan, dan tahun wajib diisi' });
@@ -227,13 +208,8 @@ router.post('/laporan/bulk-return', auth_1.authenticate, async (req, res) => {
     }
 });
 // Get dashboard statistics for admin (CACHED)
-router.get('/dashboard/stats', auth_1.authenticate, async (req, res) => {
+router.get('/dashboard/stats', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { tahun, bulan } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         const currentMonth = bulan || undefined;
@@ -252,13 +228,8 @@ router.get('/dashboard/stats', auth_1.authenticate, async (req, res) => {
     }
 });
 // Get budget realization per month for dashboard (with month filter) - CACHED
-router.get('/dashboard/budget-monthly', auth_1.authenticate, async (req, res) => {
+router.get('/dashboard/budget-monthly', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { tahun, bulan } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         const currentMonth = bulan;
@@ -282,13 +253,8 @@ router.get('/dashboard/budget-monthly', auth_1.authenticate, async (req, res) =>
     }
 });
 // Get top 10 budget absorption for dashboard - CACHED
-router.get('/dashboard/top-10-absorption', auth_1.authenticate, async (req, res) => {
+router.get('/dashboard/top-10-absorption', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { tahun, bulan } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         const currentMonth = bulan;
@@ -311,13 +277,8 @@ router.get('/dashboard/top-10-absorption', auth_1.authenticate, async (req, res)
     }
 });
 // Get bottom 10 budget absorption for dashboard - CACHED
-router.get('/dashboard/bottom-10-absorption', auth_1.authenticate, async (req, res) => {
+router.get('/dashboard/bottom-10-absorption', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { tahun, bulan } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         const currentMonth = bulan;
@@ -340,13 +301,8 @@ router.get('/dashboard/bottom-10-absorption', auth_1.authenticate, async (req, r
     }
 });
 // Get budget realization year to date for dashboard
-router.get('/dashboard/budget-ytd', auth_1.authenticate, async (req, res) => {
+router.get('/dashboard/budget-ytd', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
-        }
         const { tahun } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         // Query untuk mendapatkan total target_rp dan realisasi_rp per bulan
@@ -404,14 +360,178 @@ router.get('/dashboard/budget-ytd', auth_1.authenticate, async (req, res) => {
         res.status(500).json({ message: 'Gagal mengambil data anggaran', error: error.message });
     }
 });
-// Get puskesmas reporting details (who has reported and who hasn't)
-router.get('/dashboard/puskesmas-reporting-details', auth_1.authenticate, async (req, res) => {
-    try {
-        const userRole = req.user?.role;
-        if (userRole !== 'admin') {
-            res.status(403).json({ message: 'Access denied. Admin only.' });
-            return;
+// Get comprehensive chart data with filters for dashboard
+// Helper to get latest targets
+// Helper to get all targets with full history for time-based filtering
+const getAllTargetsWithHistory = async (whereClause) => {
+    const allTargets = await models_1.SubKegiatanTarget.findAll({
+        where: whereClause,
+        include: [{
+                model: models_1.SubKegiatan,
+                as: 'subKegiatan',
+                attributes: ['id_sub_kegiatan', 'kegiatan']
+            }],
+        order: [['created_at', 'ASC']], // ASC to process oldest first
+        raw: true,
+        nest: true
+    });
+    return allTargets;
+};
+// Helper to get anggaran valid at a specific month based on createdAt history
+const getAnggaranForMonth = (allTargets, year, monthNum) => {
+    // Get the end of the month as cutoff date
+    const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
+    // Group by unique key and get latest record created before or during this month
+    const grouped = new Map();
+    allTargets.forEach((t) => {
+        const createdAt = new Date(t.createdAt); // Use camelCase as returned by Sequelize
+        if (createdAt <= cutoffDate) {
+            const key = `${t.user_id}_${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
+            // Since sorted ASC, later records overwrite earlier ones
+            grouped.set(key, t);
         }
+    });
+    return Array.from(grouped.values());
+};
+// Helper to get all angkas with full history
+const getAllAngkasWithHistory = async (whereClause) => {
+    const allAngkas = await models_1.AnggaranKas.findAll({
+        where: whereClause,
+        order: [['created_at', 'ASC']], // ASC to process oldest first
+        raw: true
+    });
+    return allAngkas;
+};
+// Helper to get cumulative angkas up to a specific month (sum Jan to monthNum)
+const getCumulativeAngkasForMonth = (allAngkas, year, monthNum) => {
+    // Get the end of the month as cutoff date
+    const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+    // First, get latest angkas per unique key per month (for months 1 to monthNum)
+    const latestPerKeyPerMonth = new Map(); // key_month -> record
+    allAngkas.forEach((a) => {
+        const createdAt = new Date(a.createdAt); // Use camelCase as returned by Sequelize
+        if (createdAt <= cutoffDate && a.bulan <= monthNum) {
+            const keyMonth = `${a.user_id}_${a.kode_rekening}_${a.id_sumber_anggaran}_${a.tahun}_${a.bulan}`;
+            // Since sorted ASC, later records overwrite earlier ones
+            latestPerKeyPerMonth.set(keyMonth, a);
+        }
+    });
+    // Sum all latest values across all months (1 to monthNum)
+    let total = 0;
+    latestPerKeyPerMonth.forEach((record) => {
+        total += Number(record.nilai) || 0;
+    });
+    return total;
+};
+// Enhanced endpoint for chart data
+router.get('/dashboard/chart-data', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
+        const { tahun, userId, sumberAnggaran, subKegiatan } = req.query;
+        const yearParsed = parseInt(tahun) || new Date().getFullYear();
+        const sumberAnggaranId = sumberAnggaran ? parseInt(sumberAnggaran) : null;
+        const subKegiatanId = subKegiatan ? parseInt(subKegiatan) : null;
+        // Base filters (no month filter - we fetch all data and process per month)
+        const targetFilter = { tahun: yearParsed };
+        const angkasFilter = { tahun: yearParsed };
+        // Include all submitted statuses for comprehensive dashboard view
+        const laporanFilter = {
+            tahun: yearParsed,
+            status: { [sequelize_1.Op.in]: ['terkirim', 'menunggu', 'diverifikasi'] }
+        };
+        if (userId) {
+            targetFilter.user_id = userId;
+            angkasFilter.user_id = userId;
+            laporanFilter.user_id = userId;
+        }
+        // Add sumber anggaran filter
+        if (sumberAnggaranId) {
+            targetFilter.id_sumber_anggaran = sumberAnggaranId;
+            angkasFilter.id_sumber_anggaran = sumberAnggaranId;
+            laporanFilter.id_sumber_anggaran = sumberAnggaranId;
+        }
+        // Add sub kegiatan filter
+        if (subKegiatanId) {
+            targetFilter.id_sub_kegiatan = subKegiatanId;
+            angkasFilter.id_sub_kegiatan = subKegiatanId;
+            laporanFilter.id_sub_kegiatan = subKegiatanId;
+        }
+        // Fetch all data with history for time-based processing
+        const [allTargets, allAngkas, laporanData] = await Promise.all([
+            getAllTargetsWithHistory(targetFilter),
+            getAllAngkasWithHistory(angkasFilter),
+            models_1.Laporan.findAll({
+                where: laporanFilter,
+                include: [{
+                        model: models_1.SubKegiatan,
+                        as: 'subKegiatan',
+                        attributes: ['id_sub_kegiatan', 'kegiatan']
+                    }],
+                raw: true,
+                nest: true
+            })
+        ]);
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        // First pass: calculate raw values per month
+        const rawData = months.map((monthName, index) => {
+            const monthNum = index + 1;
+            // Get anggaran valid at this month (based on createdAt history)
+            const targetsForMonth = getAnggaranForMonth(allTargets, yearParsed, monthNum);
+            const anggaranForMonth = targetsForMonth.reduce((sum, t) => sum + (Number(t.target_rp) || 0), 0);
+            // Get CUMULATIVE angkas from Jan to this month
+            const cumulativeAngkas = getCumulativeAngkasForMonth(allAngkas, yearParsed, monthNum);
+            // Sum Realisasi for this month only
+            const laporanForMonth = laporanData.filter((l) => l.bulan === monthName);
+            const realisasiRp = laporanForMonth.reduce((sum, l) => sum + (Number(l.realisasi_rp) || 0), 0);
+            // Average physical realization for this month
+            const totalFisik = laporanForMonth.reduce((sum, l) => sum + (Number(l.realisasi_fisik) || 0), 0);
+            const countFisik = laporanForMonth.length;
+            const avgFisik = countFisik > 0 ? totalFisik / countFisik : 0;
+            return {
+                label: monthName,
+                anggaran: anggaranForMonth,
+                angkas: cumulativeAngkas,
+                realisasi_anggaran: realisasiRp,
+                realisasi_fisik: Math.round(avgFisik * 100) / 100
+            };
+        });
+        // Second pass: make realisasi cumulative (carry forward - at least same as previous month)
+        const processedData = rawData.map((data, index) => {
+            if (index === 0)
+                return data;
+            const prevData = rawData.slice(0, index);
+            // Cumulative realisasi anggaran: sum of all months up to current
+            const cumulativeRealisasiAnggaran = prevData.reduce((sum, d) => sum + d.realisasi_anggaran, 0) + data.realisasi_anggaran;
+            // For realisasi fisik: use the maximum value seen so far (carry forward)
+            const maxPrevFisik = Math.max(...prevData.map(d => d.realisasi_fisik), 0);
+            const cumulativeRealisasiFisik = Math.max(maxPrevFisik, data.realisasi_fisik);
+            return {
+                ...data,
+                realisasi_anggaran: cumulativeRealisasiAnggaran,
+                realisasi_fisik: Math.round(cumulativeRealisasiFisik * 100) / 100
+            };
+        });
+        // Fix first month to be itself (no accumulation needed)
+        if (processedData.length > 0) {
+            processedData[0] = rawData[0];
+        }
+        res.json({
+            success: true,
+            data: processedData,
+            debug: {
+                targetsCount: allTargets.length,
+                angkasCount: allAngkas.length,
+                laporanCount: laporanData.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error in chart data:', error);
+        res.status(500).json({ message: 'Gagal mengambil data chart', error: error.message });
+    }
+});
+// Get puskesmas reporting details (who has reported and who hasn't)
+router.get('/dashboard/puskesmas-reporting-details', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
+    try {
         const { tahun, bulan } = req.query;
         const currentYear = tahun ? parseInt(tahun) : new Date().getFullYear();
         const currentMonth = bulan || undefined;

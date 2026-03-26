@@ -614,23 +614,23 @@ router.get('/by-sub-kegiatan', authenticate, async (req: Request, res: Response)
     const grouped = new Map<number, {
       id_sub_kegiatan: number;
       subKegiatan: any;
-      target_angkas: number;
+      angkas: number;
     }>();
 
     for (const record of data) {
       // Use getDataValue to avoid Sequelize public class field issue
       const subKegiatanId = record.getDataValue('id_sub_kegiatan')!;
       const nilai = Number(record.getDataValue('nilai')) || 0;
-      
+
       if (!grouped.has(subKegiatanId)) {
         grouped.set(subKegiatanId, {
           id_sub_kegiatan: subKegiatanId,
           subKegiatan: (record as any).subKegiatan,
-          target_angkas: 0,
+          angkas: 0,
         });
       }
 
-      grouped.get(subKegiatanId)!.target_angkas += nilai;
+      grouped.get(subKegiatanId)!.angkas += nilai;
     }
 
     res.json({

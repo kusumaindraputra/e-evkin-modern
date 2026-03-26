@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app from '../../app';
 import { Laporan, User, SubKegiatanTarget, SubKegiatan } from '../../models';
+import PuskesmasEditPermission from '../../models/PuskesmasEditPermission';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
 
@@ -57,6 +58,24 @@ describe('Laporan Routes Security Tests', () => {
       config.jwt.secret,
       { expiresIn: '1h' }
     );
+
+    // Ensure edit permission exists for laporan scope (global, for test years)
+    for (const tahun of [2025, 2026]) {
+      const existingPermission = await PuskesmasEditPermission.findOne({
+        where: { scope: 'laporan', tahun, user_id: null, bulan: null },
+      });
+      if (!existingPermission) {
+        await PuskesmasEditPermission.create({
+          scope: 'laporan',
+          tahun,
+          user_id: null,
+          enabled: true,
+          created_by: adminUser.id,
+        });
+      } else if (!existingPermission.enabled) {
+        await existingPermission.update({ enabled: true });
+      }
+    }
 
     // Create test laporan
     testLaporan = await Laporan.findOne({ where: { user_id: puskesmasUser.id } });

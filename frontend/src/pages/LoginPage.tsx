@@ -28,7 +28,7 @@ export const LoginPage: React.FC = () => {
       });
 
       const { token, user } = response.data;
-      
+
       login(user, token);
       message.success('Login berhasil!');
       navigate('/dashboard');
@@ -38,11 +38,6 @@ export const LoginPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const quickLogin = (username: string, password: string) => {
-    form.setFieldsValue({ username, password });
-    form.submit();
   };
 
   return (
@@ -122,36 +117,6 @@ export const LoginPage: React.FC = () => {
                 </Button>
               </Form.Item>
 
-              {/* Quick Login Buttons for Testing */}
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
-                  Quick Login (Testing):
-                </Text>
-                <Row gutter={8}>
-                  <Col span={12}>
-                    <Button
-                      size="small"
-                      block
-                      onClick={() => quickLogin('dinkes', 'dinkes123')}
-                      disabled={loading}
-                      style={{ fontSize: 12 }}
-                    >
-                      👤 Admin Dinkes
-                    </Button>
-                  </Col>
-                  <Col span={12}>
-                    <Button
-                      size="small"
-                      block
-                      onClick={() => quickLogin('bojonggede', 'bogorkab')}
-                      disabled={loading}
-                      style={{ fontSize: 12 }}
-                    >
-                      🏥 Puskesmas Bojonggede
-                    </Button>
-                  </Col>
-                </Row>
-              </div>
             </Form>
 
             <div style={{ textAlign: 'center', marginTop: 24 }}>

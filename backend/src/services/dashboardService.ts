@@ -408,10 +408,12 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
         }
       });
 
-      // Find sub_kegiatan IDs that have MANUAL entries
+      // Find sub_kegiatan IDs that have MANUAL/ADMIN-MANUAL entries (split by sumber anggaran).
+      // When these exist, the original PDF entry (combined/unsplit) must be excluded.
+      const isManualEntry = (kodeRek: string) => kodeRek?.startsWith('MANUAL-') || kodeRek?.startsWith('ADMIN-MANUAL-');
       const subKegWithManual = new Set<number>();
       latestPerKeyPerMonth.forEach((record: any) => {
-        if (record.kode_rekening?.startsWith('MANUAL-') && record.id_sub_kegiatan) {
+        if (isManualEntry(record.kode_rekening) && record.id_sub_kegiatan) {
           subKegWithManual.add(record.id_sub_kegiatan);
         }
       });
@@ -419,7 +421,7 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
       // Sum values, excluding non-MANUAL entries for sub_kegiatan that have MANUAL splits
       let total = 0;
       latestPerKeyPerMonth.forEach((record: any) => {
-        if (subKegWithManual.has(record.id_sub_kegiatan) && !record.kode_rekening?.startsWith('MANUAL-')) {
+        if (subKegWithManual.has(record.id_sub_kegiatan) && !isManualEntry(record.kode_rekening)) {
           return; // skip PDF entry — MANUAL split replaces it
         }
         total += Number(record.nilai) || 0;

@@ -609,6 +609,17 @@ router.get('/by-sub-kegiatan', authenticate, async (req: Request, res: Response)
     // Use only latest records for grouping
     const data = Array.from(latestMap.values());
 
+    // Find sub_kegiatan IDs that have MANUAL/ADMIN-MANUAL entries (split by sumber anggaran).
+    // When these exist, the original PDF entry (combined/unsplit) must be excluded to avoid double-counting.
+    const subKegWithManual = new Set<number>();
+    for (const record of data) {
+      const kodeRek = record.getDataValue('kode_rekening') || '';
+      if (kodeRek.startsWith('MANUAL-') || kodeRek.startsWith('ADMIN-MANUAL-')) {
+        const subKegId = record.getDataValue('id_sub_kegiatan');
+        if (subKegId) subKegWithManual.add(subKegId);
+      }
+    }
+
     // Group by sub_kegiatan ONLY (NOT id_sumber_anggaran) and sum
     // This allows angkas to match with any target regardless of sumber_anggaran
     const grouped = new Map<number, {
@@ -620,7 +631,13 @@ router.get('/by-sub-kegiatan', authenticate, async (req: Request, res: Response)
     for (const record of data) {
       // Use getDataValue to avoid Sequelize public class field issue
       const subKegiatanId = record.getDataValue('id_sub_kegiatan')!;
+      const kodeRek = record.getDataValue('kode_rekening') || '';
       const nilai = Number(record.getDataValue('nilai')) || 0;
+
+      // Skip non-MANUAL entries if this sub_kegiatan has MANUAL splits
+      if (subKegWithManual.has(subKegiatanId) && !kodeRek.startsWith('MANUAL-') && !kodeRek.startsWith('ADMIN-MANUAL-')) {
+        continue;
+      }
 
       if (!grouped.has(subKegiatanId)) {
         grouped.set(subKegiatanId, {

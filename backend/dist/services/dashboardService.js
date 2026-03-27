@@ -339,6 +339,8 @@ async function getChartData(tahun, userId, sumberAnggaranId, subKegiatanId) {
             return Array.from(grouped.values());
         };
         // Helper: cumulative angkas up to month
+        // When a sub_kegiatan has MANUAL entries (split by sumber anggaran),
+        // exclude the original PDF entry (combined/unsplit) to avoid double-counting
         const getCumulativeAngkas = (angkas, year, monthNum) => {
             const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
             const latestPerKeyPerMonth = new Map();
@@ -349,8 +351,21 @@ async function getChartData(tahun, userId, sumberAnggaranId, subKegiatanId) {
                     latestPerKeyPerMonth.set(keyMonth, a);
                 }
             });
+            // Find sub_kegiatan IDs that have MANUAL entries
+            const subKegWithManual = new Set();
+            latestPerKeyPerMonth.forEach((record) => {
+                if (record.kode_rekening?.startsWith('MANUAL-') && record.id_sub_kegiatan) {
+                    subKegWithManual.add(record.id_sub_kegiatan);
+                }
+            });
+            // Sum values, excluding non-MANUAL entries for sub_kegiatan that have MANUAL splits
             let total = 0;
-            latestPerKeyPerMonth.forEach((record) => { total += Number(record.nilai) || 0; });
+            latestPerKeyPerMonth.forEach((record) => {
+                if (subKegWithManual.has(record.id_sub_kegiatan) && !record.kode_rekening?.startsWith('MANUAL-')) {
+                    return; // skip PDF entry — MANUAL split replaces it
+                }
+                total += Number(record.nilai) || 0;
+            });
             return total;
         };
         const rawData = months.map((monthName, index) => {

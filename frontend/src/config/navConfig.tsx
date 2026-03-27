@@ -22,6 +22,12 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
     // Puskesmas Items
     {
+        key: '/puskesmas/dashboard',
+        icon: <DashboardOutlined />,
+        label: 'Dashboard',
+        roles: ['puskesmas'],
+    },
+    {
         key: '/laporan',
         icon: <FileTextOutlined />,
         label: 'Laporan Kinerja',

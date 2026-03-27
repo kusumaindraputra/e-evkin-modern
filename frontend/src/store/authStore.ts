@@ -7,6 +7,7 @@ interface User {
   nama: string;
   role: 'puskesmas' | 'admin';
   kode_puskesmas?: string;
+  nama_puskesmas?: string;
 }
 
 interface AuthState {

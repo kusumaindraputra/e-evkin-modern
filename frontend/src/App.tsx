@@ -6,8 +6,9 @@ import { Layout } from './components/Layout';
 import { useAuthStore } from './store/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Lazy load dashboard (shared between roles)
+// Lazy load dashboards
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PuskesmasDashboardPage = lazy(() => import('./pages/PuskesmasDashboardPage'));
 
 // Lazy load puskesmas pages for code splitting
 const LaporanPage = lazy(() => import('./pages/LaporanPage'));
@@ -56,7 +57,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 // Root redirect component
 const RootRedirect = () => {
   const { user } = useAuthStore();
-  const redirectTo = user?.role === 'admin' ? '/dashboard' : '/laporan';
+  const redirectTo = user?.role === 'admin' ? '/dashboard' : '/puskesmas/dashboard';
   return <Navigate to={redirectTo} replace />;
 };
 
@@ -95,6 +96,14 @@ function App() {
             <AdminRoute>
               <PageWrapper component={DashboardPage} />
             </AdminRoute>
+          }
+        />
+        <Route
+          path="/puskesmas/dashboard"
+          element={
+            <PuskesmasRoute>
+              <PageWrapper component={PuskesmasDashboardPage} />
+            </PuskesmasRoute>
           }
         />
         <Route

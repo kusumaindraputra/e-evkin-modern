@@ -26,6 +26,7 @@ import chatRoutes from './routes/chat.routes';
 import targetRoutes from './routes/target.routes';
 import targetUploadRoutes from './routes/target-upload.routes';
 import angkasRoutes from './routes/angkas.routes';
+import puskesmasDashboardRoutes from './routes/puskesmas-dashboard.routes';
 
 const app: Application = express();
 
@@ -113,6 +114,7 @@ app.use('/api/admin', chatRoutes);
 app.use('/api/target', targetRoutes);
 app.use('/api/target', targetUploadRoutes);
 app.use('/api/angkas', angkasRoutes);
+app.use('/api/puskesmas/dashboard', puskesmasDashboardRoutes);
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);

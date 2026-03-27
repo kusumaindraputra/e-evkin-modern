@@ -35,6 +35,7 @@ export default defineConfig({
             './src/pages/PuskesmasTargetPage.tsx',
             './src/pages/PuskesmasTargetKinerjaPage.tsx',
             './src/pages/PuskesmasAngkasPage.tsx',
+            './src/pages/PuskesmasDashboardPage.tsx',
           ],
 
           // Admin pages chunk (lazy loaded)

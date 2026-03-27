@@ -31,6 +31,7 @@ const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const target_upload_routes_1 = __importDefault(require("./routes/target-upload.routes"));
 const angkas_routes_1 = __importDefault(require("./routes/angkas.routes"));
+const puskesmas_dashboard_routes_1 = __importDefault(require("./routes/puskesmas-dashboard.routes"));
 const app = (0, express_1.default)();
 // Trust proxy (behind nginx)
 app.set('trust proxy', 1);
@@ -107,6 +108,7 @@ app.use('/api/admin', chat_routes_1.default);
 app.use('/api/target', target_routes_1.default);
 app.use('/api/target', target_upload_routes_1.default);
 app.use('/api/angkas', angkas_routes_1.default);
+app.use('/api/puskesmas/dashboard', puskesmas_dashboard_routes_1.default);
 // 404 handler for unmatched routes
 app.use(errorHandler_1.notFoundHandler);
 // Error handling

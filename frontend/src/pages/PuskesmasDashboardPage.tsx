@@ -359,12 +359,14 @@ const PuskesmasDashboardPage: React.FC = () => {
 
             {loadingChart ? (
               <ChartSkeleton height={500} />
-            ) : chartData.length > 0 ? (
+            ) : chartData.length > 0 ? (() => {
+              const maxRpValue = Math.max(...chartData.map(d => Math.max(d.anggaran, d.angkas, d.realisasi_anggaran)));
+              return (
               <ResponsiveContainer width="100%" height={500}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="label" angle={0} textAnchor="middle" height={30} interval={0} tick={{ fontSize: 12 }} />
-                  <YAxis yAxisId="left" tickFormatter={(v) => `Rp ${formatCurrencyAbbreviated(v)}`} />
+                  <YAxis yAxisId="left" domain={[0, maxRpValue || 'auto']} tickFormatter={(v) => `Rp ${formatCurrencyAbbreviated(v)}`} />
                   <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
                     formatter={(value: number, name: string) => {
@@ -380,7 +382,8 @@ const PuskesmasDashboardPage: React.FC = () => {
                   {showRealisasiFisik && <Line yAxisId="right" type="monotone" dataKey="realisasi_fisik" name="Realisasi Fisik (%)" stroke="#fa8c16" strokeWidth={2} dot={{ fill: '#fa8c16', r: 4 }} activeDot={{ r: 6 }} />}
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
+              );
+            })() : (
               <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Text type="secondary">Tidak ada data untuk periode ini</Text>
               </div>

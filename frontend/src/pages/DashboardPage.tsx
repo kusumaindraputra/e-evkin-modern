@@ -689,7 +689,9 @@ export const DashboardPage: React.FC = () => {
               {/* Chart */}
               {loadingChartData ? (
                 <ChartSkeleton height={500} />
-              ) : chartData.length > 0 ? (
+              ) : chartData.length > 0 ? (() => {
+                const maxRpValue = Math.max(...chartData.map(d => Math.max(d.anggaran, d.angkas, d.realisasi_anggaran)));
+                return (
                 <ResponsiveContainer width="100%" height={500}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -703,6 +705,7 @@ export const DashboardPage: React.FC = () => {
                     />
                     <YAxis
                       yAxisId="left"
+                      domain={[0, maxRpValue || 'auto']}
                       tickFormatter={(value) => `Rp ${formatCurrencyAbbreviated(value)}`}
                     />
                     <YAxis
@@ -771,7 +774,8 @@ export const DashboardPage: React.FC = () => {
                     )}
                   </LineChart>
                 </ResponsiveContainer>
-              ) : (
+                );
+              })() : (
                 <div style={{ height: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Text type="secondary">Tidak ada data untuk periode ini</Text>
                 </div>

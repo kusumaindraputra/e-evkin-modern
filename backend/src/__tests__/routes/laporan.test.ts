@@ -189,7 +189,7 @@ describe('Laporan Routes Security Tests', () => {
         .set('Authorization', `Bearer ${puskesmasToken}`);
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Forbidden');
+      expect(response.body.error).toBe('Akses ditolak');
     });
 
     it('should allow admin to access any laporan', async () => {
@@ -291,7 +291,7 @@ describe('Laporan Routes Security Tests', () => {
         .send({ target_k: 888 });
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Forbidden');
+      expect(response.body.error).toBe('Akses ditolak');
     });
 
     it('should allow admin to update any laporan', async () => {
@@ -370,7 +370,7 @@ describe('Laporan Routes Security Tests', () => {
         .set('Authorization', `Bearer ${puskesmasToken}`);
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Forbidden');
+      expect(response.body.error).toBe('Akses ditolak');
     });
 
     it('should allow admin to delete any laporan', async () => {

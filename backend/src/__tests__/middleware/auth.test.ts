@@ -45,7 +45,7 @@ describe('Authentication Middleware Tests', () => {
         .set('Authorization', `Bearer ${invalidToken}`);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toContain('Invalid token');
+      expect(response.body.message).toContain('Token tidak valid');
     });
 
     it('should deny access with expired token', async () => {
@@ -54,7 +54,7 @@ describe('Authentication Middleware Tests', () => {
         .set('Authorization', `Bearer ${expiredToken}`);
 
       expect(response.status).toBe(401);
-      expect(response.body.message).toContain('Invalid token');
+      expect(response.body.message).toContain('Token tidak valid');
     });
 
     it('should allow access with valid token', async () => {

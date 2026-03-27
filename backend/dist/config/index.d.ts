@@ -1,7 +1,7 @@
 export declare const config: {
     env: string;
     port: number;
-    corsOrigin: string;
+    corsOrigin: string[];
     database: {
         host: string;
         port: number;

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { LaporanService } from '../services/laporan.service';
 
+const MAX_BULK_SIZE = 500;
+
 export class LaporanController {
 
     static async findAll(req: Request, res: Response): Promise<void> {
@@ -83,6 +85,15 @@ export class LaporanController {
                 return;
             }
 
+            if (!Array.isArray(req.body.laporanArray) || req.body.laporanArray.length === 0) {
+                res.status(400).json({ success: false, error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+                return;
+            }
+            if (req.body.laporanArray.length > MAX_BULK_SIZE) {
+                res.status(400).json({ success: false, error: `Maksimal ${MAX_BULK_SIZE} item per batch` });
+                return;
+            }
+
             const result = await LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
             res.status(201).json({
                 success: true,
@@ -103,6 +114,15 @@ export class LaporanController {
         try {
             if (!req.user) {
                 res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+
+            if (!Array.isArray(req.body.laporanArray) || req.body.laporanArray.length === 0) {
+                res.status(400).json({ success: false, error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+                return;
+            }
+            if (req.body.laporanArray.length > MAX_BULK_SIZE) {
+                res.status(400).json({ success: false, error: `Maksimal ${MAX_BULK_SIZE} item per batch` });
                 return;
             }
 

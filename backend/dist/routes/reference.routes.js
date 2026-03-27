@@ -1,14 +1,42 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const crypto_1 = __importDefault(require("crypto"));
 const models_1 = require("../models");
 const auth_1 = require("../middleware/auth");
 const cacheService_1 = require("../services/cacheService");
 const router = (0, express_1.Router)();
 // Apply authentication to all routes
 router.use(auth_1.authenticate);
+/**
+ * Generate ETag from data content for HTTP caching
+ */
+function generateETag(data) {
+    const hash = crypto_1.default.createHash('md5').update(JSON.stringify(data)).digest('hex');
+    return `"${hash}"`;
+}
+/**
+ * Send response with HTTP cache headers.
+ * Returns 304 Not Modified if client's cached version matches.
+ */
+function sendCached(req, res, data, maxAge = 600) {
+    const etag = generateETag(data);
+    // Check If-None-Match header
+    if (req.headers['if-none-match'] === etag) {
+        res.status(304).end();
+        return;
+    }
+    res.set({
+        'ETag': etag,
+        'Cache-Control': `private, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
+    });
+    res.json(data);
+}
 // GET /api/reference/sumber-anggaran - Get all sumber anggaran (CACHED)
-router.get('/sumber-anggaran', async (_req, res) => {
+router.get('/sumber-anggaran', async (req, res) => {
     try {
         const formatted = await cacheService_1.cacheService.getOrFetch(cacheService_1.CACHE_KEYS.SUMBER_ANGGARAN, async () => {
             const data = await models_1.SumberAnggaran.findAll({
@@ -19,7 +47,7 @@ router.get('/sumber-anggaran', async (_req, res) => {
                 label: item.sumber,
             }));
         }, cacheService_1.CACHE_TTL.REFERENCE_DATA);
-        res.json(formatted);
+        sendCached(req, res, formatted);
     }
     catch (error) {
         console.error('Error fetching sumber anggaran:', error);
@@ -27,7 +55,7 @@ router.get('/sumber-anggaran', async (_req, res) => {
     }
 });
 // GET /api/reference/satuan - Get all satuan (CACHED)
-router.get('/satuan', async (_req, res) => {
+router.get('/satuan', async (req, res) => {
     try {
         const formatted = await cacheService_1.cacheService.getOrFetch(cacheService_1.CACHE_KEYS.SATUAN, async () => {
             const data = await models_1.Satuan.findAll({
@@ -38,7 +66,7 @@ router.get('/satuan', async (_req, res) => {
                 label: item.satuannya,
             }));
         }, cacheService_1.CACHE_TTL.REFERENCE_DATA);
-        res.json(formatted);
+        sendCached(req, res, formatted);
     }
     catch (error) {
         console.error('Error fetching satuan:', error);
@@ -46,7 +74,7 @@ router.get('/satuan', async (_req, res) => {
     }
 });
 // GET /api/reference/kegiatan - Get all kegiatan (CACHED)
-router.get('/kegiatan', async (_req, res) => {
+router.get('/kegiatan', async (req, res) => {
     try {
         const formatted = await cacheService_1.cacheService.getOrFetch(cacheService_1.CACHE_KEYS.KEGIATAN, async () => {
             const data = await models_1.Kegiatan.findAll({
@@ -59,7 +87,7 @@ router.get('/kegiatan', async (_req, res) => {
                 kegiatan: item.kegiatan,
             }));
         }, cacheService_1.CACHE_TTL.REFERENCE_DATA);
-        res.json(formatted);
+        sendCached(req, res, formatted);
     }
     catch (error) {
         console.error('Error fetching kegiatan:', error);
@@ -98,7 +126,7 @@ router.get('/sub-kegiatan', async (req, res) => {
                 indikator_kinerja: item.indikator_kinerja,
             }));
         }, cacheService_1.CACHE_TTL.REFERENCE_DATA);
-        res.json(formatted);
+        sendCached(req, res, formatted);
     }
     catch (error) {
         console.error('Error fetching sub kegiatan:', error);

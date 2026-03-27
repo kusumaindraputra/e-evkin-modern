@@ -8,6 +8,8 @@ import { config } from './config';
 import { setupSwagger } from './config/swagger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
+import sequelize from './config/database';
+import { cacheService } from './services/cacheService';
 import authRoutes from './routes/auth.routes';
 import puskesmasRoutes from './routes/puskesmas.routes';
 import laporanRoutes from './routes/laporan.routes';
@@ -38,18 +40,51 @@ app.use(cors({
 }));
 app.use(rateLimiter);
 
-// Body parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing middleware with size limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(compression());
 
 // Swagger API Documentation
 setupSwagger(app);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Health check with optional diagnostics (detail only from localhost/internal)
+app.get('/health', async (req, res) => {
+  const basic = { status: 'OK', timestamp: new Date().toISOString() };
+
+  if (req.query.detail === 'true') {
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+    const isLocal = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+    if (!isLocal) {
+      res.json(basic);
+      return;
+    }
+
+    let poolStats = null;
+    try {
+      const pool = (sequelize as any).connectionManager?.pool;
+      if (pool) {
+        poolStats = {
+          size: pool.size ?? pool._count ?? null,
+          available: pool.available ?? pool._availableObjectsCount?.() ?? null,
+          using: pool.using ?? pool._inUseObjectsCount?.() ?? null,
+          waiting: pool.waiting ?? pool._waitingClientsCount?.() ?? null,
+        };
+      }
+    } catch { /* pool introspection failed — ignore */ }
+
+    res.json({
+      ...basic,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      dbPool: poolStats,
+      cache: cacheService.stats(),
+    });
+    return;
+  }
+
+  res.json(basic);
 });
 
 // Root route

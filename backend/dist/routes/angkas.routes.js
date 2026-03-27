@@ -273,7 +273,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
     }
     catch (error) {
         console.error('Error uploading angkas PDF:', error);
-        res.status(500).json({ error: 'Failed to process PDF file', details: error.message });
+        res.status(500).json({ error: 'Failed to process PDF file', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -439,7 +439,7 @@ router.get('/', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error fetching angkas:', error);
-        res.status(500).json({ error: 'Failed to fetch angkas data', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch angkas data', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -523,7 +523,7 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error fetching angkas by sub kegiatan:', error);
-        res.status(500).json({ error: 'Failed to fetch data', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch data', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -565,7 +565,7 @@ router.get('/unmatched', auth_1.authenticate, authorize_1.authorizeAdmin, async 
     }
     catch (error) {
         console.error('Error fetching unmatched angkas:', error);
-        res.status(500).json({ error: 'Failed to fetch data', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch data', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -607,7 +607,7 @@ router.put('/:id/match', auth_1.authenticate, authorize_1.authorizeAdmin, async 
     }
     catch (error) {
         console.error('Error matching angkas:', error);
-        res.status(500).json({ error: 'Failed to match record', details: error.message });
+        res.status(500).json({ error: 'Failed to match record', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -636,7 +636,7 @@ router.delete('/bulk', auth_1.authenticate, authorize_1.authorizeAdmin, async (r
     }
     catch (error) {
         console.error('Error deleting angkas:', error);
-        res.status(500).json({ error: 'Failed to delete records', details: error.message });
+        res.status(500).json({ error: 'Failed to delete records', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -707,7 +707,7 @@ router.get('/history', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error fetching angkas history:', error);
-        res.status(500).json({ error: 'Failed to fetch history', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch history', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -824,7 +824,7 @@ router.get('/history/all', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error fetching comprehensive angkas history:', error);
-        res.status(500).json({ error: 'Failed to fetch history', details: error.message });
+        res.status(500).json({ error: 'Failed to fetch history', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -946,7 +946,7 @@ router.put('/manual', auth_1.authenticate, (0, editPermission_1.checkEditPermiss
     }
     catch (error) {
         console.error('Error saving manual angkas:', error);
-        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: error.message });
+        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -1050,7 +1050,7 @@ router.put('/admin/manual', auth_1.authenticate, authorize_1.authorizeAdmin, asy
     }
     catch (error) {
         console.error('Error saving admin manual angkas:', error);
-        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: error.message });
+        res.status(500).json({ success: false, message: 'Gagal menyimpan angkas', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 /**
@@ -1147,7 +1147,7 @@ router.get('/manual/history', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error fetching manual angkas history:', error);
-        res.status(500).json({ success: false, message: 'Gagal mengambil history', details: error.message });
+        res.status(500).json({ success: false, message: 'Gagal mengambil history', details: process.env.NODE_ENV !== 'production' ? error.message : undefined });
     }
 });
 exports.default = router;

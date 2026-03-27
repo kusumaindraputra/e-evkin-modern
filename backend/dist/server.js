@@ -26,9 +26,45 @@ const startServer = async () => {
         await database_1.default.sync({ force: false });
         console.log('✅ Database synchronized');
         // Start server
-        app_1.default.listen(config_1.config.port, () => {
+        const server = app_1.default.listen(config_1.config.port, () => {
             logger_1.default.info(`🚀 Server running on port ${config_1.config.port}`);
             logger_1.default.info(`📍 Environment: ${config_1.config.env}`);
+            // Signal PM2 that the app is ready (for graceful reload)
+            if (typeof process.send === 'function') {
+                process.send('ready');
+            }
+        });
+        // Graceful shutdown handler
+        const gracefulShutdown = (signal) => {
+            logger_1.default.info(`${signal} received. Starting graceful shutdown...`);
+            // Stop accepting new connections
+            server.close(async () => {
+                logger_1.default.info('HTTP server closed.');
+                try {
+                    // Close database connections
+                    await database_1.default.close();
+                    logger_1.default.info('Database connections closed.');
+                }
+                catch (err) {
+                    logger_1.default.error('Error closing database:', err);
+                }
+                process.exit(0);
+            });
+            // Force shutdown after 10s if graceful shutdown fails
+            setTimeout(() => {
+                logger_1.default.error('Graceful shutdown timed out. Forcing exit.');
+                process.exit(1);
+            }, 10000);
+        };
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+        // Handle uncaught exceptions and unhandled rejections
+        process.on('uncaughtException', (error) => {
+            logger_1.default.error('Uncaught Exception:', error);
+            gracefulShutdown('uncaughtException');
+        });
+        process.on('unhandledRejection', (reason) => {
+            logger_1.default.error('Unhandled Rejection:', reason);
         });
     }
     catch (error) {

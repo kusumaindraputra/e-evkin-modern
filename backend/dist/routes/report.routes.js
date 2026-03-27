@@ -16,7 +16,7 @@ const router = (0, express_1.Router)();
 // GET laporan aggregated by sub kegiatan (admin only)
 router.get('/by-sub-kegiatan', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const { bulan, tahun, id_sub_kegiatan, status } = req.query;
+        const { bulan, tahun, id_sub_kegiatan, status, page, limit: limitParam } = req.query;
         // Build where clause with validation
         const whereClause = {};
         if (bulan)
@@ -29,6 +29,9 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, authorize_1.authorizeAdmin, 
             whereClause.id_sub_kegiatan = parsedSubKegiatan;
         if (status)
             whereClause.status = status;
+        // Pagination
+        const parsedPage = page ? Math.max(1, parseInt(page)) : undefined;
+        const parsedLimit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam))) : undefined;
         // Get aggregated data
         const aggregatedData = await Laporan_1.default.findAll({
             attributes: [
@@ -73,6 +76,7 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, authorize_1.authorizeAdmin, 
             ],
             order: [[database_1.default.col('subKegiatan->kegiatanParent.kode'), 'ASC'], [database_1.default.col('subKegiatan.kode_sub'), 'ASC']],
             raw: false,
+            ...(parsedLimit && parsedPage ? { limit: parsedLimit, offset: (parsedPage - 1) * parsedLimit } : {}),
         });
         // Calculate percentages
         const result = aggregatedData.map((item) => {
@@ -97,6 +101,9 @@ router.get('/by-sub-kegiatan', auth_1.authenticate, authorize_1.authorizeAdmin, 
                 persentase_rp: Math.round(persentaseRp * 100) / 100,
             };
         });
+        if (parsedPage && parsedLimit) {
+            return res.json({ data: result, pagination: { page: parsedPage, limit: parsedLimit } });
+        }
         return res.json(result);
     }
     catch (error) {
@@ -146,7 +153,7 @@ router.get('/by-sub-kegiatan/detail', auth_1.authenticate, authorize_1.authorize
 // GET laporan aggregated by sumber anggaran (admin only)
 router.get('/by-sumber-anggaran', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res) => {
     try {
-        const { bulan, tahun, id_sumber_anggaran, status } = req.query;
+        const { bulan, tahun, id_sumber_anggaran, status, page, limit: limitParam } = req.query;
         // Build where clause
         const whereClause = {};
         if (bulan)
@@ -157,6 +164,9 @@ router.get('/by-sumber-anggaran', auth_1.authenticate, authorize_1.authorizeAdmi
             whereClause.id_sumber_anggaran = Number(id_sumber_anggaran);
         if (status)
             whereClause.status = status;
+        // Pagination
+        const parsedPage = page ? Math.max(1, parseInt(page)) : undefined;
+        const parsedLimit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam))) : undefined;
         // Get aggregated data
         const aggregatedData = await Laporan_1.default.findAll({
             attributes: [
@@ -188,6 +198,7 @@ router.get('/by-sumber-anggaran', auth_1.authenticate, authorize_1.authorizeAdmi
             ],
             order: [[database_1.default.col('sumberAnggaran.sumber'), 'ASC']],
             raw: false,
+            ...(parsedLimit && parsedPage ? { limit: parsedLimit, offset: (parsedPage - 1) * parsedLimit } : {}),
         });
         // Calculate percentages
         const result = aggregatedData.map((item) => {
@@ -212,6 +223,9 @@ router.get('/by-sumber-anggaran', auth_1.authenticate, authorize_1.authorizeAdmi
                 persentase_rp: Math.round(persentaseRp * 100) / 100,
             };
         });
+        if (parsedPage && parsedLimit) {
+            return res.json({ data: result, pagination: { page: parsedPage, limit: parsedLimit } });
+        }
         return res.json(result);
     }
     catch (error) {

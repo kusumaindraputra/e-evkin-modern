@@ -45,7 +45,22 @@ const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
 const router = (0, express_1.Router)();
 // Configure multer for memory storage
-const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage() });
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB — large Excel files
+    fileFilter: (_req, file, cb) => {
+        const allowed = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+        ];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('Only Excel files (.xlsx, .xls) are allowed'));
+        }
+    },
+});
 // Helper function to check if entity should be excluded from errors
 // Only Puskesmas and Labkesda are valid - everything else is excluded
 function isExcludedEntity(puskesmasName) {
@@ -330,7 +345,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     row: group.rows[0],
                     puskesmas: group.puskesmas,
                     subKegiatan: group.subKegiatanNama,
-                    error: error instanceof Error ? error.message : 'Unknown error',
+                    error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : 'Processing error',
                 });
             }
         }
@@ -345,7 +360,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         return res.status(500).json({
             success: false,
             message: 'Gagal upload file',
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.message : 'Unknown error') : 'Upload error',
         });
     }
 });

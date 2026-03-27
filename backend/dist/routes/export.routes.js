@@ -297,17 +297,21 @@ router.get('/laporan', auth_1.authenticate, async (req, res) => {
                 });
             }
         });
-        // Set response headers
+        // Set response headers for streaming download
         const filename = `Laporan_${puskesmas}_${bulan || 'All'}_${tahun}.xlsx`;
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        // Write to response
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        // Stream workbook to response
         await workbook.xlsx.write(res);
         res.end();
     }
     catch (error) {
         console.error('Export error:', error);
-        res.status(500).json({ message: 'Gagal export laporan', error: error.message });
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: 'Gagal export laporan' });
+        }
     }
 });
 // Export laporan to Excel for admin (all puskesmas or specific)
@@ -660,17 +664,21 @@ router.get('/admin/laporan', auth_1.authenticate, async (req, res) => {
                 });
             }
         });
-        // Set response headers
+        // Set response headers for streaming download
         const filename = `Laporan_Admin_${bulan || 'All'}_${tahun}.xlsx`;
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        // Write to response
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        // Stream workbook to response
         await workbook.xlsx.write(res);
         res.end();
     }
     catch (error) {
         console.error('Admin export error:', error);
-        res.status(500).json({ message: 'Gagal export laporan', error: error.message });
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, message: 'Gagal export laporan' });
+        }
     }
 });
 exports.default = router;

@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { SumberAnggaran, Satuan, Kegiatan, SubKegiatan } from '../models';
 import { authenticate } from '../middleware/auth';
 import { cacheService, CACHE_KEYS, CACHE_TTL } from '../services/cacheService';
@@ -8,8 +9,36 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticate);
 
+/**
+ * Generate ETag from data content for HTTP caching
+ */
+function generateETag(data: unknown): string {
+  const hash = crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
+  return `"${hash}"`;
+}
+
+/**
+ * Send response with HTTP cache headers.
+ * Returns 304 Not Modified if client's cached version matches.
+ */
+function sendCached(req: Request, res: Response, data: unknown, maxAge: number = 600): void {
+  const etag = generateETag(data);
+
+  // Check If-None-Match header
+  if (req.headers['if-none-match'] === etag) {
+    res.status(304).end();
+    return;
+  }
+
+  res.set({
+    'ETag': etag,
+    'Cache-Control': `private, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
+  });
+  res.json(data);
+}
+
 // GET /api/reference/sumber-anggaran - Get all sumber anggaran (CACHED)
-router.get('/sumber-anggaran', async (_req: Request, res: Response) => {
+router.get('/sumber-anggaran', async (req: Request, res: Response) => {
   try {
     const formatted = await cacheService.getOrFetch(
       CACHE_KEYS.SUMBER_ANGGARAN,
@@ -25,7 +54,7 @@ router.get('/sumber-anggaran', async (_req: Request, res: Response) => {
       CACHE_TTL.REFERENCE_DATA
     );
 
-    res.json(formatted);
+    sendCached(req, res, formatted);
   } catch (error) {
     console.error('Error fetching sumber anggaran:', error);
     res.status(500).json({ message: 'Error fetching sumber anggaran' });
@@ -33,7 +62,7 @@ router.get('/sumber-anggaran', async (_req: Request, res: Response) => {
 });
 
 // GET /api/reference/satuan - Get all satuan (CACHED)
-router.get('/satuan', async (_req: Request, res: Response) => {
+router.get('/satuan', async (req: Request, res: Response) => {
   try {
     const formatted = await cacheService.getOrFetch(
       CACHE_KEYS.SATUAN,
@@ -49,7 +78,7 @@ router.get('/satuan', async (_req: Request, res: Response) => {
       CACHE_TTL.REFERENCE_DATA
     );
 
-    res.json(formatted);
+    sendCached(req, res, formatted);
   } catch (error) {
     console.error('Error fetching satuan:', error);
     res.status(500).json({ message: 'Error fetching satuan' });
@@ -57,7 +86,7 @@ router.get('/satuan', async (_req: Request, res: Response) => {
 });
 
 // GET /api/reference/kegiatan - Get all kegiatan (CACHED)
-router.get('/kegiatan', async (_req: Request, res: Response) => {
+router.get('/kegiatan', async (req: Request, res: Response) => {
   try {
     const formatted = await cacheService.getOrFetch(
       CACHE_KEYS.KEGIATAN,
@@ -75,7 +104,7 @@ router.get('/kegiatan', async (_req: Request, res: Response) => {
       CACHE_TTL.REFERENCE_DATA
     );
 
-    res.json(formatted);
+    sendCached(req, res, formatted);
   } catch (error) {
     console.error('Error fetching kegiatan:', error);
     res.status(500).json({ message: 'Error fetching kegiatan' });
@@ -86,9 +115,9 @@ router.get('/kegiatan', async (_req: Request, res: Response) => {
 router.get('/sub-kegiatan', async (req: Request, res: Response) => {
   try {
     const { id_kegiatan } = req.query;
-    
+
     // Use different cache key based on filter
-    const cacheKey = id_kegiatan 
+    const cacheKey = id_kegiatan
       ? CACHE_KEYS.SUB_KEGIATAN_BY_KEGIATAN(Number(id_kegiatan))
       : CACHE_KEYS.SUB_KEGIATAN_ALL;
 
@@ -123,7 +152,7 @@ router.get('/sub-kegiatan', async (req: Request, res: Response) => {
       CACHE_TTL.REFERENCE_DATA
     );
 
-    res.json(formatted);
+    sendCached(req, res, formatted);
   } catch (error) {
     console.error('Error fetching sub kegiatan:', error);
     res.status(500).json({ message: 'Error fetching sub kegiatan' });
@@ -138,7 +167,7 @@ router.get('/cache/stats', async (req: Request, res: Response): Promise<void> =>
       res.status(403).json({ message: 'Forbidden' });
       return;
     }
-    
+
     const stats = cacheService.stats();
     res.json({
       success: true,
@@ -158,9 +187,9 @@ router.post('/cache/invalidate', async (req: Request, res: Response): Promise<vo
       res.status(403).json({ message: 'Forbidden' });
       return;
     }
-    
+
     const { pattern } = req.body;
-    
+
     if (pattern) {
       const count = cacheService.invalidatePattern(pattern);
       res.json({

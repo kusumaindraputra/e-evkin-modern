@@ -288,18 +288,22 @@ router.get('/laporan', authenticate, async (req: Request, res: Response): Promis
       }
     });
 
-    // Set response headers
+    // Set response headers for streaming download
     const filename = `Laporan_${puskesmas}_${bulan || 'All'}_${tahun}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
-    // Write to response
+    // Stream workbook to response
     await workbook.xlsx.write(res);
     res.end();
 
   } catch (error: any) {
     console.error('Export error:', error);
-    res.status(500).json({ success: false, message: 'Gagal export laporan' });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'Gagal export laporan' });
+    }
   }
 });
 
@@ -686,18 +690,22 @@ router.get('/admin/laporan', authenticate, async (req: Request, res: Response): 
       }
     });
 
-    // Set response headers
+    // Set response headers for streaming download
     const filename = `Laporan_Admin_${bulan || 'All'}_${tahun}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
-    // Write to response
+    // Stream workbook to response
     await workbook.xlsx.write(res);
     res.end();
 
   } catch (error: any) {
     console.error('Admin export error:', error);
-    res.status(500).json({ success: false, message: 'Gagal export laporan' });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'Gagal export laporan' });
+    }
   }
 });
 

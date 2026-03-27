@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LaporanController = void 0;
 const laporan_service_1 = require("../services/laporan.service");
+const MAX_BULK_SIZE = 500;
 class LaporanController {
     static async findAll(req, res) {
         try {
@@ -28,7 +29,7 @@ class LaporanController {
         }
         catch (error) {
             console.error('Error fetching laporan:', error);
-            res.status(500).json({ error: 'Failed to fetch laporan', message: error.message });
+            res.status(500).json({ success: false, error: 'Gagal mengambil data laporan' });
         }
     }
     static async findById(req, res) {
@@ -42,13 +43,13 @@ class LaporanController {
         }
         catch (error) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan not found' });
+                res.status(404).json({ error: 'Laporan tidak ditemukan' });
             }
             else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Forbidden', message: error.message });
+                res.status(403).json({ error: 'Akses ditolak' });
             }
             else {
-                res.status(500).json({ error: 'Failed to fetch laporan', message: error.message });
+                res.status(500).json({ success: false, error: 'Gagal mengambil laporan' });
             }
         }
     }
@@ -68,10 +69,11 @@ class LaporanController {
         }
         catch (error) {
             if (error.message.includes('Target belum diset') || error.message.includes('melebihi target')) {
-                res.status(400).json({ error: 'Validation error', message: error.message });
+                res.status(400).json({ error: 'Validasi gagal', message: error.message });
             }
             else {
-                res.status(500).json({ error: 'Failed to create laporan', message: error.message });
+                console.error('Create laporan error:', error);
+                res.status(500).json({ success: false, error: 'Gagal membuat laporan' });
             }
         }
     }
@@ -79,6 +81,14 @@ class LaporanController {
         try {
             if (!req.user) {
                 res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            if (!Array.isArray(req.body.laporanArray) || req.body.laporanArray.length === 0) {
+                res.status(400).json({ success: false, error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+                return;
+            }
+            if (req.body.laporanArray.length > MAX_BULK_SIZE) {
+                res.status(400).json({ success: false, error: `Maksimal ${MAX_BULK_SIZE} item per batch` });
                 return;
             }
             const result = await laporan_service_1.LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
@@ -89,9 +99,11 @@ class LaporanController {
             });
         }
         catch (error) {
-            res.status(error.message.includes('laporanArray') ? 400 : 500).json({
-                error: 'Failed to bulk create laporan',
-                message: error.message
+            const isValidation = error.message.includes('laporanArray');
+            console.error('Bulk create error:', error);
+            res.status(isValidation ? 400 : 500).json({
+                success: false,
+                error: isValidation ? error.message : 'Gagal menyimpan laporan',
             });
         }
     }
@@ -99,6 +111,14 @@ class LaporanController {
         try {
             if (!req.user) {
                 res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            if (!Array.isArray(req.body.laporanArray) || req.body.laporanArray.length === 0) {
+                res.status(400).json({ success: false, error: 'laporanArray harus berupa array dan tidak boleh kosong' });
+                return;
+            }
+            if (req.body.laporanArray.length > MAX_BULK_SIZE) {
+                res.status(400).json({ success: false, error: `Maksimal ${MAX_BULK_SIZE} item per batch` });
                 return;
             }
             const result = await laporan_service_1.LaporanService.bulkUpsert(req.body.laporanArray, req.user.id, req.user.role);
@@ -109,9 +129,11 @@ class LaporanController {
             });
         }
         catch (error) {
-            res.status(error.message.includes('laporanArray') ? 400 : 500).json({
-                error: 'Failed to bulk upsert laporan',
-                message: error.message
+            const isValidation = error.message.includes('laporanArray');
+            console.error('Bulk upsert error:', error);
+            res.status(isValidation ? 400 : 500).json({
+                success: false,
+                error: isValidation ? error.message : 'Gagal menyimpan laporan',
             });
         }
     }
@@ -131,16 +153,17 @@ class LaporanController {
         }
         catch (error) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan not found' });
+                res.status(404).json({ error: 'Laporan tidak ditemukan' });
             }
             else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Forbidden', message: error.message });
+                res.status(403).json({ error: 'Akses ditolak' });
             }
             else if (error.message.includes('Validation') || error.message.includes('Target')) {
-                res.status(400).json({ error: 'Validation error', message: error.message });
+                res.status(400).json({ error: 'Validasi gagal', message: error.message });
             }
             else {
-                res.status(500).json({ error: 'Failed to update laporan', message: error.message });
+                console.error('Update laporan error:', error);
+                res.status(500).json({ success: false, error: 'Gagal mengupdate laporan' });
             }
         }
     }
@@ -155,13 +178,14 @@ class LaporanController {
         }
         catch (error) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan not found' });
+                res.status(404).json({ error: 'Laporan tidak ditemukan' });
             }
             else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Forbidden', message: error.message });
+                res.status(403).json({ error: 'Akses ditolak' });
             }
             else {
-                res.status(500).json({ error: 'Failed to delete laporan', message: error.message });
+                console.error('Delete laporan error:', error);
+                res.status(500).json({ success: false, error: 'Gagal menghapus laporan' });
             }
         }
     }
@@ -181,13 +205,14 @@ class LaporanController {
         }
         catch (error) {
             if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id')) {
-                res.status(400).json({ error: 'Bad Request', message: error.message });
+                res.status(400).json({ error: 'Validasi gagal', message: error.message });
             }
             else if (error.message.includes('Tidak ada laporan')) {
-                res.status(404).json({ error: 'No laporan found', message: error.message });
+                res.status(404).json({ error: 'Tidak ada laporan ditemukan', message: error.message });
             }
             else {
-                res.status(500).json({ error: 'Failed to submit laporan', message: error.message });
+                console.error('Submit laporan error:', error);
+                res.status(500).json({ success: false, error: 'Gagal mengirim laporan' });
             }
         }
     }

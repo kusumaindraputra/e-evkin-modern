@@ -46,7 +46,7 @@ router.get('/', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, res
         res.status(500).json({
             success: false,
             message: 'Gagal mengambil data sumber anggaran sub kegiatan',
-            error: error.message,
+            error: undefined,
         });
     }
 });
@@ -82,7 +82,7 @@ router.get('/by-sub-kegiatan/:id_sub_kegiatan', auth_1.authenticate, async (req,
         res.status(500).json({
             success: false,
             message: 'Gagal mengambil data sumber anggaran',
-            error: error.message,
+            error: undefined,
         });
     }
 });
@@ -162,7 +162,7 @@ router.post('/', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, re
         return res.status(500).json({
             success: false,
             message: 'Gagal menambahkan sumber anggaran',
-            error: error.message,
+            error: undefined,
         });
     }
 });
@@ -209,7 +209,7 @@ router.post('/bulk', auth_1.authenticate, authorize_1.authorizeAdmin, async (req
         return res.status(500).json({
             success: false,
             message: 'Gagal mengatur sumber anggaran',
-            error: error.message,
+            error: undefined,
         });
     }
 });
@@ -244,7 +244,7 @@ router.put('/:id', auth_1.authenticate, authorize_1.authorizeAdmin, async (req, 
         return res.status(500).json({
             success: false,
             message: 'Gagal memperbarui mapping',
-            error: error.message,
+            error: undefined,
         });
     }
 });
@@ -274,7 +274,7 @@ router.delete('/:id', auth_1.authenticate, authorize_1.authorizeAdmin, async (re
         return res.status(500).json({
             success: false,
             message: 'Gagal menghapus mapping',
-            error: error.message,
+            error: undefined,
         });
     }
 });

@@ -13,6 +13,8 @@ const config_1 = require("./config");
 const swagger_1 = require("./config/swagger");
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimiter_1 = require("./middleware/rateLimiter");
+const database_1 = __importDefault(require("./config/database"));
+const cacheService_1 = require("./services/cacheService");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const puskesmas_routes_1 = __importDefault(require("./routes/puskesmas.routes"));
 const laporan_routes_1 = __importDefault(require("./routes/laporan.routes"));
@@ -30,6 +32,8 @@ const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const target_upload_routes_1 = __importDefault(require("./routes/target-upload.routes"));
 const angkas_routes_1 = __importDefault(require("./routes/angkas.routes"));
 const app = (0, express_1.default)();
+// Trust proxy (behind nginx)
+app.set('trust proxy', 1);
 // Security middleware
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
@@ -37,16 +41,46 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(rateLimiter_1.rateLimiter);
-// Body parsing middleware
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+// Body parsing middleware with size limits
+app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 app.use((0, cookie_parser_1.default)());
 app.use((0, compression_1.default)());
 // Swagger API Documentation
 (0, swagger_1.setupSwagger)(app);
-// Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Health check with optional diagnostics (detail only from localhost/internal)
+app.get('/health', async (req, res) => {
+    const basic = { status: 'OK', timestamp: new Date().toISOString() };
+    if (req.query.detail === 'true') {
+        const clientIp = req.ip || req.socket.remoteAddress || '';
+        const isLocal = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+        if (!isLocal) {
+            res.json(basic);
+            return;
+        }
+        let poolStats = null;
+        try {
+            const pool = database_1.default.connectionManager?.pool;
+            if (pool) {
+                poolStats = {
+                    size: pool.size ?? pool._count ?? null,
+                    available: pool.available ?? pool._availableObjectsCount?.() ?? null,
+                    using: pool.using ?? pool._inUseObjectsCount?.() ?? null,
+                    waiting: pool.waiting ?? pool._waitingClientsCount?.() ?? null,
+                };
+            }
+        }
+        catch { /* pool introspection failed — ignore */ }
+        res.json({
+            ...basic,
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            dbPool: poolStats,
+            cache: cacheService_1.cacheService.stats(),
+        });
+        return;
+    }
+    res.json(basic);
 });
 // Root route
 app.get('/', (req, res) => {
@@ -73,6 +107,8 @@ app.use('/api/admin', chat_routes_1.default);
 app.use('/api/target', target_routes_1.default);
 app.use('/api/target', target_upload_routes_1.default);
 app.use('/api/angkas', angkas_routes_1.default);
+// 404 handler for unmatched routes
+app.use(errorHandler_1.notFoundHandler);
 // Error handling
 app.use(errorHandler_1.errorHandler);
 exports.default = app;

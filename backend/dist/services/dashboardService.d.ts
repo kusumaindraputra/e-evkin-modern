@@ -60,11 +60,26 @@ export declare function getBottom10Absorption(tahun: number, bulan: string): Pro
  * Invalidate dashboard cache when laporan data changes
  */
 export declare function invalidateDashboardCache(tahun?: number): void;
+/**
+ * Get budget YTD data with caching
+ */
+export declare function getBudgetYTD(tahun: number): Promise<any[]>;
+/**
+ * Get chart data with caching
+ */
+export declare function getChartData(tahun: number, userId?: string, sumberAnggaranId?: number, subKegiatanId?: number): Promise<any>;
+/**
+ * Get puskesmas reporting details with caching
+ */
+export declare function getPuskesmasReportingDetails(tahun: number, bulan?: string): Promise<any>;
 declare const _default: {
     getDashboardStats: typeof getDashboardStats;
     getBudgetMonthly: typeof getBudgetMonthly;
     getTop10Absorption: typeof getTop10Absorption;
     getBottom10Absorption: typeof getBottom10Absorption;
+    getBudgetYTD: typeof getBudgetYTD;
+    getChartData: typeof getChartData;
+    getPuskesmasReportingDetails: typeof getPuskesmasReportingDetails;
     invalidateDashboardCache: typeof invalidateDashboardCache;
     DASHBOARD_CACHE_KEYS: {
         STATS: (tahun: number, bulan?: string) => string;

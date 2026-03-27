@@ -83,7 +83,7 @@ router.post('/login', async (req, res) => {
     }
     catch (error) {
         console.error('Login error:', error);
-        return res.status(500).json({ error: 'Login failed', message: error.message });
+        return res.status(500).json({ error: 'Login gagal. Silakan coba lagi.' });
     }
 });
 // Get current user (verify token)
@@ -122,8 +122,7 @@ router.post('/logout', async (req, res) => {
     catch (error) {
         console.error('Logout error:', error);
         res.status(500).json({
-            message: 'Logout failed',
-            error: error.message
+            message: 'Logout gagal',
         });
     }
 });

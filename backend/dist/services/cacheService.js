@@ -15,6 +15,23 @@ exports.CACHE_TTL = exports.CACHE_KEYS = exports.cacheService = void 0;
 class CacheService {
     cache = new Map();
     defaultTTL = 5 * 60 * 1000; // 5 minutes default
+    cleanupInterval;
+    constructor() {
+        // Periodically clean expired entries to prevent memory leaks in long-running processes
+        this.cleanupInterval = setInterval(() => this.cleanup(), 60 * 1000); // Every 60s
+        // Don't keep process alive just for cleanup
+        if (this.cleanupInterval.unref) {
+            this.cleanupInterval.unref();
+        }
+    }
+    cleanup() {
+        const now = Date.now();
+        for (const [key, entry] of this.cache) {
+            if (now > entry.expiresAt) {
+                this.cache.delete(key);
+            }
+        }
+    }
     /**
      * Get item from cache
      * @param key Cache key

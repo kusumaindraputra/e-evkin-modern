@@ -12,6 +12,9 @@
 declare class CacheService {
     private cache;
     private defaultTTL;
+    private cleanupInterval;
+    constructor();
+    private cleanup;
     /**
      * Get item from cache
      * @param key Cache key

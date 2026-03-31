@@ -391,24 +391,8 @@ async function getChartData(tahun, userId, sumberAnggaranId, subKegiatanId) {
                 realisasi_fisik: Math.round(avgFisik * 100) / 100
             };
         });
-        const processedData = rawData.map((data, index) => {
-            if (index === 0)
-                return data;
-            const prevData = rawData.slice(0, index);
-            const cumulativeRealisasiAnggaran = prevData.reduce((sum, d) => sum + d.realisasi_anggaran, 0) + data.realisasi_anggaran;
-            const maxPrevFisik = Math.max(...prevData.map(d => d.realisasi_fisik), 0);
-            const cumulativeRealisasiFisik = Math.max(maxPrevFisik, data.realisasi_fisik);
-            return {
-                ...data,
-                realisasi_anggaran: cumulativeRealisasiAnggaran,
-                realisasi_fisik: Math.round(cumulativeRealisasiFisik * 100) / 100
-            };
-        });
-        if (processedData.length > 0) {
-            processedData[0] = rawData[0];
-        }
         return {
-            data: processedData,
+            data: rawData,
             debug: {
                 targetsCount: allTargets.length,
                 angkasCount: allAngkas.length,

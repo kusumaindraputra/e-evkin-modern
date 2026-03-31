@@ -65,6 +65,8 @@ interface TargetHistoryRecord {
   target_k: number;
   target_rp: number;
   catatan?: string | null;
+  bulan_penetapan?: number | null;
+  tanggal_penetapan?: string | null;
   created_at: string;
   creator: { id: number; username: string; nama: string };
 }
@@ -136,6 +138,7 @@ const AdminTargetUploadPage: React.FC = () => {
   const [targetUploadProgress, setTargetUploadProgress] = useState(0);
   const [targetUploadCatatan, setTargetUploadCatatan] = useState('');
   const [targetUploadBulanPenetapan, setTargetUploadBulanPenetapan] = useState<number>(new Date().getMonth() + 1);
+  const [targetUploadTanggalPenetapan, setTargetUploadTanggalPenetapan] = useState<string>(new Date().toISOString().split('T')[0]);
   const [targetHistoryModalVisible, setTargetHistoryModalVisible] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<Target | null>(null);
   const [targetHistoryData, setTargetHistoryData] = useState<TargetHistoryRecord[]>([]);
@@ -241,6 +244,9 @@ const AdminTargetUploadPage: React.FC = () => {
       formData.append('catatan', targetUploadCatatan.trim());
     }
     formData.append('bulan_penetapan', targetUploadBulanPenetapan.toString());
+    if (targetUploadTanggalPenetapan) {
+      formData.append('tanggal_penetapan', targetUploadTanggalPenetapan);
+    }
 
     setTargetUploading(true);
     setTargetUploadProgress(0);
@@ -674,6 +680,14 @@ const AdminTargetUploadPage: React.FC = () => {
             </select>
             <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Anggaran berlaku mulai bulan ini di dashboard</div>
           </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Tanggal Penetapan</label>
+            <input type="date" value={targetUploadTanggalPenetapan} onChange={(e) => setTargetUploadTanggalPenetapan(e.target.value)}
+              disabled={targetUploading}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6 }}
+            />
+            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Tanggal resmi SK/penetapan anggaran</div>
+          </div>
           <Upload.Dragger name="file" accept=".xlsx,.xls" beforeUpload={handleTargetUpload} showUploadList={false} disabled={targetUploading || !targetUploadCatatan.trim()}>
             {targetUploading ? (
               <div style={{ padding: '0 20px' }}><Progress percent={targetUploadProgress} status="active" /><p style={{ marginTop: 8 }}>Memproses...</p></div>
@@ -732,6 +746,8 @@ const AdminTargetUploadPage: React.FC = () => {
             <div>
               <div style={{ fontWeight: 'bold' }}>{formatDateTime(record.created_at)}</div>
               <div style={{ marginTop: 8 }}>Target Anggaran (Rp): <strong>{formatNumber(record.target_rp)}</strong></div>
+              {record.bulan_penetapan && <div style={{ fontSize: '12px', color: '#1890ff' }}>Berlaku mulai: <strong>{BULAN_NAMES[record.bulan_penetapan - 1]}</strong></div>}
+              {record.tanggal_penetapan && <div style={{ fontSize: '12px', color: '#666' }}>Tgl Penetapan: {new Date(record.tanggal_penetapan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
               <div style={{ fontSize: '12px', color: '#888' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
               {record.catatan && <div style={{ marginTop: 6, padding: '6px 10px', background: '#f5f5f5', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.catatan}</div>}
             </div>

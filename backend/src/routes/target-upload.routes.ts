@@ -95,11 +95,19 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
     const adminId = req.user!.id;
     const catatan = req.body.catatan || null; // Catatan manual dari user
     const bulanPenetapan = req.body.bulan_penetapan ? parseInt(req.body.bulan_penetapan, 10) : null;
+    const tanggalPenetapan = req.body.tanggal_penetapan || null;
 
     // Validate bulan_penetapan range
     if (bulanPenetapan !== null && (isNaN(bulanPenetapan) || bulanPenetapan < 1 || bulanPenetapan > 12)) {
       return res.status(400).json({
         message: 'Bulan penetapan harus antara 1-12',
+      });
+    }
+
+    // Validate tanggal_penetapan format (YYYY-MM-DD)
+    if (tanggalPenetapan && isNaN(Date.parse(tanggalPenetapan))) {
+      return res.status(400).json({
+        message: 'Format tanggal penetapan tidak valid',
       });
     }
 
@@ -349,6 +357,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             tahun: group.tahun,
             bulan: null,
             bulan_penetapan: bulanPenetapan,
+            tanggal_penetapan: tanggalPenetapan,
             target_k: existingTarget.target_k,  // Preserve existing target_k
             target_rp: group.totalPagu,
             id_satuan: existingTarget.id_satuan,  // Preserve existing satuan
@@ -376,6 +385,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             tahun: group.tahun,
             bulan: null,
             bulan_penetapan: bulanPenetapan,
+            tanggal_penetapan: tanggalPenetapan,
             target_k: 0,  // Default 0, must be set in Target Kinerja page
             target_rp: group.totalPagu,
             id_satuan: null,  // Null, must be selected in Target Kinerja page

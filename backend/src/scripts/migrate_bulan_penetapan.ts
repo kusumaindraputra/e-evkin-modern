@@ -1,5 +1,5 @@
 /**
- * One-time migration: add bulan_penetapan column
+ * One-time migration: add bulan_penetapan and tanggal_penetapan columns
  * Usage: npx tsx src/scripts/migrate_bulan_penetapan.ts
  */
 import { sequelize } from '../config/database';
@@ -11,12 +11,11 @@ async function run() {
 
   const qi = sequelize.getQueryInterface();
 
-  // Check if column exists
-  const [cols] = await sequelize.query(
+  // Check and add bulan_penetapan
+  const [cols1] = await sequelize.query(
     "SELECT column_name FROM information_schema.columns WHERE table_name='sub_kegiatan_target' AND column_name='bulan_penetapan'"
   );
-
-  if ((cols as any[]).length > 0) {
+  if ((cols1 as any[]).length > 0) {
     console.log('Column bulan_penetapan already exists, skipping');
   } else {
     await qi.addColumn('sub_kegiatan_target', 'bulan_penetapan', {
@@ -25,6 +24,21 @@ async function run() {
       comment: 'Bulan penetapan (1-12), null = berlaku dari awal tahun',
     });
     console.log('Done: bulan_penetapan column added');
+  }
+
+  // Check and add tanggal_penetapan
+  const [cols2] = await sequelize.query(
+    "SELECT column_name FROM information_schema.columns WHERE table_name='sub_kegiatan_target' AND column_name='tanggal_penetapan'"
+  );
+  if ((cols2 as any[]).length > 0) {
+    console.log('Column tanggal_penetapan already exists, skipping');
+  } else {
+    await qi.addColumn('sub_kegiatan_target', 'tanggal_penetapan', {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Tanggal resmi penetapan anggaran',
+    });
+    console.log('Done: tanggal_penetapan column added');
   }
 
   await sequelize.close();

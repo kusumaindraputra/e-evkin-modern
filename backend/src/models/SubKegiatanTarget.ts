@@ -16,6 +16,7 @@ interface SubKegiatanTargetAttributes {
   bulan?: string | null; // Optional for yearly targets
   tahun: number;
   catatan?: string | null; // Catatan perubahan untuk history
+  bulan_penetapan?: number | null; // Bulan penetapan (1-12), null = berlaku dari awal tahun
   created_by: string; // UUID user yang membuat/update
   created_at?: Date;
   updated_at?: Date;
@@ -36,6 +37,7 @@ class SubKegiatanTarget extends Model<SubKegiatanTargetAttributes, SubKegiatanTa
   declare bulan: string | null;
   declare tahun: number;
   declare catatan: string | null;
+  declare bulan_penetapan: number | null;
   declare created_by: string;
   declare readonly created_at: Date;
   declare readonly updated_at: Date;
@@ -105,6 +107,11 @@ SubKegiatanTarget.init(
     catatan: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    bulan_penetapan: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Bulan penetapan (1-12), null = berlaku dari awal tahun',
     },
     created_by: {
       type: DataTypes.UUID,

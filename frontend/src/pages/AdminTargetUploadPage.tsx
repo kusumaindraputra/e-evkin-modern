@@ -135,6 +135,7 @@ const AdminTargetUploadPage: React.FC = () => {
   const [targetUploading, setTargetUploading] = useState(false);
   const [targetUploadProgress, setTargetUploadProgress] = useState(0);
   const [targetUploadCatatan, setTargetUploadCatatan] = useState('');
+  const [targetUploadBulanPenetapan, setTargetUploadBulanPenetapan] = useState<number>(new Date().getMonth() + 1);
   const [targetHistoryModalVisible, setTargetHistoryModalVisible] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<Target | null>(null);
   const [targetHistoryData, setTargetHistoryData] = useState<TargetHistoryRecord[]>([]);
@@ -239,6 +240,7 @@ const AdminTargetUploadPage: React.FC = () => {
     if (targetUploadCatatan.trim()) {
       formData.append('catatan', targetUploadCatatan.trim());
     }
+    formData.append('bulan_penetapan', targetUploadBulanPenetapan.toString());
 
     setTargetUploading(true);
     setTargetUploadProgress(0);
@@ -660,6 +662,17 @@ const AdminTargetUploadPage: React.FC = () => {
               placeholder="Contoh: Pagu Murni / Perubahan Parsial 1" disabled={targetUploading}
               style={{ width: '100%', padding: '8px 12px', border: targetUploadCatatan.trim() ? '1px solid #d9d9d9' : '1px solid #ff7875', borderRadius: 6 }}
             />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Bulan Penetapan <span style={{ color: 'red' }}>*</span></label>
+            <select value={targetUploadBulanPenetapan} onChange={(e) => setTargetUploadBulanPenetapan(Number(e.target.value))}
+              disabled={targetUploading}
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, background: '#fff' }}>
+              {BULAN_NAMES.map((name, idx) => (
+                <option key={idx + 1} value={idx + 1}>{name}</option>
+              ))}
+            </select>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Anggaran berlaku mulai bulan ini di dashboard</div>
           </div>
           <Upload.Dragger name="file" accept=".xlsx,.xls" beforeUpload={handleTargetUpload} showUploadList={false} disabled={targetUploading || !targetUploadCatatan.trim()}>
             {targetUploading ? (

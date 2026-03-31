@@ -31,7 +31,7 @@ export const LoginPage: React.FC = () => {
 
       login(user, token);
       message.success('Login berhasil!');
-      navigate('/dashboard');
+      navigate(user.role === 'admin' ? '/dashboard' : '/puskesmas/dashboard');
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Login gagal. Silakan coba lagi.';
       message.error(errorMessage);

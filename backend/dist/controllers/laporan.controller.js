@@ -2,7 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LaporanController = void 0;
 const laporan_service_1 = require("../services/laporan.service");
+const cacheService_1 = require("../services/cacheService");
 const MAX_BULK_SIZE = 500;
+/** Invalidate all dashboard caches when laporan data changes */
+function invalidateDashboardCaches() {
+    cacheService_1.cacheService.invalidatePattern('dashboard:');
+    cacheService_1.cacheService.invalidatePattern('puskesmas_dashboard:');
+}
 class LaporanController {
     static async findAll(req, res) {
         try {
@@ -65,6 +71,7 @@ class LaporanController {
                 payload.user_id = req.user.id;
             }
             const result = await laporan_service_1.LaporanService.create(payload);
+            invalidateDashboardCaches();
             res.status(201).json(result);
         }
         catch (error) {
@@ -92,6 +99,7 @@ class LaporanController {
                 return;
             }
             const result = await laporan_service_1.LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.status(201).json({
                 success: true,
                 count: result.length,
@@ -122,6 +130,7 @@ class LaporanController {
                 return;
             }
             const result = await laporan_service_1.LaporanService.bulkUpsert(req.body.laporanArray, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.status(200).json({
                 success: true,
                 message: `Bulk upsert completed: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped`,
@@ -149,6 +158,7 @@ class LaporanController {
                 role: req.user.role,
                 data: req.body
             });
+            invalidateDashboardCaches();
             res.json(result);
         }
         catch (error) {
@@ -174,6 +184,7 @@ class LaporanController {
                 return;
             }
             await laporan_service_1.LaporanService.delete(req.params.id, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.json({ message: 'Laporan deleted successfully' });
         }
         catch (error) {
@@ -201,6 +212,7 @@ class LaporanController {
                 return;
             }
             const count = await laporan_service_1.LaporanService.submit(bulan, tahun, req.user.id, req.user.role, user_id);
+            invalidateDashboardCaches();
             res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
         }
         catch (error) {

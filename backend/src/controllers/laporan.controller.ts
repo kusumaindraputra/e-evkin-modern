@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { LaporanService } from '../services/laporan.service';
+import { cacheService } from '../services/cacheService';
 
 const MAX_BULK_SIZE = 500;
+
+/** Invalidate all dashboard caches when laporan data changes */
+function invalidateDashboardCaches(): void {
+    cacheService.invalidatePattern('dashboard:');
+    cacheService.invalidatePattern('puskesmas_dashboard:');
+}
 
 export class LaporanController {
 
@@ -67,6 +74,7 @@ export class LaporanController {
             }
 
             const result = await LaporanService.create(payload);
+            invalidateDashboardCaches();
             res.status(201).json(result);
         } catch (error: any) {
             if (error.message.includes('Target belum diset') || error.message.includes('melebihi target')) {
@@ -95,6 +103,7 @@ export class LaporanController {
             }
 
             const result = await LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.status(201).json({
                 success: true,
                 count: result.length,
@@ -127,6 +136,7 @@ export class LaporanController {
             }
 
             const result = await LaporanService.bulkUpsert(req.body.laporanArray, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.status(200).json({
                 success: true,
                 message: `Bulk upsert completed: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped`,
@@ -155,6 +165,7 @@ export class LaporanController {
                 role: req.user.role,
                 data: req.body
             });
+            invalidateDashboardCaches();
             res.json(result);
         } catch (error: any) {
             if (error.message.includes('not found')) {
@@ -178,6 +189,7 @@ export class LaporanController {
             }
 
             await LaporanService.delete(req.params.id, req.user.id, req.user.role);
+            invalidateDashboardCaches();
             res.json({ message: 'Laporan deleted successfully' });
         } catch (error: any) {
             if (error.message.includes('not found')) {
@@ -205,6 +217,7 @@ export class LaporanController {
             }
 
             const count = await LaporanService.submit(bulan, tahun, req.user.id, req.user.role, user_id);
+            invalidateDashboardCaches();
             res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
         } catch (error: any) {
             if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id')) {

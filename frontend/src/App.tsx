@@ -11,7 +11,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const PuskesmasDashboardPage = lazy(() => import('./pages/PuskesmasDashboardPage'));
 
 // Lazy load puskesmas pages for code splitting
-const LaporanPage = lazy(() => import('./pages/LaporanPage'));
+
 const LaporanBulkInputPage = lazy(() => import('./pages/LaporanBulkInputPage'));
 const CaraPengisianPage = lazy(() => import('./pages/CaraPengisianPage'));
 const PuskesmasTargetPage = lazy(() => import('./pages/PuskesmasTargetPage'));
@@ -114,14 +114,7 @@ function App() {
             </PuskesmasRoute>
           }
         />
-        <Route
-          path="/laporan-old"
-          element={
-            <PuskesmasRoute>
-              <PageWrapper component={LaporanPage} />
-            </PuskesmasRoute>
-          }
-        />
+
         <Route
           path="/cara-pengisian"
           element={

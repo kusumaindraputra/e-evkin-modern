@@ -1,61 +1,29 @@
-import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  Table,
   Button,
-  Space,
-  Tag,
   Typography,
   Row,
   Col,
   Card,
   Select,
   message,
-  InputNumber,
-  Input,
   Popconfirm,
 } from 'antd';
 import {
   SaveOutlined,
   SendOutlined,
   ReloadOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
-import { formatNumber, formatSumberAnggaran, getSumberAnggaranColor } from '../utils/formatters';
+import LaporanProgressHeader from '../components/LaporanProgressHeader';
+import LaporanGroupCard from '../components/LaporanGroupCard';
+import type { LaporanRowData } from '../components/LaporanInputCard';
+import '../components/LaporanBulkInput.css';
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-
-interface LaporanRow {
-  id_sub_kegiatan: number;
-  kode_sub: string;
-  kegiatan: string;
-  indikator_kinerja: string;
-  id_kegiatan: number;
-
-  // Form fields
-  id_sumber_anggaran?: number;
-  id_satuan?: number; // Read-only dari admin target
-  target_k?: number; // Read-only dari admin
-  target_rp?: number; // Read-only dari admin
-  angkas?: number; // From PDF for single sumber, or manual input for multiple sumber
-  realisasi_k?: number;
-  realisasi_rp?: number;
-  realisasi_fisik?: number;
-  permasalahan?: string;
-  upaya?: string;
-
-  // Existing laporan data
-  laporan_id?: string;
-  status?: string;
-
-  // Angkas handling flag
-  // true = user must enter angkas manually (multiple sumber anggaran per sub kegiatan)
-  // false = angkas auto-filled from PDF upload (single sumber anggaran)
-  isManualAngkas?: boolean;
-}
+const { Text } = Typography;
 
 interface ReferenceData {
   sumberAnggaran: Array<{ value: number; label: string }>;
@@ -87,155 +55,7 @@ interface ExistingLaporan {
   status: string;
 }
 
-// Type for field change values
-type FieldChangeValue = string | number | null;
-
-// Memoized render components to prevent re-renders
-interface SumberAnggaranCellProps {
-  id_sumber_anggaran?: number;
-  sumberAnggaran: ReferenceData['sumberAnggaran'];
-}
-
-const SumberAnggaranCell = memo(({ id_sumber_anggaran, sumberAnggaran }: SumberAnggaranCellProps) => {
-  const sumber = sumberAnggaran.find((sa) => sa.value === id_sumber_anggaran);
-  const simplifiedLabel = formatSumberAnggaran(sumber?.label);
-  return (
-    <div>
-      <Tag color="blue" style={{ margin: 0, whiteSpace: 'normal' }}>{simplifiedLabel}</Tag>
-    </div>
-  );
-});
-SumberAnggaranCell.displayName = 'SumberAnggaranCell';
-
-interface SatuanCellProps {
-  id_satuan?: number;
-  satuan: ReferenceData['satuan'];
-}
-
-const SatuanCell = memo(({ id_satuan, satuan }: SatuanCellProps) => {
-  const satuanItem = satuan.find((s) => s.value === id_satuan);
-  return <div style={{ textAlign: 'center' }}>{satuanItem?.label || '-'}</div>;
-});
-SatuanCell.displayName = 'SatuanCell';
-
-interface RealisasiKInputProps {
-  value?: number;
-  disabled?: boolean;
-  onChange: (value: number | null) => void;
-}
-
-const RealisasiKInput = memo(({ value, disabled, onChange }: RealisasiKInputProps) => (
-  <InputNumber
-    style={{ width: '100%' }}
-    value={value}
-    onChange={onChange}
-    min={0}
-    step={1}
-    controls={false}
-    formatter={(val) => {
-      if (!val) return '0';
-      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }}
-    parser={(val) => {
-      const parsed = val?.replace(/\./g, '');
-      return parsed ? Number(parsed) : 0;
-    }}
-    disabled={disabled}
-  />
-));
-RealisasiKInput.displayName = 'RealisasiKInput';
-
-interface RealisasiRpInputProps {
-  value?: number;
-  maxValue?: number;
-  disabled?: boolean;
-  onChange: (value: number | null) => void;
-}
-
-const RealisasiRpInput = memo(({ value, maxValue, disabled, onChange }: RealisasiRpInputProps) => (
-  <InputNumber
-    style={{ width: '100%' }}
-    value={value}
-    onChange={onChange}
-    min={0}
-    max={maxValue || undefined}
-    step={1}
-    controls={false}
-    formatter={(val) => {
-      if (!val) return '0';
-      return `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    }}
-    parser={(val) => {
-      const parsed = val?.replace(/\./g, '');
-      return parsed ? Number(parsed) : 0;
-    }}
-    disabled={disabled}
-  />
-));
-RealisasiRpInput.displayName = 'RealisasiRpInput';
-
-interface RealisasiFisikInputProps {
-  value?: number;
-  disabled?: boolean;
-  onChange: (value: number | null) => void;
-}
-
-const RealisasiFisikInput = memo(({ value, disabled, onChange }: RealisasiFisikInputProps) => (
-  <InputNumber
-    style={{ width: '100%' }}
-    value={value}
-    onChange={onChange}
-    min={0}
-    max={100}
-    step={0.01}
-    controls={false}
-    formatter={(val) => `${val}`}
-    disabled={disabled}
-  />
-));
-RealisasiFisikInput.displayName = 'RealisasiFisikInput';
-
-interface TextAreaInputProps {
-  value?: string;
-  disabled?: boolean;
-  onChange: (value: string) => void;
-}
-
-const TextAreaInput = memo(({ value, disabled, onChange }: TextAreaInputProps) => (
-  <TextArea
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    rows={2}
-    disabled={disabled}
-  />
-));
-TextAreaInput.displayName = 'TextAreaInput';
-
-interface StatusTagProps {
-  status?: string;
-}
-
-const StatusTag = memo(({ status }: StatusTagProps) => {
-  if (!status) return <Tag>Belum Disimpan</Tag>;
-  const color =
-    status === 'terkirim'
-      ? 'processing'
-      : status === 'tersimpan'
-        ? 'default'
-        : 'warning';
-
-  const label =
-    status === 'tersimpan'
-      ? 'Tersimpan'
-      : status === 'terkirim'
-        ? 'Terkirim'
-        : status;
-
-  return <Tag color={color}>{label}</Tag>;
-});
-StatusTag.displayName = 'StatusTag';
-
-// Static options moved outside component to prevent re-creation on every render
+// Static options
 const BULAN_OPTIONS = [
   { value: 'Januari', label: 'Januari' },
   { value: 'Februari', label: 'Februari' },
@@ -256,17 +76,27 @@ const TAHUN_OPTIONS = Array.from({ length: 5 }, (_, i) => {
   return { value: year, label: year.toString() };
 });
 
+// Group rows by kegiatan induk name (extracted from API data)
+interface GroupedKegiatan {
+  kegiatanLabel: string;
+  kegiatanKode?: string;
+  rows: LaporanRowData[];
+}
 
 export const LaporanBulkInputPage: React.FC = () => {
-  // Use individual selectors to prevent unnecessary re-renders
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState<LaporanRow[]>([]);
+  const [rows, setRows] = useState<LaporanRowData[]>([]);
   const [referenceData, setReferenceData] = useState<ReferenceData>({
     sumberAnggaran: [],
     satuan: [],
   });
+
+  // Store kegiatan parent info for grouping
+  const [kegiatanParentMap, setKegiatanParentMap] = useState<
+    Record<number, { kegiatan: string; kode: string }>
+  >({});
 
   // Refs to prevent double-loading in React StrictMode
   const referenceDataLoaded = useRef(false);
@@ -274,10 +104,11 @@ export const LaporanBulkInputPage: React.FC = () => {
 
   // Filters
   const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
-  const [filterTahun, setFilterTahun] = useState<number>(new Date().getFullYear());
+  const [filterTahun, setFilterTahun] = useState<number>(
+    new Date().getFullYear()
+  );
 
   const loadReferenceData = useCallback(async () => {
-    // Skip if already loaded (prevents double-loading in React StrictMode)
     if (referenceDataLoaded.current) return;
     referenceDataLoaded.current = true;
 
@@ -296,57 +127,52 @@ export const LaporanBulkInputPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to load reference data:', error);
       message.error('Gagal memuat data referensi');
-      // Reset flag to allow retry on error
       referenceDataLoaded.current = false;
     }
   }, [token]);
 
   const loadData = useCallback(async () => {
     if (!user || !filterBulan || !filterTahun) return;
-
-    // Prevent concurrent requests (React StrictMode double-invokes effects)
     if (loadDataInProgress.current) return;
     loadDataInProgress.current = true;
 
     setLoading(true);
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
+      const bulanIndex =
+        BULAN_OPTIONS.findIndex((b) => b.value === filterBulan) + 1;
 
-      // Get bulan index for angkas query (1-12)
-      const bulanIndex = BULAN_OPTIONS.findIndex(b => b.value === filterBulan) + 1;
-
-      // Load sub kegiatan yang punya target di tahun ini
-      // Also load full angkas data (with monthly values per sumber anggaran)
-      const [assignmentsRes, laporanRes, angkasRes, angkasFullRes] = await Promise.all([
-        axios.get(
-          `${API_BASE_URL}/target/assigned?tahun=${filterTahun}`,
-          config
-        ),
-        axios.get(`${API_BASE_URL}/laporan`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { bulan: filterBulan, tahun: filterTahun, limit: 1000 },
-        }),
-        // For single-sumber: get cumulative angkas by sub_kegiatan
-        axios.get(`${API_BASE_URL}/angkas/by-sub-kegiatan`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { tahun: filterTahun, bulan: bulanIndex },
-        }).catch(() => ({ data: { data: [] } })),
-        // For multi-sumber: get full angkas data by sumber_anggaran with monthly values
-        axios.get(`${API_BASE_URL}/angkas`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { tahun: filterTahun },
-        }).catch(() => ({ data: { data: [] } })),
-      ]);
-
+      const [assignmentsRes, laporanRes, angkasRes, angkasFullRes] =
+        await Promise.all([
+          axios.get(
+            `${API_BASE_URL}/target/assigned?tahun=${filterTahun}`,
+            config
+          ),
+          axios.get(`${API_BASE_URL}/laporan`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { bulan: filterBulan, tahun: filterTahun, limit: 1000 },
+          }),
+          axios
+            .get(`${API_BASE_URL}/angkas/by-sub-kegiatan`, {
+              headers: { Authorization: `Bearer ${token}` },
+              params: { tahun: filterTahun, bulan: bulanIndex },
+            })
+            .catch(() => ({ data: { data: [] } })),
+          axios
+            .get(`${API_BASE_URL}/angkas`, {
+              headers: { Authorization: `Bearer ${token}` },
+              params: { tahun: filterTahun },
+            })
+            .catch(() => ({ data: { data: [] } })),
+        ]);
 
       const existingLaporan = Array.isArray(laporanRes.data.data)
         ? laporanRes.data.data
         : Array.isArray(laporanRes.data)
-          ? laporanRes.data
-          : [];
+        ? laporanRes.data
+        : [];
 
-      // Create map of angkas by sub_kegiatan ONLY (for single-sumber sub kegiatan)
-      // PDF angkas may have different sumber_anggaran than targets
+      // Angkas maps
       const angkasMap = new Map<number, number>();
       if (angkasRes.data.data) {
         for (const item of angkasRes.data.data) {
@@ -354,13 +180,10 @@ export const LaporanBulkInputPage: React.FC = () => {
         }
       }
 
-      // Create map of angkas by sub_kegiatan + sumber_anggaran (for multi-sumber sub kegiatan)
-      // Calculate cumulative angkas from month 1 to selected month
       const angkasFullMap = new Map<string, number>();
       if (angkasFullRes.data?.data) {
         for (const item of angkasFullRes.data.data) {
           const key = `${item.id_sub_kegiatan}-${item.id_sumber_anggaran}`;
-          // Sum bulanan values from month 1 to bulanIndex
           const bulanan = item.bulanan || [];
           let cumulative = 0;
           for (let i = 0; i < bulanIndex && i < bulanan.length; i++) {
@@ -370,45 +193,44 @@ export const LaporanBulkInputPage: React.FC = () => {
         }
       }
 
-      // Map target data to rows (NEW FORMAT)
+      // Map target data to rows
       const targetData = assignmentsRes.data.data || [];
-      const mappedRows: LaporanRow[] = [];
+      const mappedRows: LaporanRowData[] = [];
+      const parentMap: Record<number, { kegiatan: string; kode: string }> = {};
 
-      // For each sub kegiatan with targets
       for (const item of targetData) {
         const subKegiatan = item.subKegiatan;
         const targets = item.targets || [];
-
-        if (targets.length === 0) continue; // Skip jika tidak ada target
+        if (targets.length === 0) continue;
 
         const subKegiatanId = subKegiatan.id_sub_kegiatan;
-
-        // isManualAngkas from backend: true if multiple sumber anggaran
-        // When true, puskesmas must input angkas manually (PDF angkas can't be split)
-        // When false, angkas is auto-filled from PDF upload
         const isManualAngkas = item.isManualAngkas || false;
 
-        // Create one row for each target (each sumber anggaran)
+        // Store parent kegiatan info for grouping
+        if (subKegiatan.kegiatanParent) {
+          const parentKegId = subKegiatan.kegiatanParent.id_kegiatan;
+          if (!parentMap[parentKegId]) {
+            parentMap[parentKegId] = {
+              kegiatan: subKegiatan.kegiatanParent.kegiatan,
+              kode: subKegiatan.kegiatanParent.kode || '',
+            };
+          }
+        }
+
         targets.forEach((target: TargetData) => {
           const idSumberAnggaran = target.id_sumber_anggaran;
 
-          // Find existing laporan for this sub kegiatan + sumber anggaran combo
           const existing = existingLaporan.find(
             (l: ExistingLaporan) =>
               l.id_sub_kegiatan === subKegiatanId &&
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
-          // Get angkas:
-          // - For single sumber: from PDF angkas (by sub_kegiatan only)
-          // - For multi sumber: from angkas page (by sub_kegiatan + sumber_anggaran)
           let angkasValue: number;
           if (isManualAngkas) {
-            // Get cumulative angkas from angkas page (per sumber_anggaran)
             const angkasKey = `${subKegiatanId}-${idSumberAnggaran}`;
             angkasValue = angkasFullMap.get(angkasKey) || 0;
           } else {
-            // Auto-fill from PDF angkas (by sub_kegiatan only)
             angkasValue = angkasMap.get(subKegiatanId) || 0;
           }
 
@@ -417,33 +239,31 @@ export const LaporanBulkInputPage: React.FC = () => {
             kode_sub: subKegiatan.kode_sub,
             kegiatan: subKegiatan.kegiatan,
             indikator_kinerja: subKegiatan.indikator_kinerja,
-            id_kegiatan: 0,
-
-            // Pre-fill sumber anggaran (readonly, dari target)
+            id_kegiatan: subKegiatan.kegiatanParent?.id_kegiatan || 0,
             id_sumber_anggaran: idSumberAnggaran,
-
-            // Target dan satuan dari admin (READ-ONLY)
-            // Use default satuan (1=Orang) if not set in target
             target_k: target.target_k || 0,
             target_rp: Number(target.target_rp) || 0,
             angkas: angkasValue,
-            id_satuan: target.id_satuan || 1, // Default to "Orang" if not set
-
-            // Flag for angkas handling
+            id_satuan: target.id_satuan || 1,
             isManualAngkas,
-
-            // Populate with existing data if available
             laporan_id: existing?.id,
             status: existing?.status,
-            realisasi_k: existing?.realisasi_k ? Number(existing.realisasi_k) : undefined,
-            realisasi_rp: existing?.realisasi_rp ? Number(existing.realisasi_rp) : undefined,
-            realisasi_fisik: existing?.realisasi_fisik ? Number(existing.realisasi_fisik) : undefined,
+            realisasi_k: existing?.realisasi_k
+              ? Number(existing.realisasi_k)
+              : undefined,
+            realisasi_rp: existing?.realisasi_rp
+              ? Number(existing.realisasi_rp)
+              : undefined,
+            realisasi_fisik: existing?.realisasi_fisik
+              ? Number(existing.realisasi_fisik)
+              : undefined,
             permasalahan: existing?.permasalahan || '',
             upaya: existing?.upaya || '',
           });
         });
       }
 
+      setKegiatanParentMap(parentMap);
       setRows(mappedRows);
     } catch (error: any) {
       console.error('Error loading data:', error);
@@ -464,11 +284,18 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   }, [filterBulan, filterTahun, loadData]);
 
+  // Field change handler
   const handleFieldChange = useCallback(
-    (id_sub_kegiatan: number, id_sumber_anggaran: number, field: string, value: FieldChangeValue) => {
+    (
+      id_sub_kegiatan: number,
+      id_sumber_anggaran: number,
+      field: string,
+      value: string | number | null
+    ) => {
       setRows((prevRows) =>
         prevRows.map((row) =>
-          row.id_sub_kegiatan === id_sub_kegiatan && row.id_sumber_anggaran === id_sumber_anggaran
+          row.id_sub_kegiatan === id_sub_kegiatan &&
+          row.id_sumber_anggaran === id_sumber_anggaran
             ? { ...row, [field]: value }
             : row
         )
@@ -477,19 +304,15 @@ export const LaporanBulkInputPage: React.FC = () => {
     []
   );
 
+  // Save handler
   const handleSave = useCallback(async () => {
     if (!filterBulan || !filterTahun) {
       message.warning('Pilih bulan dan tahun terlebih dahulu');
       return;
     }
 
-    // Validate: check if at least one row has data
     const hasData = rows.some(
-      (row) =>
-        row.id_sumber_anggaran ||
-        row.id_satuan ||
-        row.target_k ||
-        row.realisasi_k
+      (row) => row.id_sumber_anggaran || row.id_satuan || row.target_k || row.realisasi_k
     );
 
     if (!hasData) {
@@ -497,42 +320,44 @@ export const LaporanBulkInputPage: React.FC = () => {
       return;
     }
 
-    // Warn if multi-sumber sub kegiatan has no angkas data (should be input on angkas page first)
-    const rowsToSave = rows.filter((row) => row.id_sumber_anggaran && row.id_satuan);
+    const rowsToSave = rows.filter(
+      (row) => row.id_sumber_anggaran && row.id_satuan
+    );
     const missingAngkas = rowsToSave.filter(
       (row) => row.isManualAngkas && (!row.angkas || row.angkas <= 0)
     );
 
     if (missingAngkas.length > 0) {
-      const kodeList = [...new Set(missingAngkas.map(r => r.kode_sub))].join(', ');
-      message.warning(`Angkas belum diinput untuk: ${kodeList}. Silakan input di halaman Target & Angkas terlebih dahulu.`);
-      // Don't block save, just warn - user may want to save other data
+      const kodeList = [
+        ...new Set(missingAngkas.map((r) => r.kode_sub)),
+      ].join(', ');
+      message.warning(
+        `Angkas belum diinput untuk: ${kodeList}. Silakan input di halaman Target & Angkas terlebih dahulu.`
+      );
     }
 
     setLoading(true);
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const laporanArray = rowsToSave
-        .map((row) => ({
-          id: row.laporan_id,
-          id_kegiatan: row.id_kegiatan,
-          id_sub_kegiatan: row.id_sub_kegiatan,
-          id_sumber_anggaran: row.id_sumber_anggaran,
-          id_satuan: row.id_satuan,
-          target_k: row.target_k || 0,
-          angkas: row.angkas || 0,
-          target_rp: row.target_rp || 0,
-          realisasi_k: row.realisasi_k || 0,
-          realisasi_rp: row.realisasi_rp || 0,
-          realisasi_fisik: row.realisasi_fisik || 0,
-          permasalahan: row.permasalahan || '',
-          upaya: row.upaya || '',
-          bulan: filterBulan,
-          tahun: filterTahun,
-        }));
+      const laporanArray = rowsToSave.map((row) => ({
+        id: row.laporan_id,
+        id_kegiatan: row.id_kegiatan,
+        id_sub_kegiatan: row.id_sub_kegiatan,
+        id_sumber_anggaran: row.id_sumber_anggaran,
+        id_satuan: row.id_satuan,
+        target_k: row.target_k || 0,
+        angkas: row.angkas || 0,
+        target_rp: row.target_rp || 0,
+        realisasi_k: row.realisasi_k || 0,
+        realisasi_rp: row.realisasi_rp || 0,
+        realisasi_fisik: row.realisasi_fisik || 0,
+        permasalahan: row.permasalahan || '',
+        upaya: row.upaya || '',
+        bulan: filterBulan,
+        tahun: filterTahun,
+      }));
 
-      // Use optimized bulk-upsert endpoint (single transaction)
       const response = await axios.post(
         `${API_BASE_URL}/laporan/bulk-upsert`,
         { laporanArray },
@@ -541,7 +366,8 @@ export const LaporanBulkInputPage: React.FC = () => {
 
       const { results } = response.data;
       message.success(
-        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
+        `Berhasil: ${results.created} dibuat, ${results.updated} diupdate${
+          results.skipped > 0 ? `, ${results.skipped} dilewati` : ''
         }`
       );
 
@@ -549,15 +375,18 @@ export const LaporanBulkInputPage: React.FC = () => {
         console.warn('Errors during save:', results.errors);
       }
 
-      loadData(); // Reload to get updated data
+      loadData();
     } catch (error: any) {
       console.error('Error saving:', error);
-      message.error(error.response?.data?.message || 'Gagal menyimpan laporan');
+      message.error(
+        error.response?.data?.message || 'Gagal menyimpan laporan'
+      );
     } finally {
       setLoading(false);
     }
   }, [filterBulan, filterTahun, rows, token, loadData]);
 
+  // Submit handler
   const handleSubmit = useCallback(async () => {
     if (!filterBulan || !filterTahun) {
       message.warning('Pilih bulan dan tahun terlebih dahulu');
@@ -572,10 +401,14 @@ export const LaporanBulkInputPage: React.FC = () => {
         { bulan: filterBulan, tahun: filterTahun },
         config
       );
-      message.success(`Laporan ${filterBulan} ${filterTahun} berhasil dikirim`);
+      message.success(
+        `Laporan ${filterBulan} ${filterTahun} berhasil dikirim`
+      );
       loadData();
     } catch (error: any) {
-      message.error(error.response?.data?.message || 'Gagal mengirim laporan');
+      message.error(
+        error.response?.data?.message || 'Gagal mengirim laporan'
+      );
     } finally {
       setLoading(false);
     }
@@ -590,204 +423,87 @@ export const LaporanBulkInputPage: React.FC = () => {
     setFilterTahun(value);
   }, []);
 
-  const columns: ColumnsType<LaporanRow> = useMemo(
-    () => [
-      {
-        title: 'No',
-        key: 'no',
-        width: 50,
-        align: 'center',
-        fixed: 'left' as const,
-        render: (_: any, __: any, index: number) => index + 1,
-      },
-      {
-        title: 'Sub Kegiatan',
-        key: 'sub_kegiatan',
-        width: 320,
-        fixed: 'left' as const,
-        render: (_: any, record: LaporanRow) => {
-          const sumber = referenceData.sumberAnggaran.find((sa) => sa.value === record.id_sumber_anggaran);
-          const simplifiedSumber = formatSumberAnggaran(sumber?.label);
-          const sumberColor = getSumberAnggaranColor(simplifiedSumber);
-          return (
-            <div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                <Tag color="blue">{record.kode_sub}</Tag>
-                <Tag color={sumberColor}>{simplifiedSumber}</Tag>
-              </div>
-              <div style={{ marginTop: 4 }}>{record.kegiatan}</div>
-            </div>
-          );
-        },
-        sorter: (a, b) => a.kode_sub.localeCompare(b.kode_sub),
-      },
-      {
-        title: 'Indikator Kinerja',
-        dataIndex: 'indikator_kinerja',
-        key: 'indikator_kinerja',
-        width: 250,
-        render: (text: string) => (
-          <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>
-        ),
-        sorter: (a, b) => a.indikator_kinerja.localeCompare(b.indikator_kinerja),
-      },
-      // Column order: Target Anggaran, Target Angkas, Realisasi (Rp), Target (K), Satuan, Realisasi (K)
-      {
-        title: 'Target Anggaran (Rp)',
-        key: 'target_rp',
-        width: 160,
-        sorter: (a, b) => (a.target_rp || 0) - (b.target_rp || 0),
-        render: (_: any, record: LaporanRow) => (
-          <div style={{ textAlign: 'right' }}>
-            {formatNumber(record.target_rp || 0)}
-          </div>
-        ),
-      },
-      {
-        title: 'Angkas (Rp)',
-        key: 'angkas',
-        width: 150,
-        sorter: (a, b) => (a.angkas || 0) - (b.angkas || 0),
-        render: (_: any, record: LaporanRow) => {
-          const hasAngkas = record.angkas && record.angkas > 0;
-          return (
-            <div style={{ textAlign: 'right' }}>
-              {formatNumber(record.angkas || 0)}
-              {record.isManualAngkas && !hasAngkas && (
-                <div style={{ fontSize: '10px', color: '#fa8c16' }}>Belum diinput</div>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        title: 'Realisasi (Rp)',
-        key: 'realisasi_rp',
-        width: 150,
-        sorter: (a, b) => (a.realisasi_rp || 0) - (b.realisasi_rp || 0),
-        render: (_: any, record: LaporanRow) => (
-          <RealisasiRpInput
-            value={record.realisasi_rp}
-            maxValue={record.angkas}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_rp', value)
-            }
-          />
-        ),
-      },
-      {
-        title: 'Target (K)',
-        key: 'target_k',
-        width: 120,
-        sorter: (a, b) => (a.target_k || 0) - (b.target_k || 0),
-        render: (_: any, record: LaporanRow) => (
-          <div style={{ textAlign: 'right' }}>
-            {formatNumber(record.target_k || 0)}
-          </div>
-        ),
-      },
-      {
-        title: 'Satuan',
-        key: 'id_satuan',
-        width: 120,
-        render: (_: any, record: LaporanRow) => (
-          <SatuanCell id_satuan={record.id_satuan} satuan={referenceData.satuan} />
-        ),
-      },
-      {
-        title: 'Realisasi (K)',
-        key: 'realisasi_k',
-        width: 120,
-        sorter: (a, b) => (a.realisasi_k || 0) - (b.realisasi_k || 0),
-        render: (_: any, record: LaporanRow) => (
-          <RealisasiKInput
-            value={record.realisasi_k}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_k', value)
-            }
-          />
-        ),
-      },
-      {
-        title: 'Realisasi Fisik (%)',
-        key: 'realisasi_fisik',
-        width: 120,
-        sorter: (a, b) => (a.realisasi_fisik || 0) - (b.realisasi_fisik || 0),
-        render: (_: any, record: LaporanRow) => (
-          <RealisasiFisikInput
-            value={record.realisasi_fisik}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'realisasi_fisik', value)
-            }
-          />
-        ),
-      },
-      {
-        title: 'Permasalahan',
-        key: 'permasalahan',
-        width: 200,
-        render: (_: any, record: LaporanRow) => (
-          <TextAreaInput
-            value={record.permasalahan}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'permasalahan', value)
-            }
-          />
-        ),
-      },
-      {
-        title: 'Upaya',
-        key: 'upaya',
-        width: 200,
-        render: (_: any, record: LaporanRow) => (
-          <TextAreaInput
-            value={record.upaya}
-            disabled={record.status === 'terkirim'}
-            onChange={(value) =>
-              handleFieldChange(record.id_sub_kegiatan, record.id_sumber_anggaran!, 'upaya', value)
-            }
-          />
-        ),
-      },
-      {
-        title: 'Status',
-        key: 'status',
-        width: 120,
-        fixed: 'right',
-        sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
-        render: (_: any, record: LaporanRow) => <StatusTag status={record.status} />,
-      },
-    ],
-    [referenceData, handleFieldChange]
-  );
+  // Group rows by parent kegiatan
+  const groupedData = useMemo((): GroupedKegiatan[] => {
+    const groups = new Map<number, GroupedKegiatan>();
 
-  // Check if there are no unsaved records (allow mix of tersimpan and terkirim)
-  const canSendReport = rows.length > 0 && rows.every(
-    (row) => row.laporan_id && (row.status === 'tersimpan' || row.status === 'terkirim')
-  );
+    for (const row of rows) {
+      const kegId = row.id_kegiatan || 0;
+      if (!groups.has(kegId)) {
+        const parent = kegiatanParentMap[kegId];
+        groups.set(kegId, {
+          kegiatanLabel: parent?.kegiatan || 'Kegiatan Lainnya',
+          kegiatanKode: parent?.kode,
+          rows: [],
+        });
+      }
+      groups.get(kegId)!.rows.push(row);
+    }
 
-  // Check if there are unsaved changes (no laporan_id or missing required fields)
+    // Sort groups by kode
+    return Array.from(groups.values()).sort((a, b) =>
+      (a.kegiatanKode || '').localeCompare(b.kegiatanKode || '')
+    );
+  }, [rows, kegiatanParentMap]);
+
+  // Reference data maps for quick lookup
+  const sumberAnggaranMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const sa of referenceData.sumberAnggaran) {
+      map[sa.value] = sa.label;
+    }
+    return map;
+  }, [referenceData.sumberAnggaran]);
+
+  const satuanMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const s of referenceData.satuan) {
+      map[s.value] = s.label;
+    }
+    return map;
+  }, [referenceData.satuan]);
+
+  // Progress stats
+  const progressStats = useMemo(() => {
+    const filled = rows.filter(
+      (r) => r.laporan_id || (r.realisasi_k !== undefined && r.realisasi_k !== null)
+    ).length;
+    const totalTargetRp = rows.reduce((sum, r) => sum + (r.target_rp || 0), 0);
+    const totalRealisasiRp = rows.reduce(
+      (sum, r) => sum + (r.realisasi_rp || 0),
+      0
+    );
+    const totalTargetK = rows.reduce((sum, r) => sum + (r.target_k || 0), 0);
+    const totalRealisasiK = rows.reduce(
+      (sum, r) => sum + (r.realisasi_k || 0),
+      0
+    );
+    return {
+      filled,
+      totalTargetRp,
+      totalRealisasiRp,
+      totalTargetK,
+      totalRealisasiK,
+    };
+  }, [rows]);
+
+  // Action bar state
+  const canSendReport =
+    rows.length > 0 &&
+    rows.every(
+      (row) =>
+        row.laporan_id &&
+        (row.status === 'tersimpan' || row.status === 'terkirim')
+    );
+
   const hasUnsavedChanges = rows.some(
     (row) => !row.laporan_id || (!row.id_sumber_anggaran && !row.id_satuan)
   );
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Title level={3}>Laporan Kinerja Bulanan</Title>
-          <Text type="secondary">
-            Isi laporan untuk semua sub kegiatan yang telah dikonfigurasi
-          </Text>
-        </Col>
-      </Row>
-
-      {/* Filter Section */}
-      <Card style={{ marginBottom: 16 }}>
+      {/* Filter Bar */}
+      <Card className="laporan-filter-bar">
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={8} md={6}>
             <Text strong>Periode Laporan:</Text>
@@ -811,26 +527,67 @@ export const LaporanBulkInputPage: React.FC = () => {
             />
           </Col>
           <Col xs={24} sm={8} md={6}>
-            <Space>
-              <Button icon={<ReloadOutlined />} onClick={loadData} disabled={!filterBulan || !filterTahun}>
-                Refresh
-              </Button>
-            </Space>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadData}
+              disabled={!filterBulan || !filterTahun}
+              loading={loading}
+            >
+              Refresh
+            </Button>
           </Col>
         </Row>
       </Card>
 
-      {filterBulan && filterTahun && (
+      {filterBulan && filterTahun && rows.length > 0 && (
         <>
-          {/* Action Buttons */}
-          <Card style={{ marginBottom: 16 }}>
-            <Space>
+          {/* Progress Header */}
+          <LaporanProgressHeader
+            bulan={filterBulan}
+            tahun={filterTahun}
+            totalRows={rows.length}
+            filledRows={progressStats.filled}
+            totalTargetRp={progressStats.totalTargetRp}
+            totalRealisasiRp={progressStats.totalRealisasiRp}
+            totalTargetK={progressStats.totalTargetK}
+            totalRealisasiK={progressStats.totalRealisasiK}
+          />
+
+          {/* Grouped Cards */}
+          {groupedData.map((group) => (
+            <LaporanGroupCard
+              key={group.kegiatanKode || group.kegiatanLabel}
+              kegiatanLabel={group.kegiatanLabel}
+              kegiatanKode={group.kegiatanKode}
+              rows={group.rows}
+              sumberAnggaranMap={sumberAnggaranMap}
+              satuanMap={satuanMap}
+              onFieldChange={handleFieldChange}
+            />
+          ))}
+
+          {/* Sticky Action Bar */}
+          <div className="laporan-action-bar">
+            <div className="action-bar-info">
+              {hasUnsavedChanges && (
+                <Text type="warning">
+                  ⚠ Simpan terlebih dahulu sebelum mengirim
+                </Text>
+              )}
+              {!canSendReport && !hasUnsavedChanges && rows.length > 0 && (
+                <Text type="secondary">
+                  Semua laporan harus tersimpan untuk dikirim
+                </Text>
+              )}
+            </div>
+            <div className="action-bar-buttons">
               <Button
                 type="primary"
                 icon={<SaveOutlined />}
                 onClick={handleSave}
                 loading={loading}
                 disabled={rows.length === 0}
+                size="large"
               >
                 Simpan Laporan
               </Button>
@@ -845,54 +602,44 @@ export const LaporanBulkInputPage: React.FC = () => {
                 <Button
                   icon={<SendOutlined />}
                   loading={loading}
-                  disabled={rows.length === 0 || !canSendReport || hasUnsavedChanges}
+                  disabled={
+                    rows.length === 0 || !canSendReport || hasUnsavedChanges
+                  }
+                  size="large"
                 >
-                  Kirim Laporan {filterBulan} {filterTahun}
+                  Kirim {filterBulan}
                 </Button>
               </Popconfirm>
-            </Space>
-            {hasUnsavedChanges && (
-              <div style={{ marginTop: 8 }}>
-                <Text type="warning">
-                  * Simpan terlebih dahulu sebelum mengirim laporan
-                </Text>
-              </div>
-            )}
-            {!canSendReport && !hasUnsavedChanges && rows.length > 0 && (
-              <div style={{ marginTop: 8 }}>
-                <Text type="warning">
-                  * Semua laporan harus berstatus "Tersimpan" atau "Terkirim" untuk dapat dikirim ulang
-                </Text>
-              </div>
-            )}
-          </Card>
-
-          {/* Table - with virtual scrolling for large datasets */}
-          <Card>
-            <Table
-              columns={columns}
-              dataSource={rows}
-              loading={loading}
-              rowKey={(record) => `${record.id_sub_kegiatan}-${record.id_sumber_anggaran}`}
-              sticky
-              scroll={{ x: 2800, y: 500 }}
-              pagination={false}
-              bordered
-              virtual
-            />
-          </Card>
+            </div>
+          </div>
         </>
       )}
 
-      {!filterBulan || !filterTahun ? (
+      {/* Empty state when no data */}
+      {filterBulan && filterTahun && rows.length === 0 && !loading && (
+        <div className="laporan-empty-state">
+          <FileTextOutlined className="empty-icon" />
+          <div className="empty-text">
+            Tidak ada sub kegiatan dengan target untuk periode ini
+          </div>
+        </div>
+      )}
+
+      {/* Initial state — no filter selected */}
+      {(!filterBulan || !filterTahun) && (
         <Card>
-          <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Text type="secondary" style={{ fontSize: 16 }}>
-              Pilih bulan dan tahun untuk mulai input laporan
-            </Text>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <FileTextOutlined
+              style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }}
+            />
+            <div>
+              <Text type="secondary" style={{ fontSize: 16 }}>
+                Pilih bulan dan tahun untuk mulai input laporan
+              </Text>
+            </div>
           </div>
         </Card>
-      ) : null}
+      )}
     </div>
   );
 };

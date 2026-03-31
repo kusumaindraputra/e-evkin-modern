@@ -402,11 +402,10 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
     // When a sub_kegiatan has MANUAL entries (split by sumber anggaran),
     // exclude the original PDF entry (combined/unsplit) to avoid double-counting
     const getCumulativeAngkas = (angkas: any[], year: number, monthNum: number) => {
-      const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
       const latestPerKeyPerMonth = new Map();
+      // angkas are ordered by created_at ASC, so later entries overwrite earlier ones
       angkas.forEach((a: any) => {
-        const createdAt = new Date(a.createdAt);
-        if (createdAt <= cutoffDate && a.bulan <= monthNum) {
+        if (a.bulan <= monthNum) {
           const keyMonth = `${a.user_id}_${a.kode_rekening}_${a.id_sumber_anggaran}_${a.tahun}_${a.bulan}`;
           latestPerKeyPerMonth.set(keyMonth, a);
         }

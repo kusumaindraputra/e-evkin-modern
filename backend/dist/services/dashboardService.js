@@ -326,12 +326,16 @@ async function getChartData(tahun, userId, sumberAnggaranId, subKegiatanId) {
         ]);
         const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         // Helper: get anggaran valid at a specific month
+        // Uses bulan_penetapan (effective month) instead of created_at for determining
+        // which budget revision applies to each month.
+        // For month M, keeps the latest-created target whose bulan_penetapan <= M.
         const getAnggaranForMonth = (targets, year, monthNum) => {
-            const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
             const grouped = new Map();
+            // targets are ordered by created_at ASC, so later entries overwrite earlier ones
             targets.forEach((t) => {
-                const createdAt = new Date(t.createdAt);
-                if (createdAt <= cutoffDate) {
+                // bulan_penetapan null = berlaku dari awal tahun (treated as month 1)
+                const effectiveMonth = t.bulan_penetapan || 1;
+                if (effectiveMonth <= monthNum) {
                     const key = `${t.user_id}_${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
                     grouped.set(key, t);
                 }
@@ -342,11 +346,10 @@ async function getChartData(tahun, userId, sumberAnggaranId, subKegiatanId) {
         // When a sub_kegiatan has MANUAL entries (split by sumber anggaran),
         // exclude the original PDF entry (combined/unsplit) to avoid double-counting
         const getCumulativeAngkas = (angkas, year, monthNum) => {
-            const cutoffDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
             const latestPerKeyPerMonth = new Map();
+            // angkas are ordered by created_at ASC, so later entries overwrite earlier ones
             angkas.forEach((a) => {
-                const createdAt = new Date(a.createdAt);
-                if (createdAt <= cutoffDate && a.bulan <= monthNum) {
+                if (a.bulan <= monthNum) {
                     const keyMonth = `${a.user_id}_${a.kode_rekening}_${a.id_sumber_anggaran}_${a.tahun}_${a.bulan}`;
                     latestPerKeyPerMonth.set(keyMonth, a);
                 }

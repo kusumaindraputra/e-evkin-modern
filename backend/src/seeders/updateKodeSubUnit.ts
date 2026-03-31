@@ -48,7 +48,7 @@ const kodeSubUnitMapping: Record<string, string> = {
   "Sukamakmur": "1.02.0.00.0.00.01.0047",
   "Cariu": "1.02.0.00.0.00.01.0048",
   "Klapanunggal": "1.02.0.00.0.00.01.0049",
-  "Labkesda": "1.02.0.00.0.00.01.0050",
+  "Labkesda": "1.02.0.00.0.00.01.0113",
   "Bagoang": "1.02.0.00.0.00.01.0052",
   "Curug": "1.02.0.00.0.00.01.0053",
   "Lebakwangi": "1.02.0.00.0.00.01.0054",

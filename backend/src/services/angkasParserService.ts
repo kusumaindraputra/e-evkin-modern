@@ -50,7 +50,8 @@ const KEGIATAN_PATTERN = /^(1\.\d+\.\d+\.\d+\.\d+\.\d+)\s+(.+?)(\d{1,3}(?:\.\d{3
 // Pattern to match Sumber Anggaran header lines (short code like "4.1" or "4.2")
 // Example: "4.1   Pendapatan Asli Daerah"
 // Example: "4.2   Transfer"
-const SUMBER_ANGGARAN_PATTERN = /^(\d\.\d)\s+(.+?)(?:\s+\d{1,3}(?:\.\d{3})*(?:,\d{2})?|$)/;
+// Must NOT match when followed only by currency values (e.g., "4.1   1.139.718.035.880,00")
+const SUMBER_ANGGARAN_PATTERN = /^(\d\.\d)\s+([A-Za-z].+?)(?:\s+\d{1,3}(?:\.\d{3})*(?:,\d{2})?|$)/;
 
 // Pattern to parse currency values (Indonesian format: 1.234.567,89)
 // MUST end with ,XX (decimal) to avoid matching kode rekening like 1.02.01.2.10.0001
@@ -283,7 +284,108 @@ export async function parseAngkasPdf(pdfBuffer: Buffer): Promise<ParsedAngkas> {
       lines.push(currentLine);
     }
 
-    const pageText = lines.map(line => line.join(' ')).join('\n');
+    // Build raw lines from grouped text items
+    const rawLines = lines.map(line => line.join(' ').trim());
+
+    // JOIN SPLIT KODE LINES: The SIPD Penatausahaan PDF splits kode rekening
+    // across 2-3 lines due to column layout. We need to reconstruct them.
+    //
+    // Pattern A - Puskesmas header (3-line split):
+    //   Line N:   "1.02.0.00.0.0  Puskesmas"       (partial kode + optional text)
+    //   Line N+1: "4.367.839.106,00 ..."            (values)
+    //   Line N+2: "0.01.0018 Bojonggede"            (kode tail + name)
+    //   -> Join as: "1.02.0.00.0.00.01.0018 Puskesmas Bojonggede  4.367..."
+    //
+    // Pattern B - Sub-kegiatan (2-3 line split):
+    //   Line N:   "1.02.02.2.02."                   (partial kode)
+    //   Line N+1: "dengan Masalah  30.025.000,00..."(uraian + values)
+    //   Line N+2: "0021"                            (kode tail)
+    //   -> Join as: "1.02.02.2.02.0021 dengan Masalah 30.025.000,00..."
+    //
+    // Pattern B2 - Sub-kegiatan variant:
+    //   Line N:   "1.02.02.2.02.  Operasional Pelayanan"
+    //   Line N+1: "331.035.100,00 ..."              (values)
+    //   Line N+2: "0033 Puskesmas"                  (kode tail + uraian cont.)
+    //   -> Join as: "1.02.02.2.02.0033 Operasional Pelayanan Puskesmas 331.035..."
+
+    const joinedLines: string[] = [];
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+
+      // Pattern A: Puskesmas header - partial kode "1.02.0.00.0.0" with optional text
+      const puskesmasKodeMatch = line.match(/^(1\.02\.0\.00\.0\.0)\s*(.*)/);
+      if (puskesmasKodeMatch) {
+        const partialKode = puskesmasKodeMatch[1];
+        const textOnKodeLine = puskesmasKodeMatch[2].trim();
+        // Search next 1-3 lines for the kode tail "0.01.XXXX" or "0.XX.XXXX"
+        let kodeTail = '';
+        let kodeTailName = '';
+        let valuesLine = '';
+        let skipTo = i;
+
+        for (let j = i + 1; j <= Math.min(i + 3, rawLines.length - 1); j++) {
+          const candidate = rawLines[j];
+          const tailMatch = candidate.match(/^(0\.\d+\.\d+)\s*(.*)/);
+          if (tailMatch) {
+            kodeTail = tailMatch[1];
+            kodeTailName = tailMatch[2].trim();
+            skipTo = j;
+            break;
+          } else {
+            // This is a text/values line between partial kode and tail
+            valuesLine += ' ' + candidate;
+          }
+        }
+
+        if (kodeTail) {
+          const fullKode = partialKode + kodeTail;
+          // Build: "fullKode textOnKodeLine kodeTailName valuesLine"
+          const textParts = [textOnKodeLine, kodeTailName].filter(Boolean).join(' ');
+          joinedLines.push(fullKode + ' ' + textParts + valuesLine);
+          i = skipTo;
+          continue;
+        }
+      }
+
+      // Pattern B: Sub-kegiatan partial kode "1.02.XX.X.XX." with optional text
+      const subKegKodeMatch = line.match(/^(1\.\d+\.\d+\.\d+\.\d+\.)\s*(.*)/);
+      if (subKegKodeMatch) {
+        const partialKode = subKegKodeMatch[1];
+        const textOnKodeLine = subKegKodeMatch[2].trim();
+        // Search next 1-3 lines for the kode tail "XXXX" (4 digits)
+        let kodeTail = '';
+        let kodeTailText = '';
+        let middleContent = '';
+        let skipTo = i;
+
+        for (let j = i + 1; j <= Math.min(i + 3, rawLines.length - 1); j++) {
+          const candidate = rawLines[j];
+          const tailMatch = candidate.match(/^(\d{4})\b\s*(.*)/);
+          if (tailMatch) {
+            kodeTail = tailMatch[1];
+            kodeTailText = tailMatch[2].trim();
+            skipTo = j;
+            break;
+          } else {
+            middleContent += ' ' + candidate;
+          }
+        }
+
+        if (kodeTail) {
+          const fullKode = partialKode + kodeTail;
+          // Build: "fullKode textOnKodeLine middleContent kodeTailText"
+          const allText = [textOnKodeLine, middleContent.trim(), kodeTailText].filter(Boolean).join(' ');
+          joinedLines.push(fullKode + ' ' + allText);
+          i = skipTo;
+          continue;
+        }
+      }
+
+      // Default: keep line as-is
+      joinedLines.push(line);
+    }
+
+    const pageText = joinedLines.join('\n');
     fullText += pageText + '\n';
 
     // Parse this page
@@ -487,6 +589,8 @@ function calculateSimilarity(str1: string, str2: string): number {
 const PUSKESMAS_ALIASES: Record<string, string> = {
   // Labkesda doesn't have "Puskesmas" prefix in PDF
   'labkesda': 'labkesda',
+  // Full name variant in newer PDFs (2026+)
+  'laboratoriumkesehatandaerah': 'labkesda',
 };
 
 /**

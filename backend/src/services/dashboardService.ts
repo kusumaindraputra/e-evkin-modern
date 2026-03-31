@@ -452,8 +452,22 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
       };
     });
 
+    // Carry forward: realisasi is cumulative (total spending up to that month),
+    // so months without laporan should show at least the previous month's value
+    let prevRealisasi = 0;
+    let prevFisik = 0;
+    const chartData = rawData.map(data => {
+      prevRealisasi = data.realisasi_anggaran > 0 ? data.realisasi_anggaran : prevRealisasi;
+      prevFisik = data.realisasi_fisik > 0 ? data.realisasi_fisik : prevFisik;
+      return {
+        ...data,
+        realisasi_anggaran: Math.max(data.realisasi_anggaran, prevRealisasi),
+        realisasi_fisik: Math.max(data.realisasi_fisik, prevFisik),
+      };
+    });
+
     return {
-      data: rawData,
+      data: chartData,
       debug: {
         targetsCount: allTargets.length,
         angkasCount: allAngkas.length,

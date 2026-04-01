@@ -14,7 +14,9 @@ import {
   SendOutlined,
   ReloadOutlined,
   FileTextOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
+import { Spin } from 'antd';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
@@ -102,11 +104,23 @@ export const LaporanBulkInputPage: React.FC = () => {
   const referenceDataLoaded = useRef(false);
   const loadDataInProgress = useRef(false);
 
-  // Filters
-  const [filterBulan, setFilterBulan] = useState<string | undefined>(undefined);
-  const [filterTahun, setFilterTahun] = useState<number>(
-    new Date().getFullYear()
-  );
+  // Filters — auto-default to previous month, persist in localStorage
+  const [filterBulan, setFilterBulan] = useState<string | undefined>(() => {
+    const saved = localStorage.getItem('laporan_filter_bulan');
+    if (saved) return saved;
+    // Default to previous month
+    const prevMonth = new Date().getMonth(); // 0-indexed, so getMonth() for current = prev month index
+    return prevMonth === 0
+      ? BULAN_OPTIONS[11].value // Desember if currently Januari
+      : BULAN_OPTIONS[prevMonth - 1].value;
+  });
+  const [filterTahun, setFilterTahun] = useState<number>(() => {
+    const saved = localStorage.getItem('laporan_filter_tahun');
+    if (saved) return Number(saved);
+    // If current month is January, default year is previous year
+    const now = new Date();
+    return now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  });
 
   const loadReferenceData = useCallback(async () => {
     if (referenceDataLoaded.current) return;
@@ -414,13 +428,15 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   }, [filterBulan, filterTahun, token, loadData]);
 
-  // Stable filter handlers
+  // Stable filter handlers — persist to localStorage
   const handleFilterBulanChange = useCallback((value: string) => {
     setFilterBulan(value);
+    localStorage.setItem('laporan_filter_bulan', value);
   }, []);
 
   const handleFilterTahunChange = useCallback((value: number) => {
     setFilterTahun(value);
+    localStorage.setItem('laporan_filter_tahun', String(value));
   }, []);
 
   // Group rows by parent kegiatan
@@ -582,6 +598,14 @@ export const LaporanBulkInputPage: React.FC = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* Loading state */}
+      {filterBulan && filterTahun && loading && rows.length === 0 && (
+        <div className="laporan-loading-state">
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} />
+          <div className="loading-text">Memuat data laporan...</div>
+        </div>
+      )}
 
       {filterBulan && filterTahun && rows.length > 0 && (
         <>

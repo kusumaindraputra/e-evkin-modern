@@ -49,7 +49,7 @@ const LaporanProgressHeader: React.FC<ProgressHeaderProps> = ({
         Isi realisasi untuk semua sub kegiatan yang telah dikonfigurasi
       </div>
 
-      <div className="laporan-progress-stats">
+      <div className={`laporan-progress-stats ${totalTargetK === 0 ? 'stats-3-col' : ''}`}>
         <div className="progress-stat-card">
           <div className="stat-label">Pengisian</div>
           <div className="stat-value">
@@ -64,17 +64,19 @@ const LaporanProgressHeader: React.FC<ProgressHeaderProps> = ({
             {formatCurrencyAbbreviated(totalRealisasiRp)} / {formatCurrencyAbbreviated(totalAngkas > 0 ? totalAngkas : totalTargetRp)}
           </div>
         </div>
-        <div className="progress-stat-card">
-          <div className="stat-label">Capaian Kinerja</div>
-          <div className="stat-value">{capaianKinerja}%</div>
-          <div className="stat-unit">
-            {formatNumber(totalRealisasiK)} / {formatNumber(totalTargetK)}
+        {totalTargetK > 0 && (
+          <div className="progress-stat-card">
+            <div className="stat-label">Capaian Kinerja</div>
+            <div className="stat-value">{capaianKinerja}%</div>
+            <div className="stat-unit">
+              {formatNumber(totalRealisasiK)} / {formatNumber(totalTargetK)}
+            </div>
           </div>
-        </div>
+        )}
         <div className="progress-stat-card">
           <div className="stat-label">Status</div>
           <div className="stat-value" style={{ fontSize: 16 }}>
-            {progressPercent === 100 ? '✅ Lengkap' : `⏳ ${progressPercent}%`}
+            {progressPercent === 100 ? 'Lengkap' : `${progressPercent}%`}
           </div>
           <div className="stat-unit">progress pengisian</div>
         </div>

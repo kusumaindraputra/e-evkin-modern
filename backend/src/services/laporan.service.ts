@@ -311,19 +311,19 @@ export class LaporanService {
           const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
           const target = targetMap.get(targetKey);
 
-          if (!target || (target.target_k === 0 && target.target_rp === 0)) {
+          if (!target) {
             results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
             results.skipped++;
             continue;
           }
 
-          if (data.realisasi_k !== undefined && data.realisasi_k > target.target_k) {
+          if (target.target_k > 0 && data.realisasi_k !== undefined && data.realisasi_k > target.target_k) {
             results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi kinerja (${data.realisasi_k}) melebihi target (${target.target_k})`);
             results.skipped++;
             continue;
           }
 
-          if (data.angkas !== undefined && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
+          if (data.angkas > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
             results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
             results.skipped++;
             continue;

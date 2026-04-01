@@ -400,10 +400,21 @@ export const LaporanBulkInputPage: React.FC = () => {
     }
   }, [filterBulan, filterTahun, rows, token, loadData]);
 
+  // Check if any row has target_k = 0 (cannot submit)
+  const hasZeroTargetK = useMemo(
+    () => rows.some((r) => r.target_k === 0),
+    [rows]
+  );
+
   // Submit handler
   const handleSubmit = useCallback(async () => {
     if (!filterBulan || !filterTahun) {
       message.warning('Pilih bulan dan tahun terlebih dahulu');
+      return;
+    }
+
+    if (hasZeroTargetK) {
+      message.error('Tidak dapat mengirim: ada sub kegiatan dengan Target Kinerja = 0. Hubungi admin untuk menetapkan target.');
       return;
     }
 
@@ -426,7 +437,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterBulan, filterTahun, token, loadData]);
+  }, [filterBulan, filterTahun, token, loadData, hasZeroTargetK]);
 
   // Stable filter handlers — persist to localStorage
   const handleFilterBulanChange = useCallback((value: string) => {
@@ -666,14 +677,15 @@ export const LaporanBulkInputPage: React.FC = () => {
                 onConfirm={handleSubmit}
                 okText="Ya, Kirim"
                 cancelText="Batal"
-                disabled={!canSendReport || hasUnsavedChanges}
+                disabled={!canSendReport || hasUnsavedChanges || hasZeroTargetK}
               >
                 <Button
                   icon={<SendOutlined />}
                   loading={loading}
                   disabled={
-                    rows.length === 0 || !canSendReport || hasUnsavedChanges
+                    rows.length === 0 || !canSendReport || hasUnsavedChanges || hasZeroTargetK
                   }
+                  title={hasZeroTargetK ? 'Ada sub kegiatan dengan Target Kinerja = 0' : undefined}
                   size="large"
                 >
                   Kirim {filterBulan}

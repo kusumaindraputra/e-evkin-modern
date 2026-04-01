@@ -76,25 +76,23 @@ const LaporanGroupCard: React.FC<LaporanGroupCardProps> = ({
       </div>
 
       <div className={expanded ? 'group-body-visible' : 'group-body-hidden'}>
-        {expanded && (
-          <div className="laporan-group-body">
-            {rows.map((row) => (
-              <LaporanInputCard
-                key={`${row.id_sub_kegiatan}-${row.id_sumber_anggaran}`}
-                row={row}
-                sumberAnggaranLabel={
-                  row.id_sumber_anggaran
-                    ? sumberAnggaranMap[row.id_sumber_anggaran]
-                    : undefined
-                }
-                satuanLabel={
-                  row.id_satuan ? satuanMap[row.id_satuan] : undefined
-                }
-                onFieldChange={onFieldChange}
-              />
-            ))}
-          </div>
-        )}
+        <div className="laporan-group-body">
+          {rows.map((row) => (
+            <LaporanInputCard
+              key={`${row.id_sub_kegiatan}-${row.id_sumber_anggaran}`}
+              row={row}
+              sumberAnggaranLabel={
+                row.id_sumber_anggaran
+                  ? sumberAnggaranMap[row.id_sumber_anggaran]
+                  : undefined
+              }
+              satuanLabel={
+                row.id_satuan ? satuanMap[row.id_satuan] : undefined
+              }
+              onFieldChange={onFieldChange}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

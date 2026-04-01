@@ -449,23 +449,23 @@
   color: #8c8c8c;
 }
 
-/* Smooth expand/collapse animation */
-.group-body-enter {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
+/* Smooth expand/collapse animation using CSS grid */
+.group-body-visible,
+.group-body-hidden {
+  display: grid;
+  transition: grid-template-rows 0.3s ease, opacity 0.25s ease;
 }
 
 .group-body-visible {
-  max-height: 5000px;
-  overflow: visible;
+  grid-template-rows: 1fr;
   opacity: 1;
-  transition: max-height 0.4s ease, opacity 0.3s ease;
 }
 
 .group-body-hidden {
-  max-height: 0;
-  overflow: hidden;
+  grid-template-rows: 0fr;
   opacity: 0;
-  transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+
+.group-body-hidden > .laporan-group-body {
+  overflow: hidden;
 }

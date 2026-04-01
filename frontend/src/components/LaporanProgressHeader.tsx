@@ -7,6 +7,7 @@ interface ProgressHeaderProps {
   totalRows: number;
   filledRows: number;
   totalTargetRp: number;
+  totalAngkas: number;
   totalRealisasiRp: number;
   totalTargetK: number;
   totalRealisasiK: number;
@@ -18,6 +19,7 @@ const LaporanProgressHeader: React.FC<ProgressHeaderProps> = ({
   totalRows,
   filledRows,
   totalTargetRp,
+  totalAngkas,
   totalRealisasiRp,
   totalTargetK,
   totalRealisasiK,
@@ -28,9 +30,10 @@ const LaporanProgressHeader: React.FC<ProgressHeaderProps> = ({
   }, [totalRows, filledRows]);
 
   const capaianAnggaran = useMemo(() => {
-    if (totalTargetRp === 0) return 0;
-    return Math.round((totalRealisasiRp / totalTargetRp) * 100);
-  }, [totalTargetRp, totalRealisasiRp]);
+    const base = totalAngkas > 0 ? totalAngkas : totalTargetRp;
+    if (base === 0) return 0;
+    return Math.round((totalRealisasiRp / base) * 100);
+  }, [totalAngkas, totalTargetRp, totalRealisasiRp]);
 
   const capaianKinerja = useMemo(() => {
     if (totalTargetK === 0) return 0;
@@ -58,7 +61,7 @@ const LaporanProgressHeader: React.FC<ProgressHeaderProps> = ({
           <div className="stat-label">Capaian Anggaran</div>
           <div className="stat-value">{capaianAnggaran}%</div>
           <div className="stat-unit">
-            {formatCurrencyAbbreviated(totalRealisasiRp)} / {formatCurrencyAbbreviated(totalTargetRp)}
+            {formatCurrencyAbbreviated(totalRealisasiRp)} / {formatCurrencyAbbreviated(totalAngkas > 0 ? totalAngkas : totalTargetRp)}
           </div>
         </div>
         <div className="progress-stat-card">

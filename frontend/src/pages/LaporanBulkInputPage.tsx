@@ -7,6 +7,7 @@ import {
   Card,
   Select,
   message,
+  Modal,
   Popconfirm,
 } from 'antd';
 import {
@@ -14,7 +15,9 @@ import {
   SendOutlined,
   ReloadOutlined,
   FileTextOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
+import { useBlocker } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
@@ -469,6 +472,10 @@ export const LaporanBulkInputPage: React.FC = () => {
       (r) => r.laporan_id || (r.realisasi_k !== undefined && r.realisasi_k !== null)
     ).length;
     const totalTargetRp = rows.reduce((sum, r) => sum + (r.target_rp || 0), 0);
+    const totalAngkas = rows.reduce(
+      (sum, r) => sum + (r.angkas && r.angkas > 0 ? r.angkas : r.target_rp || 0),
+      0
+    );
     const totalRealisasiRp = rows.reduce(
       (sum, r) => sum + (r.realisasi_rp || 0),
       0
@@ -481,6 +488,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     return {
       filled,
       totalTargetRp,
+      totalAngkas,
       totalRealisasiRp,
       totalTargetK,
       totalRealisasiK,
@@ -497,8 +505,65 @@ export const LaporanBulkInputPage: React.FC = () => {
     );
 
   const hasUnsavedChanges = rows.some(
-    (row) => !row.laporan_id || (!row.id_sumber_anggaran && !row.id_satuan)
+    (row) => !row.laporan_id || !row.id_sumber_anggaran || !row.id_satuan
   );
+
+  // Track if user has edited any field (dirty state)
+  const isDirty = useRef(false);
+  const originalRowsRef = useRef<string>('');
+
+  // Mark dirty when rows differ from last-loaded snapshot
+  useEffect(() => {
+    const snapshot = JSON.stringify(rows.map(r => ({
+      realisasi_k: r.realisasi_k, realisasi_rp: r.realisasi_rp,
+      realisasi_fisik: r.realisasi_fisik, permasalahan: r.permasalahan, upaya: r.upaya,
+    })));
+    if (!originalRowsRef.current) {
+      originalRowsRef.current = snapshot;
+    }
+    isDirty.current = snapshot !== originalRowsRef.current;
+  }, [rows]);
+
+  // Reset dirty on successful save/load
+  useEffect(() => {
+    if (!loading && rows.length > 0) {
+      originalRowsRef.current = JSON.stringify(rows.map(r => ({
+        realisasi_k: r.realisasi_k, realisasi_rp: r.realisasi_rp,
+        realisasi_fisik: r.realisasi_fisik, permasalahan: r.permasalahan, upaya: r.upaya,
+      })));
+      isDirty.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // Browser tab close / refresh warning
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // React Router navigation blocker
+  const blocker = useBlocker(() => isDirty.current);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      Modal.confirm({
+        title: 'Data belum disimpan',
+        icon: <ExclamationCircleOutlined />,
+        content: 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?',
+        okText: 'Tinggalkan',
+        okType: 'danger',
+        cancelText: 'Tetap di sini',
+        onOk: () => blocker.proceed(),
+        onCancel: () => blocker.reset(),
+      });
+    }
+  }, [blocker]);
 
   return (
     <div>
@@ -548,6 +613,7 @@ export const LaporanBulkInputPage: React.FC = () => {
             totalRows={rows.length}
             filledRows={progressStats.filled}
             totalTargetRp={progressStats.totalTargetRp}
+            totalAngkas={progressStats.totalAngkas}
             totalRealisasiRp={progressStats.totalRealisasiRp}
             totalTargetK={progressStats.totalTargetK}
             totalRealisasiK={progressStats.totalRealisasiK}

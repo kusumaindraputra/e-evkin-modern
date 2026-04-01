@@ -29,7 +29,6 @@ export default defineConfig({
 
           // Puskesmas pages chunk (lazy loaded)
           'puskesmas-pages': [
-            './src/pages/LaporanPage.tsx',
             './src/pages/LaporanBulkInputPage.tsx',
             './src/pages/CaraPengisianPage.tsx',
             './src/pages/PuskesmasTargetPage.tsx',

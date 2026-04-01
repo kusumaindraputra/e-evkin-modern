@@ -7,7 +7,6 @@ import {
   Card,
   Select,
   message,
-  Modal,
   Popconfirm,
 } from 'antd';
 import {
@@ -15,9 +14,7 @@ import {
   SendOutlined,
   ReloadOutlined,
   FileTextOutlined,
-  ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { useBlocker } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
@@ -536,7 +533,7 @@ export const LaporanBulkInputPage: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  // Browser tab close / refresh warning
+  // Browser tab close / refresh / navigation warning
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (isDirty.current) {
@@ -546,24 +543,6 @@ export const LaporanBulkInputPage: React.FC = () => {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
-
-  // React Router navigation blocker
-  const blocker = useBlocker(() => isDirty.current);
-
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      Modal.confirm({
-        title: 'Data belum disimpan',
-        icon: <ExclamationCircleOutlined />,
-        content: 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?',
-        okText: 'Tinggalkan',
-        okType: 'danger',
-        cancelText: 'Tetap di sini',
-        onOk: () => blocker.proceed(),
-        onCancel: () => blocker.reset(),
-      });
-    }
-  }, [blocker]);
 
   return (
     <div>

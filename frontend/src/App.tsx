@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const PuskesmasRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== 'puskesmas') return <Navigate to="/laporan" replace />;
+  if (user?.role !== 'puskesmas') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -50,7 +50,7 @@ const PuskesmasRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== 'admin') return <Navigate to="/laporan" replace />;
+  if (user?.role !== 'admin') return <Navigate to="/puskesmas/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -189,8 +189,11 @@ function App() {
         />
 
 
-        {/* Catch all - redirect to dashboard */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* Profile route placeholder — redirect to role-appropriate dashboard */}
+        <Route path="/profile" element={<RootRedirect />} />
+
+        {/* Catch all — role-aware redirect */}
+        <Route path="*" element={<RootRedirect />} />
       </Routes>
     </BrowserRouter>
   );

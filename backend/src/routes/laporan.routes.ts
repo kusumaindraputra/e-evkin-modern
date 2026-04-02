@@ -24,9 +24,9 @@ router.post('/bulk-upsert', authenticate, checkEditPermission('laporan'), Lapora
 router.put('/:id', authenticate, checkEditPermission('laporan'), LaporanController.update);
 
 // Delete laporan
-router.delete('/:id', authenticate, LaporanController.delete);
+router.delete('/:id', authenticate, checkEditPermission('laporan'), LaporanController.delete);
 
 // Submit laporan
-router.post('/submit', authenticate, LaporanController.submit);
+router.post('/submit', authenticate, checkEditPermission('laporan'), LaporanController.submit);
 
 export default router;

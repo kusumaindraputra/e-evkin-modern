@@ -92,3 +92,59 @@ body {
 .table-row-dark:hover {
   background-color: #EFF6FF !important;
 }
+
+/* ===================================
+   MOBILE-FIRST GLOBAL OVERRIDES
+   =================================== */
+
+/* Tables: horizontal scroll on mobile */
+.ant-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cards: tighter padding on mobile */
+@media (max-width: 767px) {
+  .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  .ant-modal .ant-modal-body {
+    padding: 16px !important;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Stat cards: smaller on mobile */
+  .ant-statistic-title {
+    font-size: 12px !important;
+  }
+
+  .ant-statistic-content-value {
+    font-size: 20px !important;
+  }
+
+  /* Select: full width on mobile */
+  .ant-select {
+    min-width: unset !important;
+  }
+
+  /* Space: tighter on mobile */
+  .ant-space-gap-middle {
+    gap: 8px !important;
+  }
+
+  /* Table: smaller font on mobile */
+  .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-table-cell {
+    padding: 8px 8px !important;
+  }
+}

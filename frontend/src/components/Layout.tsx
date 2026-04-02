@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import { Layout as AntLayout, Menu, Button, Dropdown, Avatar, Typography } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout as AntLayout, Menu, Button, Dropdown, Avatar, Typography, Drawer } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
   LogoutOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { NAV_ITEMS } from '../config/navConfig';
-import { layout } from '../theme';
+import { layout, brand } from '../theme';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import './Layout.css';
 
 const { Header, Sider, Content } = AntLayout;
@@ -21,9 +23,21 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { isMobile } = useBreakpoint();
+
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  // Auto-collapse sidebar when switching to mobile
+  useEffect(() => {
+    if (isMobile) setCollapsed(true);
+  }, [isMobile]);
 
   const handleLogout = () => {
     logout();
@@ -55,6 +69,78 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
+  const siderMenu = (
+    <>
+      <div className="logo-container">
+        <Text
+          strong
+          className={`logo-text ${isMobile || !collapsed ? 'logo-text-expanded' : 'logo-text-collapsed'}`}
+        >
+          {!isMobile && collapsed ? 'E-EV' : 'E-EVKIN'}
+        </Text>
+      </div>
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[location.pathname]}
+        items={menuItems}
+      />
+    </>
+  );
+
+  // ── Mobile layout: Drawer ──
+  if (isMobile) {
+    return (
+      <AntLayout className="layout-container">
+        <Drawer
+          placement="left"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          width={260}
+          closable={false}
+          className="mobile-drawer"
+          styles={{
+            body: { padding: 0, background: brand.primaryDark },
+            header: { display: 'none' },
+          }}
+        >
+          <div className="drawer-close-row">
+            <Button
+              type="text"
+              icon={<CloseOutlined />}
+              onClick={() => setDrawerOpen(false)}
+              className="drawer-close-btn"
+            />
+          </div>
+          {siderMenu}
+        </Drawer>
+
+        <AntLayout className="layout-content-wrapper mobile">
+          <Header className="layout-header">
+            <Button
+              type="text"
+              icon={<MenuUnfoldOutlined />}
+              onClick={() => setDrawerOpen(true)}
+              className="trigger-button"
+            />
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div className="user-profile">
+                <Avatar icon={<UserOutlined />} size="small" />
+                <div className="user-info mobile-user-info">
+                  <Text strong className="user-name-text">{user?.nama}</Text>
+                </div>
+              </div>
+            </Dropdown>
+          </Header>
+          <Content className="layout-content">
+            {children}
+          </Content>
+        </AntLayout>
+      </AntLayout>
+    );
+  }
+
+  // ── Desktop layout: Fixed Sider ──
   return (
     <AntLayout className="layout-container">
       <Sider
@@ -65,20 +151,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         collapsedWidth={layout.siderCollapsedWidth}
         className="layout-sider"
       >
-        <div className="logo-container">
-          <Text
-            strong
-            className={`logo-text ${collapsed ? 'logo-text-collapsed' : 'logo-text-expanded'}`}
-          >
-            {collapsed ? 'E-EV' : 'E-EVKIN'}
-          </Text>
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-        />
+        {siderMenu}
       </Sider>
       <AntLayout
         className="layout-content-wrapper"
@@ -91,12 +164,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClick={() => setCollapsed(!collapsed)}
             className="trigger-button"
           />
-          <Dropdown
-            menu={{
-              items: userMenuItems,
-            }}
-            placement="bottomRight"
-          >
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div className="user-profile">
               <Avatar icon={<UserOutlined />} style={{ marginRight: 8 }} />
               <div className="user-info">

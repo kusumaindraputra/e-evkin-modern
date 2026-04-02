@@ -102,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="user-info">
                 <Text strong>{user?.nama}</Text>
                 <Text type="secondary" className="user-role-text">
-                  {user?.role === 'admin' ? 'Administrator' : (user?.nama_puskesmas || user?.kode_puskesmas)}
+                  {user?.role === 'admin' ? 'Administrator' : (user?.nama_puskesmas || 'Puskesmas')}
                 </Text>
               </div>
             </div>

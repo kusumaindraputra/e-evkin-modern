@@ -75,6 +75,16 @@ SubKegiatanTarget.init({
         type: sequelize_1.DataTypes.TEXT,
         allowNull: true,
     },
+    bulan_penetapan: {
+        type: sequelize_1.DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'Bulan penetapan (1-12), null = berlaku dari awal tahun',
+    },
+    tanggal_penetapan: {
+        type: sequelize_1.DataTypes.DATEONLY,
+        allowNull: true,
+        comment: 'Tanggal resmi penetapan anggaran',
+    },
     created_by: {
         type: sequelize_1.DataTypes.UUID,
         allowNull: false,

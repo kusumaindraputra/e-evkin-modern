@@ -105,6 +105,49 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
         const subKegiatanList = await models_1.SubKegiatan.findAll({
             attributes: ['id_sub_kegiatan', 'kegiatan', 'kode_sub'],
         });
+        // Build kode_sub lookup map for direct kode-based matching
+        const kodeSubMap = new Map();
+        for (const sk of subKegiatanList) {
+            if (sk.kode_sub) {
+                kodeSubMap.set(sk.kode_sub, sk.id_sub_kegiatan);
+            }
+        }
+        // Pre-fetch SubKegiatanTarget records for sumber anggaran resolution
+        // When PDF doesn't provide sumber, we look up target records to determine it
+        const allTargets = await models_1.SubKegiatanTarget.findAll({
+            where: { tahun },
+            attributes: ['user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_rp'],
+            include: [{
+                    model: models_1.SumberAnggaran,
+                    as: 'sumberAnggaran',
+                    attributes: ['id_sumber', 'sumber'],
+                }],
+        });
+        // Build lookup: user_id + id_sub_kegiatan -> Array<{ id_sumber, nama, target_rp }>
+        const targetSumberMap = new Map();
+        for (const t of allTargets) {
+            const key = `${t.user_id}_${t.id_sub_kegiatan}`;
+            if (!targetSumberMap.has(key)) {
+                targetSumberMap.set(key, []);
+            }
+            const sa = t.sumberAnggaran;
+            if (sa) {
+                const arr = targetSumberMap.get(key);
+                // Avoid duplicates (multiple target records with same sumber)
+                if (!arr.some(s => s.id === sa.id_sumber)) {
+                    arr.push({
+                        id: sa.id_sumber,
+                        nama: sa.sumber,
+                        target_rp: Number(t.target_rp) || 0,
+                    });
+                }
+                else {
+                    // Accumulate target_rp for same sumber
+                    const existing = arr.find(s => s.id === sa.id_sumber);
+                    existing.target_rp += Number(t.target_rp) || 0;
+                }
+            }
+        }
         // Cache sumber anggaran mappings
         const sumberAnggaranCache = new Map();
         let createdSumberAnggaran = 0;
@@ -150,7 +193,14 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
             }
             // Process each row
             for (const row of puskesmasData.rows) {
-                // Get sumber anggaran from cache or find/create
+                // Step 1: Match sub_kegiatan FIRST (needed for sumber resolution)
+                // Try kode-based matching first (more reliable than name matching)
+                let idSubKegiatan = kodeSubMap.get(row.kodeRekening) || null;
+                if (!idSubKegiatan) {
+                    idSubKegiatan = (0, angkasParserService_1.findBestMatch)(row.uraian, subKegiatanList.map(sk => ({ id: sk.id_sub_kegiatan, nama: sk.kegiatan })));
+                }
+                // Step 2: Resolve sumber anggaran
+                // Try from PDF first
                 const cacheKey = `${row.sumberAnggaranKode || ''}-${row.sumberAnggaranNama || ''}`;
                 let sumberAnggaran = sumberAnggaranCache.get(cacheKey);
                 if (sumberAnggaran === undefined) {
@@ -158,6 +208,110 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     sumberAnggaranCache.set(cacheKey, sumberAnggaran);
                     if (sumberAnggaran && !result.detectedSumberAnggaran.some(s => s.kode === row.sumberAnggaranKode)) {
                         createdSumberAnggaran++;
+                    }
+                }
+                // Step 3: If PDF didn't provide sumber, resolve from SubKegiatanTarget
+                if (!sumberAnggaran && userId && idSubKegiatan) {
+                    const targetKey = `${userId}_${idSubKegiatan}`;
+                    const targetSumbers = targetSumberMap.get(targetKey);
+                    if (targetSumbers && targetSumbers.length === 1) {
+                        // Single sumber - use it directly
+                        sumberAnggaran = { id: targetSumbers[0].id, nama: targetSumbers[0].nama };
+                    }
+                    else if (targetSumbers && targetSumbers.length > 1) {
+                        // Multiple sumber - split proportionally by target_rp
+                        const totalTargetRp = targetSumbers.reduce((sum, s) => sum + s.target_rp, 0);
+                        for (const targetSumber of targetSumbers) {
+                            const ratio = totalTargetRp > 0 ? targetSumber.target_rp / totalTargetRp : 1 / targetSumbers.length;
+                            // Process each month with proportional split
+                            for (let bulan = 1; bulan <= 12; bulan++) {
+                                const nilaiTotal = row.bulanan[bulan - 1] || 0;
+                                if (nilaiTotal === 0) {
+                                    result.skipped++;
+                                    continue;
+                                }
+                                const nilai = Math.round(nilaiTotal * ratio);
+                                if (nilai === 0) {
+                                    result.skipped++;
+                                    continue;
+                                }
+                                try {
+                                    const angkasKey = `${userId}_${row.kodeRekening}_${targetSumber.id}_${bulan}`;
+                                    const existingRecord = existingAngkasMap.get(angkasKey) || null;
+                                    if (existingRecord) {
+                                        const existingNilai = Number(existingRecord.nilai);
+                                        if (existingNilai === nilai) {
+                                            result.skipped++;
+                                            continue;
+                                        }
+                                        const newAngkas = await models_1.AnggaranKas.create({
+                                            user_id: userId,
+                                            id_sub_kegiatan: idSubKegiatan,
+                                            id_sumber_anggaran: targetSumber.id,
+                                            kode_rekening: row.kodeRekening,
+                                            uraian: row.uraian,
+                                            tahun,
+                                            bulan,
+                                            nilai,
+                                            created_by: adminId,
+                                        });
+                                        existingAngkasMap.set(angkasKey, newAngkas);
+                                        result.updated++;
+                                        result.success++;
+                                        result.successList.push({
+                                            type: 'updated',
+                                            puskesmas: puskesmasData.namaPuskesmas,
+                                            kodeRekening: row.kodeRekening,
+                                            uraian: row.uraian,
+                                            sumberAnggaran: targetSumber.nama,
+                                            tahun,
+                                            bulan,
+                                            oldValue: existingNilai,
+                                            newValue: nilai,
+                                        });
+                                    }
+                                    else {
+                                        const newAngkas = await models_1.AnggaranKas.create({
+                                            user_id: userId,
+                                            id_sub_kegiatan: idSubKegiatan,
+                                            id_sumber_anggaran: targetSumber.id,
+                                            kode_rekening: row.kodeRekening,
+                                            uraian: row.uraian,
+                                            tahun,
+                                            bulan,
+                                            nilai,
+                                            created_by: adminId,
+                                        });
+                                        existingAngkasMap.set(angkasKey, newAngkas);
+                                        result.inserted++;
+                                        result.success++;
+                                        result.successList.push({
+                                            type: 'inserted',
+                                            puskesmas: puskesmasData.namaPuskesmas,
+                                            kodeRekening: row.kodeRekening,
+                                            uraian: row.uraian,
+                                            sumberAnggaran: targetSumber.nama,
+                                            tahun,
+                                            bulan,
+                                            newValue: nilai,
+                                        });
+                                    }
+                                }
+                                catch (error) {
+                                    result.failed++;
+                                    const errorDetails = error.errors ? error.errors.map((e) => `${e.path}: ${e.message}`).join(', ') : error.message;
+                                    console.error(`Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
+                                    result.errors.push({
+                                        puskesmas: puskesmasData.namaPuskesmas,
+                                        kodeRekening: row.kodeRekening,
+                                        uraian: row.uraian,
+                                        error: errorDetails,
+                                    });
+                                }
+                            }
+                            // Already processed all months for this sumber - skip the normal flow
+                        }
+                        continue; // Skip normal single-sumber processing below
                     }
                 }
                 if (!sumberAnggaran) {
@@ -169,9 +323,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                     result.skipped++;
                     continue;
                 }
-                // Try to match to sub_kegiatan
-                const idSubKegiatan = (0, angkasParserService_1.findBestMatch)(row.uraian, subKegiatanList.map(sk => ({ id: sk.id_sub_kegiatan, nama: sk.kegiatan })));
-                // Process each month
+                // Process each month (single sumber path)
                 for (let bulan = 1; bulan <= 12; bulan++) {
                     const nilai = row.bulanan[bulan - 1] || 0;
                     // Skip zero values
@@ -252,7 +404,7 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         result.failed++;
                         // Log detailed error for debugging
                         const errorDetails = error.errors ? error.errors.map((e) => `${e.path}: ${e.message}`).join(', ') : error.message;
-                        console.error(`❌ Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
+                        console.error(`Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
                         result.errors.push({
                             puskesmas: puskesmasData.namaPuskesmas,
                             kodeRekening: row.kodeRekening,

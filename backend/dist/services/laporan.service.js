@@ -248,17 +248,17 @@ class LaporanService {
                     }
                     const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
                     const target = targetMap.get(targetKey);
-                    if (!target || (target.target_k === 0 && target.target_rp === 0)) {
+                    if (!target) {
                         results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Target belum diset untuk tahun ${data.tahun}`);
                         results.skipped++;
                         continue;
                     }
-                    if (data.realisasi_k !== undefined && data.realisasi_k > target.target_k) {
+                    if (target.target_k > 0 && data.realisasi_k !== undefined && data.realisasi_k > target.target_k) {
                         results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi kinerja (${data.realisasi_k}) melebihi target (${target.target_k})`);
                         results.skipped++;
                         continue;
                     }
-                    if (data.angkas !== undefined && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
+                    if (data.angkas > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
                         results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
                         results.skipped++;
                         continue;
@@ -269,9 +269,19 @@ class LaporanService {
                         user_id: userId,
                         id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
                         id_satuan: data.id_satuan || target.id_satuan,
-                        status: (data.status || 'tersimpan'),
+                        status: 'tersimpan',
                     };
                     if (data.id) {
+                        // Protect terkirim laporan from being overwritten
+                        const existingById = await models_1.Laporan.findOne({
+                            where: { id: data.id, user_id: userId },
+                            attributes: ['id', 'status'],
+                            transaction,
+                        });
+                        if (existingById && existingById.status === 'terkirim') {
+                            results.skipped++;
+                            continue;
+                        }
                         const [updatedCount] = await models_1.Laporan.update(laporanData, {
                             where: { id: data.id, user_id: userId },
                             transaction,
@@ -282,6 +292,11 @@ class LaporanService {
                         const existingKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.bulan}_${data.tahun}`;
                         const existing = existingLaporanMap.get(existingKey);
                         if (existing) {
+                            // Protect terkirim laporan from being overwritten
+                            if (existing.status === 'terkirim') {
+                                results.skipped++;
+                                continue;
+                            }
                             await existing.update(laporanData, { transaction });
                             results.updated++;
                         }
@@ -356,6 +371,31 @@ class LaporanService {
         const userId = requesterRole === 'puskesmas' ? requesterId : userIdParam;
         if (!userId) {
             throw new Error('user_id is required');
+        }
+        // Validate data completeness before submit
+        const pendingLaporan = await models_1.Laporan.findAll({
+            where: {
+                user_id: userId,
+                bulan,
+                tahun,
+                status: 'tersimpan'
+            }
+        });
+        if (pendingLaporan.length === 0) {
+            const alreadySubmittedCount = await models_1.Laporan.count({
+                where: { user_id: userId, bulan, tahun, status: 'terkirim' }
+            });
+            if (alreadySubmittedCount > 0) {
+                throw new Error(`Semua laporan untuk ${bulan} ${tahun} sudah dikirim sebelumnya`);
+            }
+            throw new Error(`Tidak ada laporan dengan status "tersimpan" untuk ${bulan} ${tahun}`);
+        }
+        const incomplete = pendingLaporan.filter(l => {
+            const data = l.get({ plain: true });
+            return data.realisasi_k === null || data.realisasi_k === undefined;
+        });
+        if (incomplete.length > 0) {
+            throw new Error(`${incomplete.length} laporan belum memiliki data realisasi kinerja. Lengkapi data sebelum mengirim.`);
         }
         const [updatedCount] = await models_1.Laporan.update({ status: 'terkirim' }, {
             where: {

@@ -18,8 +18,8 @@ router.post('/bulk-upsert', auth_1.authenticate, (0, editPermission_1.checkEditP
 // Update laporan
 router.put('/:id', auth_1.authenticate, (0, editPermission_1.checkEditPermission)('laporan'), laporan_controller_1.LaporanController.update);
 // Delete laporan
-router.delete('/:id', auth_1.authenticate, laporan_controller_1.LaporanController.delete);
+router.delete('/:id', auth_1.authenticate, (0, editPermission_1.checkEditPermission)('laporan'), laporan_controller_1.LaporanController.delete);
 // Submit laporan
-router.post('/submit', auth_1.authenticate, laporan_controller_1.LaporanController.submit);
+router.post('/submit', auth_1.authenticate, (0, editPermission_1.checkEditPermission)('laporan'), laporan_controller_1.LaporanController.submit);
 exports.default = router;
 //# sourceMappingURL=laporan.routes.js.map

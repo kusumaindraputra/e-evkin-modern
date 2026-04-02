@@ -134,7 +134,7 @@ router.get('/budget-monthly', async (req, res) => {
         FROM laporan l
         INNER JOIN sub_kegiatan sk ON l.id_sub_kegiatan = sk.id_sub_kegiatan
         INNER JOIN kegiatan k ON sk.id_kegiatan = k.id_kegiatan
-        WHERE l.tahun = :tahun AND l.bulan = :bulan AND l.user_id = :userId
+        WHERE l.tahun = :tahun AND l.bulan = :bulan AND l.user_id = :userId AND l.status = 'terkirim'
         GROUP BY l.id_sub_kegiatan, sk.kode_sub, sk.kegiatan, k.kode, k.kegiatan
         ORDER BY sk.kode_sub ASC
       `;

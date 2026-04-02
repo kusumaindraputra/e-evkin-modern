@@ -10,6 +10,8 @@ interface SubKegiatanTargetAttributes {
     bulan?: string | null;
     tahun: number;
     catatan?: string | null;
+    bulan_penetapan?: number | null;
+    tanggal_penetapan?: Date | null;
     created_by: string;
     created_at?: Date;
     updated_at?: Date;
@@ -27,6 +29,8 @@ declare class SubKegiatanTarget extends Model<SubKegiatanTargetAttributes, SubKe
     bulan: string | null;
     tahun: number;
     catatan: string | null;
+    bulan_penetapan: number | null;
+    tanggal_penetapan: Date | null;
     created_by: string;
     readonly created_at: Date;
     readonly updated_at: Date;

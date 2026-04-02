@@ -1,6 +1,7 @@
 import { Card, Descriptions, Tag, Typography, Row, Col, Progress, Divider } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { formatNumber, formatDateTime } from '../utils/formatters';
+import { brand } from '../theme';
 
 const { Title, Text } = Typography;
 
@@ -48,10 +49,10 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
   const capaianPagu = calculatePercentage(laporan.realisasi_rp, laporan.target_rp);
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 90) return '#52c41a'; // green
-    if (percentage >= 70) return '#1890ff'; // blue
-    if (percentage >= 50) return '#faad14'; // orange
-    return '#ff4d4f'; // red
+    if (percentage >= 90) return brand.success;
+    if (percentage >= 70) return brand.primary;
+    if (percentage >= 50) return brand.warning;
+    return brand.error;
   };
 
   const getStatusConfig = (status: string) => {
@@ -136,7 +137,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
           <Col span={8}>
             <Card size="small" style={{ textAlign: 'center', backgroundColor: '#f6ffed' }}>
               <Text type="secondary">Realisasi Kinerja</Text>
-              <Title level={3} style={{ margin: '8px 0', color: '#52c41a' }}>
+              <Title level={3} style={{ margin: '8px 0', color: brand.success }}>
                 {formatNumber(laporan.realisasi_k)}
               </Title>
               <Text>{laporan.satuan?.satuannya}</Text>
@@ -198,7 +199,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
                   <Text strong>{formatNumber(laporan.angkas)}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Realisasi Anggaran (Rp)">
-                  <Text strong style={{ color: '#52c41a' }}>
+                  <Text strong style={{ color: brand.success }}>
                     {formatNumber(laporan.realisasi_rp)}
                   </Text>
                 </Descriptions.Item>

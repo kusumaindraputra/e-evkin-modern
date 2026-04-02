@@ -22,6 +22,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
+import { brand } from '../theme';
 
 interface AngkasData {
   user_id: string;
@@ -350,7 +351,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
       width: 140,
       align: 'right' as const,
       render: (value: number, record: AngkasData) => (
-        <span style={{ color: value === 0 ? '#faad14' : undefined }}>
+        <span style={{ color: value === 0 ? brand.warning : undefined }}>
           {formatNumber(value)}
           {record.hasAngkas && <Tag color="green" style={{ marginLeft: 4 }}>✓</Tag>}
         </span>
@@ -467,7 +468,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
           </Col>
         </Row>
 
-        <p style={{ color: '#888', fontSize: '12px', marginBottom: 16 }}>
+        <p style={{ color: brand.textTertiary, fontSize: '12px', marginBottom: 16 }}>
           * <Tag color="orange">Manual Input</Tag> = Sub kegiatan dengan lebih dari 1 sumber anggaran, dapat diedit manual<br />
           * <Tag color="default"><LockOutlined /> Dari PDF</Tag> = Data dari upload PDF, tidak dapat diedit di halaman ini
         </p>
@@ -508,7 +509,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
         width={700}
       >
         {selectedRecord && (
-          <div style={{ marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 6 }}>
+          <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
             <p style={{ margin: 0 }}>
               <strong>Sub Kegiatan:</strong> {selectedRecord.subKegiatan?.kode_sub || 'N/A'} -{' '}
               {selectedRecord.subKegiatan?.kegiatan || 'N/A'}
@@ -536,23 +537,23 @@ export const PuskesmasAngkasPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#888', fontSize: 12 }}>Total Angkas</div>
+                  <div style={{ color: brand.textTertiary, fontSize: 12 }}>Total Angkas</div>
                   <div style={{ fontSize: 16, fontWeight: 'bold' }}>{formatNumber(formTotal)}</div>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#888', fontSize: 12 }}>Target Anggaran</div>
+                  <div style={{ color: brand.textTertiary, fontSize: 12 }}>Target Anggaran</div>
                   <div style={{ fontSize: 16, fontWeight: 'bold' }}>{formatNumber(selectedRecord.target_rp)}</div>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#888', fontSize: 12 }}>Selisih</div>
+                  <div style={{ color: brand.textTertiary, fontSize: 12 }}>Selisih</div>
                   <div style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: getSelisih() === 0 ? '#52c41a' : '#fa541c'
+                    color: getSelisih() === 0 ? brand.success : brand.error
                   }}>
                     {getSelisih() > 0 ? '+' : ''}{formatNumber(getSelisih())}
                   </div>
@@ -654,11 +655,11 @@ export const PuskesmasAngkasPage: React.FC = () => {
                       </Tag>
                     ))}
                   </div>
-                  <div style={{ marginTop: 4, fontSize: '12px', color: '#888' }}>
+                  <div style={{ marginTop: 4, fontSize: '12px', color: brand.textTertiary }}>
                     Dibuat oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
                   </div>
                   {record.uraian && (
-                    <div style={{ marginTop: 6, padding: '6px 10px', background: '#f5f5f5', borderRadius: 4, fontSize: '12px', color: '#595959' }}>
+                    <div style={{ marginTop: 6, padding: '6px 10px', background: brand.bgLayout, borderRadius: 4, fontSize: '12px', color: brand.textSecondary }}>
                       <strong>Catatan:</strong> {record.uraian}
                     </div>
                   )}

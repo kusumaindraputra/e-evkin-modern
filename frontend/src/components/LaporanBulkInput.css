@@ -1,12 +1,12 @@
 /* ====================================
    LAPORAN BULK INPUT - CARD-BASED LAYOUT
-   Redesigned from flat table to grouped cards
+   Uses CSS variables from theme (index.css :root)
    ==================================== */
 
 /* Progress Header */
 .laporan-progress-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-lg);
   padding: 20px 24px;
   margin-bottom: 20px;
   color: #fff;
@@ -50,16 +50,16 @@
 }
 
 .progress-stat-card {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 14px 16px;
   text-align: center;
-  transition: background 0.2s;
+  transition: background var(--transition-fast);
 }
 
 .progress-stat-card:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.20);
 }
 
 .progress-stat-card .stat-label {
@@ -89,15 +89,15 @@
 .progress-bar-track {
   height: 8px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  border-radius: 4px;
-  background: linear-gradient(90deg, #69db7c 0%, #40c057 100%);
-  transition: width 0.5s ease;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-success), #3BA06B);
+  transition: width var(--transition-slow);
 }
 
 .progress-bar-labels {
@@ -117,7 +117,7 @@
   padding: 16px 20px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .laporan-filter-bar .ant-card-body {
     padding: 12px;
   }
@@ -129,36 +129,36 @@
 /* Group Card (Accordion per Kegiatan) */
 .laporan-group-card {
   margin-bottom: 12px;
-  border: 1px solid #f0f0f0;
-  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .laporan-group-card:hover {
-  border-color: #d9d9d9;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .laporan-group-header {
   display: flex;
   align-items: center;
   padding: 14px 20px;
-  background: #fafafa;
+  background: var(--bg-layout);
   cursor: pointer;
   user-select: none;
   gap: 12px;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 
 .laporan-group-header:hover {
-  background: #f0f5ff;
+  background: #EFF6FF;
 }
 
 .laporan-group-header .group-expand-icon {
   font-size: 12px;
-  color: #8c8c8c;
-  transition: transform 0.25s ease;
+  color: var(--text-tertiary);
+  transition: transform var(--transition);
   flex-shrink: 0;
 }
 
@@ -170,7 +170,7 @@
   flex: 1;
   font-size: 14px;
   font-weight: 600;
-  color: #262626;
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -185,7 +185,7 @@
   gap: 10px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .laporan-group-body {
     padding: 8px;
     gap: 8px;
@@ -201,33 +201,33 @@
 
 /* Input Card (Per Sub Kegiatan Row) */
 .laporan-input-card {
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
   padding: 16px 20px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: #fff;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background: var(--bg-card);
 }
 
 .laporan-input-card:hover {
-  border-color: #d6e4ff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .laporan-input-card.status-terkirim {
-  background: #f6ffed;
-  border-color: #b7eb8f;
+  background: #F0FDF4;
+  border-color: #86EFAC;
 }
 
 .laporan-input-card.status-tersimpan {
-  background: #fafafa;
-  border-color: #d9d9d9;
+  background: #F8FAFC;
+  border-color: var(--border-color);
 }
 
 .laporan-input-card.status-empty {
-  border-left: 3px solid #faad14;
+  border-left: 3px solid var(--color-warning);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .laporan-input-card {
     padding: 12px;
   }
@@ -245,13 +245,13 @@
 .input-card-meta .meta-title {
   font-size: 13px;
   font-weight: 500;
-  color: #434343;
+  color: var(--text-secondary);
   flex: 1;
   min-width: 0;
   line-height: 1.4;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .input-card-meta .meta-title {
     flex-basis: 100%;
     order: 10;
@@ -261,14 +261,14 @@
 
 .input-card-indikator {
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
   line-height: 1.4;
   margin-bottom: 14px;
   white-space: pre-wrap;
   padding: 8px 12px;
-  background: #fafafa;
-  border-radius: 6px;
-  display: none; /* Hidden by default, shown on expand */
+  background: var(--bg-layout);
+  border-radius: var(--radius);
+  display: none;
 }
 
 .input-card-indikator.visible {
@@ -282,7 +282,7 @@
   gap: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .input-card-data {
     grid-template-columns: 1fr;
     gap: 10px;
@@ -291,17 +291,17 @@
 
 .data-section {
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .data-section.target-section {
-  background: #f0f5ff;
-  border: 1px solid #d6e4ff;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
 }
 
 .data-section.realisasi-section {
-  background: #f6ffed;
-  border: 1px solid #d9f7be;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
 }
 
 .data-section-title {
@@ -313,11 +313,11 @@
 }
 
 .data-section.target-section .data-section-title {
-  color: #2f54eb;
+  color: var(--color-primary);
 }
 
 .data-section.realisasi-section .data-section-title {
-  color: #52c41a;
+  color: var(--color-success);
 }
 
 .data-row {
@@ -334,7 +334,7 @@
 
 .data-row .data-label {
   font-size: 12px;
-  color: #595959;
+  color: var(--text-secondary);
   flex-shrink: 0;
   min-width: 70px;
 }
@@ -342,7 +342,7 @@
 .data-row .data-value {
   font-size: 13px;
   font-weight: 600;
-  color: #262626;
+  color: var(--text-primary);
   text-align: right;
 }
 
@@ -353,10 +353,10 @@
 
 .data-row .data-input .ant-input-number {
   width: 100%;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .data-row .data-label {
     min-width: 60px;
     font-size: 11px;
@@ -382,31 +382,31 @@
 .capaian-bar {
   flex: 1;
   height: 6px;
-  background: #f0f0f0;
-  border-radius: 3px;
+  background: var(--border-light);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .capaian-bar-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s ease;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-slow);
 }
 
 .capaian-bar-fill.capaian-green {
-  background: linear-gradient(90deg, #73d13d, #52c41a);
+  background: linear-gradient(90deg, #34D399, var(--color-success));
 }
 
 .capaian-bar-fill.capaian-blue {
-  background: linear-gradient(90deg, #40a9ff, #1890ff);
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
 }
 
 .capaian-bar-fill.capaian-orange {
-  background: linear-gradient(90deg, #ffc53d, #faad14);
+  background: linear-gradient(90deg, #FBBF24, var(--color-warning));
 }
 
 .capaian-bar-fill.capaian-red {
-  background: linear-gradient(90deg, #ff7875, #ff4d4f);
+  background: linear-gradient(90deg, #FCA5A5, var(--color-error));
 }
 
 .capaian-text {
@@ -420,12 +420,12 @@
 .input-card-extras {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .extras-toggle {
   font-size: 12px;
-  color: #1890ff;
+  color: var(--color-primary);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -434,7 +434,7 @@
 }
 
 .extras-toggle:hover {
-  color: #40a9ff;
+  color: var(--color-primary-light);
 }
 
 .extras-fields {
@@ -444,7 +444,7 @@
   gap: 12px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .extras-fields {
     grid-template-columns: 1fr;
   }
@@ -453,21 +453,21 @@
 .extras-field label {
   display: block;
   font-size: 12px;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
   margin-bottom: 4px;
   font-weight: 500;
 }
 
 .extras-field .ant-input {
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
 /* Sticky Action Bar */
 .laporan-action-bar {
   position: sticky;
   bottom: 0;
-  background: #fff;
-  border-top: 1px solid #f0f0f0;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
   padding: 12px 20px;
   margin: 0 -24px -24px;
   display: flex;
@@ -475,15 +475,15 @@
   justify-content: space-between;
   gap: 12px;
   z-index: 10;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
-  border-radius: 0 0 8px 8px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .laporan-action-bar {
     flex-direction: column;
     padding: 12px;
-    margin: 0 -12px -12px;
+    margin: 0 -16px -16px;
   }
   .action-bar-buttons {
     width: 100%;
@@ -495,7 +495,7 @@
 
 .action-bar-info {
   font-size: 13px;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
 }
 
 .action-bar-buttons {
@@ -511,13 +511,13 @@
 
 .laporan-empty-state .empty-icon {
   font-size: 48px;
-  color: #d9d9d9;
+  color: var(--border-color);
   margin-bottom: 16px;
 }
 
 .laporan-empty-state .empty-text {
   font-size: 16px;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
 }
 
 /* Loading state */
@@ -529,14 +529,14 @@
 .laporan-loading-state .loading-text {
   margin-top: 16px;
   font-size: 14px;
-  color: #8c8c8c;
+  color: var(--text-tertiary);
 }
 
 /* Smooth expand/collapse animation using CSS grid */
 .group-body-visible,
 .group-body-hidden {
   display: grid;
-  transition: grid-template-rows 0.3s ease, opacity 0.25s ease;
+  transition: grid-template-rows var(--transition) ease, opacity var(--transition-fast) ease;
 }
 
 .group-body-visible {

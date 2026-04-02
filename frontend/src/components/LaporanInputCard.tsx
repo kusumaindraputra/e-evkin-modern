@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Tag, InputNumber, Input, Tooltip } from 'antd';
 import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { formatNumber, formatSumberAnggaran, getSumberAnggaranColor } from '../utils/formatters';
+import { brand } from '../theme';
 
 const { TextArea } = Input;
 
@@ -46,10 +47,10 @@ const getCapaianColor = (pct: number): string => {
 };
 
 const getCapaianTextColor = (pct: number): string => {
-  if (pct >= 90) return '#52c41a';
-  if (pct >= 70) return '#1890ff';
-  if (pct >= 50) return '#faad14';
-  return '#ff4d4f';
+  if (pct >= 90) return brand.success;
+  if (pct >= 70) return brand.primary;
+  if (pct >= 50) return brand.warning;
+  return brand.error;
 };
 
 const numberFormatter = (val: number | string | undefined) => {
@@ -171,7 +172,7 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
             <span className="data-value">
               Rp {formatNumber(row.angkas || 0)}
               {row.isManualAngkas && (!row.angkas || row.angkas <= 0) && (
-                <span style={{ color: '#fa8c16', fontSize: 10, display: 'block' }}>
+                <span style={{ color: brand.warning, fontSize: 10, display: 'block' }}>
                   Belum diinput
                 </span>
               )}

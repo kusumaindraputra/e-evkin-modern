@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import apiClient from '../utils/apiClient';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
+import { brand } from '../theme';
 import {
   LineChart,
   Line,
@@ -210,7 +211,7 @@ const PuskesmasDashboardPage: React.FC = () => {
                     title="Total Laporan"
                     value={stats.totalLaporan}
                     prefix={<FileTextOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
+                    valueStyle={{ color: brand.primary }}
                   />
                 </Card>
               </Col>
@@ -220,7 +221,7 @@ const PuskesmasDashboardPage: React.FC = () => {
                     title="Terkirim"
                     value={stats.terkirim}
                     prefix={<CheckCircleOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
+                    valueStyle={{ color: brand.success }}
                   />
                 </Card>
               </Col>
@@ -230,7 +231,7 @@ const PuskesmasDashboardPage: React.FC = () => {
                     title="Tersimpan (Draft)"
                     value={stats.tersimpan}
                     prefix={<ClockCircleOutlined />}
-                    valueStyle={{ color: '#faad14' }}
+                    valueStyle={{ color: brand.warning }}
                   />
                 </Card>
               </Col>
@@ -247,7 +248,7 @@ const PuskesmasDashboardPage: React.FC = () => {
               title="Total Target Anggaran YTD"
               value={totalStats.totalTarget}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: brand.primary }}
               formatter={(v) => formatCurrencyWithPrefix(v as number)}
             />
           </Card>
@@ -258,7 +259,7 @@ const PuskesmasDashboardPage: React.FC = () => {
               title="Total Realisasi Anggaran YTD"
               value={totalStats.totalRealisasi}
               prefix={<DollarOutlined />}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: brand.success }}
               formatter={(v) => formatCurrencyWithPrefix(v as number)}
             />
           </Card>
@@ -272,8 +273,8 @@ const PuskesmasDashboardPage: React.FC = () => {
               suffix="%"
               precision={2}
               valueStyle={{
-                color: totalStats.persentaseRealisasi >= 80 ? '#52c41a' :
-                  totalStats.persentaseRealisasi >= 60 ? '#faad14' : '#ff4d4f',
+                color: totalStats.persentaseRealisasi >= 80 ? brand.success :
+                  totalStats.persentaseRealisasi >= 60 ? brand.warning : brand.error,
               }}
             />
           </Card>
@@ -337,20 +338,20 @@ const PuskesmasDashboardPage: React.FC = () => {
                 <Col>
                   <Space wrap size="middle">
                     <Space>
-                      <Switch checked={showAnggaran} onChange={setShowAnggaran} size="small" style={{ backgroundColor: showAnggaran ? '#1890ff' : undefined }} />
-                      <Text style={{ color: showAnggaran ? '#1890ff' : '#999' }}>Anggaran</Text>
+                      <Switch checked={showAnggaran} onChange={setShowAnggaran} size="small" style={{ backgroundColor: showAnggaran ? brand.primary : undefined }} />
+                      <Text style={{ color: showAnggaran ? brand.primary : brand.textTertiary }}>Anggaran</Text>
                     </Space>
                     <Space>
-                      <Switch checked={showAngkas} onChange={setShowAngkas} size="small" style={{ backgroundColor: showAngkas ? '#722ed1' : undefined }} />
-                      <Text style={{ color: showAngkas ? '#722ed1' : '#999' }}>Angkas</Text>
+                      <Switch checked={showAngkas} onChange={setShowAngkas} size="small" style={{ backgroundColor: showAngkas ? brand.accent : undefined }} />
+                      <Text style={{ color: showAngkas ? brand.accent : brand.textTertiary }}>Angkas</Text>
                     </Space>
                     <Space>
-                      <Switch checked={showRealisasiAnggaran} onChange={setShowRealisasiAnggaran} size="small" style={{ backgroundColor: showRealisasiAnggaran ? '#52c41a' : undefined }} />
-                      <Text style={{ color: showRealisasiAnggaran ? '#52c41a' : '#999' }}>Realisasi Anggaran</Text>
+                      <Switch checked={showRealisasiAnggaran} onChange={setShowRealisasiAnggaran} size="small" style={{ backgroundColor: showRealisasiAnggaran ? brand.success : undefined }} />
+                      <Text style={{ color: showRealisasiAnggaran ? brand.success : brand.textTertiary }}>Realisasi Anggaran</Text>
                     </Space>
                     <Space>
-                      <Switch checked={showRealisasiFisik} onChange={setShowRealisasiFisik} size="small" style={{ backgroundColor: showRealisasiFisik ? '#fa8c16' : undefined }} />
-                      <Text style={{ color: showRealisasiFisik ? '#fa8c16' : '#999' }}>Realisasi Fisik (%)</Text>
+                      <Switch checked={showRealisasiFisik} onChange={setShowRealisasiFisik} size="small" style={{ backgroundColor: showRealisasiFisik ? brand.warning : undefined }} />
+                      <Text style={{ color: showRealisasiFisik ? brand.warning : brand.textTertiary }}>Realisasi Fisik (%)</Text>
                     </Space>
                   </Space>
                 </Col>
@@ -373,13 +374,13 @@ const PuskesmasDashboardPage: React.FC = () => {
                       if (name === 'Realisasi Fisik (%)') return `${value.toFixed(2)}%`;
                       return formatCurrencyWithPrefix(value);
                     }}
-                    labelStyle={{ color: '#000' }}
+                    labelStyle={{ color: brand.textPrimary }}
                   />
                   <Legend />
-                  {showAnggaran && <Line yAxisId="left" type="monotone" dataKey="anggaran" name="Target Anggaran (Rp)" stroke="#1890ff" strokeWidth={2} dot={{ fill: '#1890ff', r: 4 }} activeDot={{ r: 6 }} />}
-                  {showAngkas && <Line yAxisId="left" type="monotone" dataKey="angkas" name="Angkas (Rp)" stroke="#722ed1" strokeWidth={2} dot={{ fill: '#722ed1', r: 4 }} activeDot={{ r: 6 }} />}
-                  {showRealisasiAnggaran && <Line yAxisId="left" type="monotone" dataKey="realisasi_anggaran" name="Realisasi Anggaran (Rp)" stroke="#52c41a" strokeWidth={2} dot={{ fill: '#52c41a', r: 4 }} activeDot={{ r: 6 }} />}
-                  {showRealisasiFisik && <Line yAxisId="right" type="monotone" dataKey="realisasi_fisik" name="Realisasi Fisik (%)" stroke="#fa8c16" strokeWidth={2} dot={{ fill: '#fa8c16', r: 4 }} activeDot={{ r: 6 }} />}
+                  {showAnggaran && <Line yAxisId="left" type="monotone" dataKey="anggaran" name="Target Anggaran (Rp)" stroke={brand.primary} strokeWidth={2} dot={{ fill: brand.primary, r: 4 }} activeDot={{ r: 6 }} />}
+                  {showAngkas && <Line yAxisId="left" type="monotone" dataKey="angkas" name="Angkas (Rp)" stroke={brand.accent} strokeWidth={2} dot={{ fill: brand.accent, r: 4 }} activeDot={{ r: 6 }} />}
+                  {showRealisasiAnggaran && <Line yAxisId="left" type="monotone" dataKey="realisasi_anggaran" name="Realisasi Anggaran (Rp)" stroke={brand.success} strokeWidth={2} dot={{ fill: brand.success, r: 4 }} activeDot={{ r: 6 }} />}
+                  {showRealisasiFisik && <Line yAxisId="right" type="monotone" dataKey="realisasi_fisik" name="Realisasi Fisik (%)" stroke={brand.warning} strokeWidth={2} dot={{ fill: brand.warning, r: 4 }} activeDot={{ r: 6 }} />}
                 </LineChart>
               </ResponsiveContainer>
               );
@@ -413,7 +414,7 @@ const PuskesmasDashboardPage: React.FC = () => {
               <Row gutter={[16, 16]}>
                 {monthlyData.map((item, index) => (
                   <Col xs={24} sm={12} lg={8} xl={6} key={index}>
-                    <Card size="small" style={{ background: '#fafafa', height: '100%' }}>
+                    <Card size="small" style={{ background: brand.bgLayout, height: '100%' }}>
                       <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>
                         {item.sub_kegiatan}
                       </Text>
@@ -427,7 +428,7 @@ const PuskesmasDashboardPage: React.FC = () => {
                         </div>
                         <div>
                           <Text style={{ fontSize: 11 }}>Realisasi: </Text>
-                          <Text strong style={{ fontSize: 11, color: '#52c41a' }}>
+                          <Text strong style={{ fontSize: 11, color: brand.success }}>
                             {formatCurrencyWithPrefix(item.realisasi_rp)}
                           </Text>
                         </div>
@@ -435,8 +436,8 @@ const PuskesmasDashboardPage: React.FC = () => {
                           percent={item.persentase}
                           size="small"
                           strokeColor={
-                            item.persentase >= 80 ? '#52c41a' :
-                              item.persentase >= 60 ? '#faad14' : '#ff4d4f'
+                            item.persentase >= 80 ? brand.success :
+                              item.persentase >= 60 ? brand.warning : brand.error
                           }
                         />
                       </Space>

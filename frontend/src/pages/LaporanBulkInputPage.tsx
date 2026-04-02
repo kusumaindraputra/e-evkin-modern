@@ -23,6 +23,7 @@ import { useAuthStore } from '../store/authStore';
 import LaporanProgressHeader from '../components/LaporanProgressHeader';
 import LaporanGroupCard from '../components/LaporanGroupCard';
 import type { LaporanRowData } from '../components/LaporanInputCard';
+import { brand } from '../theme';
 import '../components/LaporanBulkInput.css';
 
 const { Text } = Typography;
@@ -711,7 +712,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         <Card>
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <FileTextOutlined
-              style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }}
+              style={{ fontSize: 48, color: brand.border, marginBottom: 16 }}
             />
             <div>
               <Text type="secondary" style={{ fontSize: 16 }}>

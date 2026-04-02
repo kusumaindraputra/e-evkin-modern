@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Tag, Badge } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
 import LaporanInputCard, { type LaporanRowData } from './LaporanInputCard';
+import { brand } from '../theme';
 
 interface LaporanGroupCardProps {
   kegiatanLabel: string;
@@ -40,9 +41,9 @@ const LaporanGroupCard: React.FC<LaporanGroupCardProps> = ({
   );
 
   const badgeColor = useMemo(() => {
-    if (allSubmitted) return '#52c41a';
-    if (filledCount === rows.length) return '#1890ff';
-    if (filledCount > 0) return '#faad14';
+    if (allSubmitted) return brand.success;
+    if (filledCount === rows.length) return brand.primary;
+    if (filledCount > 0) return brand.warning;
     return '#d9d9d9';
   }, [allSubmitted, filledCount, rows.length]);
 

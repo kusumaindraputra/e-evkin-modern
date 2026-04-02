@@ -1,17 +1,17 @@
 .chat-widget-compact,
 .chat-widget-full {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .chat-messages {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 12px;
-  background-color: #fafafa;
+  background-color: var(--bg-layout);
 }
 
 .chat-message {
-  animation: slideIn 0.3s ease-in-out;
+  animation: slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chat-message.user {
@@ -30,7 +30,7 @@
 }
 
 .markdown-content {
-  line-height: 1.6;
+  line-height: 1.5714;
 }
 
 .markdown-content p {
@@ -49,29 +49,29 @@
 
 .markdown-content strong {
   font-weight: 600;
-  color: #262626;
+  color: var(--text-primary);
 }
 
 .markdown-content code {
-  background-color: #f0f0f0;
+  background-color: var(--bg-layout);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-family: 'Courier New', monospace;
   font-size: 12px;
 }
 
 .markdown-content pre {
-  background-color: #f5f5f5;
+  background-color: #F1F5F9;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow-x: auto;
 }
 
 .markdown-content blockquote {
-  border-left: 3px solid #1890ff;
+  border-left: 3px solid var(--color-primary);
   padding-left: 12px;
   margin-left: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
 }
 

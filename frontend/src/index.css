@@ -1,6 +1,9 @@
+/* ── Google Fonts: Plus Jakarta Sans ─────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5714;
   font-weight: 400;
 
   color-scheme: light;
@@ -9,6 +12,37 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* ── Theme CSS variables (mirrors theme.ts tokens) ──── */
+  --color-primary: #0E6BA8;
+  --color-primary-light: #3D8DC5;
+  --color-primary-dark: #094D7A;
+  --color-accent: #0891B2;
+  --color-success: #2E8B57;
+  --color-warning: #E8961E;
+  --color-error: #CF1322;
+
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --border-color: #E5E7EB;
+  --border-light: #F3F4F6;
+  --bg-layout: #F9FAFB;
+  --bg-card: #FFFFFF;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.10);
+
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  --breakpoint-mobile: 768px;
 }
 
 * {
@@ -19,62 +53,42 @@
 
 body {
   min-height: 100vh;
+  background: var(--bg-layout);
+  color: var(--text-primary);
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* ====================================
-   GLOBAL TABLE STYLES
-   - Sticky headers
-   - Zebra striping
-   ==================================== */
+/* ── Global table styles ────────────────────────────────── */
 
-/* Sticky header for all Ant Design tables - DISABLED (Concflits with Fixed Columns)
-/* .ant-table-wrapper .ant-table-thead > tr > th {
-  position: sticky !important;
-  top: 0;
-  z-index: 2;
-  background: #fafafa !important;
-} */
-
-/* When table has fixed header with scroll.y */
-/* .ant-table-wrapper .ant-table-header {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-} */
-
-/* Zebra striping for table rows */
-.ant-table-wrapper .ant-table-tbody>tr:nth-child(odd)>td {
+/* Zebra striping */
+.ant-table-wrapper .ant-table-tbody > tr:nth-child(odd) > td {
   background-color: #ffffff;
 }
-
-.ant-table-wrapper .ant-table-tbody>tr:nth-child(even)>td {
-  background-color: #fafafa;
+.ant-table-wrapper .ant-table-tbody > tr:nth-child(even) > td {
+  background-color: #F8FAFC;
 }
 
-/* Hover effect - override zebra background */
-.ant-table-wrapper .ant-table-tbody>tr:hover>td {
-  background-color: #e6f4ff !important;
+/* Hover */
+.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background-color: #EFF6FF !important;
 }
 
 /* Selected row */
-.ant-table-wrapper .ant-table-tbody>tr.ant-table-row-selected>td {
-  background-color: #bae0ff !important;
+.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #DBEAFE !important;
 }
 
-/* Legacy class support (for custom rowClassName) */
+/* Legacy class support */
 .table-row-light {
   background-color: #ffffff;
 }
-
 .table-row-dark {
-  background-color: #fafafa;
+  background-color: #F8FAFC;
 }
-
 .table-row-light:hover,
 .table-row-dark:hover {
-  background-color: #e6f4ff !important;
+  background-color: #EFF6FF !important;
 }

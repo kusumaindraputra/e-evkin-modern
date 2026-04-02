@@ -9,6 +9,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { NAV_ITEMS } from '../config/navConfig';
+import { layout } from '../theme';
 import './Layout.css';
 
 const { Header, Sider, Content } = AntLayout;
@@ -60,6 +61,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         trigger={null}
         collapsible
         collapsed={collapsed}
+        width={layout.siderWidth}
+        collapsedWidth={layout.siderCollapsedWidth}
         className="layout-sider"
       >
         <div className="logo-container">
@@ -79,7 +82,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Sider>
       <AntLayout
         className="layout-content-wrapper"
-        style={{ marginLeft: collapsed ? 80 : 200 }}
+        style={{ marginLeft: collapsed ? layout.siderCollapsedWidth : layout.siderWidth }}
       >
         <Header className="layout-header">
           <Button
@@ -99,7 +102,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="user-info">
                 <Text strong>{user?.nama}</Text>
                 <Text type="secondary" className="user-role-text">
-                  {user?.role === 'admin' ? 'Administrator' : user?.kode_puskesmas}
+                  {user?.role === 'admin' ? 'Administrator' : (user?.nama_puskesmas || user?.kode_puskesmas)}
                 </Text>
               </div>
             </div>

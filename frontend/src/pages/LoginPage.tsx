@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, Typography, message, Row, Col } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { brand, gradients } from '../theme';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 
@@ -47,7 +48,7 @@ export const LoginPage: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: gradients.login,
       }}
     >
       <Row justify="center" style={{ width: '100%', padding: '0 16px' }}>
@@ -59,7 +60,7 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <Title level={2} style={{ marginBottom: 8, color: '#667eea' }}>
+              <Title level={2} style={{ marginBottom: 8, color: brand.primary }}>
                 E-EVKIN
               </Title>
               <Text type="secondary">
@@ -109,7 +110,7 @@ export const LoginPage: React.FC = () => {
                   style={{
                     height: 48,
                     fontSize: 16,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: gradients.login,
                     border: 'none',
                   }}
                 >

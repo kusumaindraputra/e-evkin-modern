@@ -5,6 +5,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
 import Markdown from 'react-markdown';
+import { brand } from '../theme';
 import './ChatWidget.css';
 
 interface ChatMessage {
@@ -113,7 +114,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
         size="small"
         title={
           <Space size="small">
-            <RobotOutlined style={{ color: '#1890ff', fontSize: 14 }} />
+            <RobotOutlined style={{ color: brand.primary, fontSize: 14 }} />
             <span style={{ fontSize: 13 }}>Asisten Analis</span>
           </Space>
         }
@@ -151,8 +152,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                     marginBottom: 6,
                     padding: '6px 8px',
                     borderRadius: 4,
-                    backgroundColor: msg.type === 'user' ? '#e6f7ff' : '#f6f8fb',
-                    borderLeft: `2px solid ${msg.type === 'user' ? '#1890ff' : '#52c41a'}`,
+                    backgroundColor: msg.type === 'user' ? '#EFF6FF' : brand.bgLayout,
+                    borderLeft: `2px solid ${msg.type === 'user' ? brand.primary : brand.success}`,
                     fontSize: 12,
                   }}
                 >
@@ -192,7 +193,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
       className="chat-widget-full"
       title={
         <Space>
-          <RobotOutlined style={{ color: '#1890ff' }} />
+          <RobotOutlined style={{ color: brand.primary }} />
           <span>Asisten Analis Kinerja Puskesmas</span>
         </Space>
       }
@@ -211,7 +212,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
       >
         {messages.length === 0 ? (
           <div style={{ padding: '20px 0' }}>
-            <p style={{ color: '#666', fontSize: 13, marginBottom: 16 }}>
+            <p style={{ color: brand.textSecondary, fontSize: 13, marginBottom: 16 }}>
               Saya siap membantu menganalisis data kinerja Puskesmas. Pilih pertanyaan atau ketik langsung:
             </p>
             <Space direction="vertical" style={{ width: '100%' }}>
@@ -231,11 +232,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                   marginBottom: 12,
                   padding: '10px 14px',
                   borderRadius: 6,
-                  backgroundColor: msg.type === 'user' ? '#e6f7ff' : '#f6f8fb',
-                  borderLeft: `3px solid ${msg.type === 'user' ? '#1890ff' : '#52c41a'}`,
+                  backgroundColor: msg.type === 'user' ? '#EFF6FF' : brand.bgLayout,
+                  borderLeft: `3px solid ${msg.type === 'user' ? brand.primary : brand.success}`,
                 }}
               >
-                <p style={{ margin: 0, marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>
+                <p style={{ margin: 0, marginBottom: 4, fontWeight: 500, fontSize: 12, color: brand.textSecondary }}>
                   {msg.type === 'user' ? '👤 Pertanyaan' : '🤖 Analisis'}
                 </p>
                 {msg.type === 'assistant' ? (
@@ -248,7 +249,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
             {loading && (
               <div style={{ textAlign: 'center', padding: 12 }}>
                 <Spin size="default" />
-                <p style={{ marginTop: 8, color: '#666', fontSize: 12 }}>Menganalisis data...</p>
+                <p style={{ marginTop: 8, color: brand.textSecondary, fontSize: 12 }}>Menganalisis data...</p>
               </div>
             )}
             <div ref={messagesEndRef} />

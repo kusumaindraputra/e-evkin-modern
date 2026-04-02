@@ -25,6 +25,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
+import { brand } from '../theme';
 
 const { Text } = Typography;
 
@@ -274,15 +275,15 @@ const AdminTargetUploadPage: React.FC = () => {
           content: (
             <div>
               <p><strong>Total Berhasil:</strong> {result.success} target</p>
-              <p style={{ marginLeft: 20, color: '#52c41a' }}>• Inserted (Baru): {result.inserted}</p>
-              <p style={{ marginLeft: 20, color: '#1890ff' }}>• Updated (Existing): {result.updated}</p>
-              <p style={{ marginLeft: 20, color: '#faad14' }}>• Skipped (Same Value): {result.skipped || 0}</p>
+              <p style={{ marginLeft: 20, color: brand.success }}>• Inserted (Baru): {result.inserted}</p>
+              <p style={{ marginLeft: 20, color: brand.primary }}>• Updated (Existing): {result.updated}</p>
+              <p style={{ marginLeft: 20, color: brand.warning }}>• Skipped (Same Value): {result.skipped || 0}</p>
               <p><strong>Gagal:</strong> {result.failed} target</p>
               {result.errors?.length > 0 && (
                 <div style={{ marginTop: 16, maxHeight: 150, overflow: 'auto' }}>
-                  <p style={{ color: '#ff4d4f' }}><strong>Errors:</strong></p>
+                  <p style={{ color: brand.error }}><strong>Errors:</strong></p>
                   {result.errors.slice(0, 5).map((err: any, idx: number) => (
-                    <p key={idx} style={{ fontSize: 12, color: '#ff4d4f', marginLeft: 20 }}>
+                    <p key={idx} style={{ fontSize: 12, color: brand.error, marginLeft: 20 }}>
                       • Row {err.row}: {err.error}
                     </p>
                   ))}
@@ -400,14 +401,14 @@ const AdminTargetUploadPage: React.FC = () => {
         content: (
           <div>
             <p><strong>Total Berhasil:</strong> {result.success} data</p>
-            <p style={{ marginLeft: 20, color: '#52c41a' }}>• Inserted (Baru): {result.inserted}</p>
-            <p style={{ marginLeft: 20, color: '#1890ff' }}>• Updated (History Baru): {result.updated}</p>
-            <p style={{ marginLeft: 20, color: '#faad14' }}>• Skipped (Sama/Zero): {result.skipped}</p>
+            <p style={{ marginLeft: 20, color: brand.success }}>• Inserted (Baru): {result.inserted}</p>
+            <p style={{ marginLeft: 20, color: brand.primary }}>• Updated (History Baru): {result.updated}</p>
+            <p style={{ marginLeft: 20, color: brand.warning }}>• Skipped (Sama/Zero): {result.skipped}</p>
             <p><strong>Gagal:</strong> {result.failed} data</p>
             {result.unmatchedPuskesmas?.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <p style={{ color: '#ff4d4f' }}><strong>Puskesmas Tidak Ditemukan:</strong></p>
-                <ul style={{ marginLeft: 20, color: '#ff4d4f' }}>
+                <p style={{ color: brand.error }}><strong>Puskesmas Tidak Ditemukan:</strong></p>
+                <ul style={{ marginLeft: 20, color: brand.error }}>
                   {result.unmatchedPuskesmas.map((name: string, idx: number) => (
                     <li key={idx}>{name}</li>
                   ))}
@@ -530,9 +531,9 @@ const AdminTargetUploadPage: React.FC = () => {
     { title: 'Target Anggaran (Rp)', dataIndex: 'target_rp', key: 'target_rp', width: 140, align: 'right' as const, render: (value: number) => formatNumber(value || 0) },
     ...BULAN_NAMES.map((name, idx) => ({
       title: name.substring(0, 3), dataIndex: ['bulanan', idx], key: `bulan_${idx}`, width: 85, align: 'right' as const,
-      render: (value: number, record: AngkasRecord) => !record.hasAngkas ? <span style={{ color: '#bfbfbf' }}>-</span> : (value ? formatNumber(value) : '-'),
+      render: (value: number, record: AngkasRecord) => !record.hasAngkas ? <span style={{ color: brand.border }}>-</span> : (value ? formatNumber(value) : '-'),
     })),
-    { title: 'Total Angkas', dataIndex: 'total', key: 'total', width: 120, fixed: 'right' as const, align: 'right' as const, render: (value: number, record: AngkasRecord) => <strong style={{ color: record.hasAngkas ? undefined : '#bfbfbf' }}>{formatNumber(value)}</strong> },
+    { title: 'Total Angkas', dataIndex: 'total', key: 'total', width: 120, fixed: 'right' as const, align: 'right' as const, render: (value: number, record: AngkasRecord) => <strong style={{ color: record.hasAngkas ? undefined : brand.border }}>{formatNumber(value)}</strong> },
     {
       title: 'Aksi', key: 'action', width: 90, fixed: 'right' as const,
       render: (_: any, record: AngkasRecord) => <Button size="small" icon={<HistoryOutlined />} onClick={() => handleViewAngkasHistory(record)}>History</Button>,
@@ -622,8 +623,8 @@ const AdminTargetUploadPage: React.FC = () => {
               <>
                 <Row gutter={16} style={{ marginBottom: 16 }}>
                   <Col span={8}><Card size="small"><Statistic title="Total Kombinasi" value={angkasStats.total} /></Card></Col>
-                  <Col span={8}><Card size="small"><Statistic title="Sudah Upload" value={angkasStats.withAngkas} valueStyle={{ color: '#52c41a' }} /></Card></Col>
-                  <Col span={8}><Card size="small"><Statistic title="Belum Upload" value={angkasStats.withoutAngkas} valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
+                  <Col span={8}><Card size="small"><Statistic title="Sudah Upload" value={angkasStats.withAngkas} valueStyle={{ color: brand.success }} /></Card></Col>
+                  <Col span={8}><Card size="small"><Statistic title="Belum Upload" value={angkasStats.withoutAngkas} valueStyle={{ color: brand.error }} /></Card></Col>
                 </Row>
                 <div style={{ marginBottom: 16 }}>
                   <Space>
@@ -666,27 +667,27 @@ const AdminTargetUploadPage: React.FC = () => {
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Catatan Perubahan <span style={{ color: 'red' }}>*</span></label>
             <input type="text" value={targetUploadCatatan} onChange={(e) => setTargetUploadCatatan(e.target.value)}
               placeholder="Contoh: Pagu Murni / Perubahan Parsial 1" disabled={targetUploading}
-              style={{ width: '100%', padding: '8px 12px', border: targetUploadCatatan.trim() ? '1px solid #d9d9d9' : '1px solid #ff7875', borderRadius: 6 }}
+              style={{ width: '100%', padding: '8px 12px', border: targetUploadCatatan.trim() ? `1px solid ${brand.border}` : '1px solid #ff7875', borderRadius: 6 }}
             />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Bulan Penetapan <span style={{ color: 'red' }}>*</span></label>
             <select value={targetUploadBulanPenetapan} onChange={(e) => setTargetUploadBulanPenetapan(Number(e.target.value))}
               disabled={targetUploading}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, background: '#fff' }}>
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${brand.border}`, borderRadius: 6, background: brand.bgCard }}>
               {BULAN_NAMES.map((name, idx) => (
                 <option key={idx + 1} value={idx + 1}>{name}</option>
               ))}
             </select>
-            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Anggaran berlaku mulai bulan ini di dashboard</div>
+            <div style={{ fontSize: 12, color: brand.textTertiary, marginTop: 4 }}>Anggaran berlaku mulai bulan ini di dashboard</div>
           </div>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Tanggal Penetapan</label>
             <input type="date" value={targetUploadTanggalPenetapan} onChange={(e) => setTargetUploadTanggalPenetapan(e.target.value)}
               disabled={targetUploading}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6 }}
+              style={{ width: '100%', padding: '8px 12px', border: `1px solid ${brand.border}`, borderRadius: 6 }}
             />
-            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Tanggal resmi SK/penetapan anggaran</div>
+            <div style={{ fontSize: 12, color: brand.textTertiary, marginTop: 4 }}>Tanggal resmi SK/penetapan anggaran</div>
           </div>
           <Upload.Dragger name="file" accept=".xlsx,.xls" beforeUpload={handleTargetUpload} showUploadList={false} disabled={targetUploading || !targetUploadCatatan.trim()}>
             {targetUploading ? (
@@ -705,7 +706,7 @@ const AdminTargetUploadPage: React.FC = () => {
             <div style={{ textAlign: 'center', padding: 20 }}><Progress type="circle" percent={angkasUploadProgress} /><p style={{ marginTop: 16 }}><LoadingOutlined /> Memproses PDF...</p></div>
           ) : (
             <Upload.Dragger accept=".pdf" showUploadList={false} beforeUpload={handleAngkasUpload}>
-              <p className="ant-upload-drag-icon"><UploadOutlined style={{ fontSize: 48, color: '#1890ff' }} /></p>
+              <p className="ant-upload-drag-icon"><UploadOutlined style={{ fontSize: 48, color: brand.primary }} /></p>
               <p>Klik atau drag file PDF ke area ini</p>
             </Upload.Dragger>
           )}
@@ -746,10 +747,10 @@ const AdminTargetUploadPage: React.FC = () => {
             <div>
               <div style={{ fontWeight: 'bold' }}>{formatDateTime(record.created_at)}</div>
               <div style={{ marginTop: 8 }}>Target Anggaran (Rp): <strong>{formatNumber(record.target_rp)}</strong></div>
-              {record.bulan_penetapan && <div style={{ fontSize: '12px', color: '#1890ff' }}>Berlaku mulai: <strong>{BULAN_NAMES[record.bulan_penetapan - 1]}</strong></div>}
-              {record.tanggal_penetapan && <div style={{ fontSize: '12px', color: '#666' }}>Tgl Penetapan: {new Date(record.tanggal_penetapan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
-              <div style={{ fontSize: '12px', color: '#888' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
-              {record.catatan && <div style={{ marginTop: 6, padding: '6px 10px', background: '#f5f5f5', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.catatan}</div>}
+              {record.bulan_penetapan && <div style={{ fontSize: '12px', color: brand.primary }}>Berlaku mulai: <strong>{BULAN_NAMES[record.bulan_penetapan - 1]}</strong></div>}
+              {record.tanggal_penetapan && <div style={{ fontSize: '12px', color: brand.textSecondary }}>Tgl Penetapan: {new Date(record.tanggal_penetapan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
+              <div style={{ fontSize: '12px', color: brand.textTertiary }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
+              {record.catatan && <div style={{ marginTop: 6, padding: '6px 10px', background: brand.bgLayout, borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.catatan}</div>}
             </div>
           ),
         }))} />
@@ -774,14 +775,14 @@ const AdminTargetUploadPage: React.FC = () => {
                     <div>
                       <div style={{ fontWeight: 'bold' }}>{formatDateTime(record.created_at)}</div>
                       <div>Nilai: <strong>{formatNumber(record.nilai)}</strong></div>
-                      <div style={{ fontSize: '12px', color: '#888' }}>Diupload oleh: {record.creator?.nama || 'N/A'}</div>
+                      <div style={{ fontSize: '12px', color: brand.textTertiary }}>Diupload oleh: {record.creator?.nama || 'N/A'}</div>
                     </div>
                   ),
                 }))} />
               </Card>
             ))}
           </div>
-        ) : <p style={{ textAlign: 'center', color: '#888' }}>Belum ada history</p>}
+        ) : <p style={{ textAlign: 'center', color: brand.textTertiary }}>Belum ada history</p>}
       </Modal>
     </div>
   );

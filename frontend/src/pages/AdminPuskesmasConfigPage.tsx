@@ -14,6 +14,7 @@ import { SettingOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { brand } from '../theme';
 
 const { Title, Text } = Typography;
 
@@ -260,7 +261,7 @@ export const AdminPuskesmasConfigPage: React.FC = () => {
             render={(item) => (
               <div>
                 <div style={{ fontWeight: 500 }}>{item.title}</div>
-                <div style={{ fontSize: '12px', color: '#888' }}>{item.description}</div>
+                <div style={{ fontSize: '12px', color: brand.textTertiary }}>{item.description}</div>
               </div>
             )}
             listStyle={{

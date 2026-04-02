@@ -1,0 +1,224 @@
+/**
+ * E-EVKIN Design System — "Health Government Blue"
+ *
+ * Centralized theme tokens for Ant Design v5 ConfigProvider.
+ * All colors, spacing, border-radius, shadows, and transitions
+ * are defined here so components stay consistent.
+ */
+import type { ThemeConfig } from 'antd';
+
+// ── Brand palette ──────────────────────────────────────────
+export const brand = {
+  primary:     '#0E6BA8',   // Teal-blue — trustworthy, health-sector
+  primaryLight:'#3D8DC5',
+  primaryDark: '#094D7A',
+  accent:      '#0891B2',   // Cyan accent for highlights
+
+  success:     '#2E8B57',   // Sea green — calmer than default
+  successLight:'#D4EDDA',
+  warning:     '#E8961E',   // Warm amber
+  warningLight:'#FFF3CD',
+  error:       '#CF1322',   // Classic error red
+  errorLight:  '#FFF1F0',
+
+  // Semantic grays (Ant Design neutral palette)
+  textPrimary:   '#1F2937',  // Near-black for headings
+  textSecondary: '#6B7280',  // Mid-gray for labels
+  textTertiary:  '#9CA3AF',  // Light gray for captions
+  border:        '#E5E7EB',  // Subtle borders
+  borderLight:   '#F3F4F6',  // Very subtle dividers
+  bgLayout:      '#F9FAFB',  // Page background
+  bgCard:        '#FFFFFF',  // Card surfaces
+  bgElevated:    '#FFFFFF',  // Modals, popovers
+
+  // Status-specific (for Tags — avoid overloading orange)
+  statusTerkirim:   '#2E8B57',
+  statusTersimpan:  '#0E6BA8',
+  statusDitolak:    '#CF1322',
+  statusMenunggu:   '#E8961E',
+  statusVerified:   '#15803D',
+
+  // Chart series colors
+  chartAngkas:       '#7C3AED',   // Purple for anggaran kas
+  chartRealisasi:    '#E8961E',   // Orange for realisasi fisik
+
+  // Sumber anggaran tag colors
+  tagBOK:  '#0E6BA8',
+  tagPAD:  '#7C3AED',
+  tagBLUD: '#D97706',
+  tagJKN:  '#0891B2',
+} as const;
+
+// ── Layout constants ───────────────────────────────────────
+export const layout = {
+  siderWidth:          220,
+  siderCollapsedWidth: 72,
+  headerHeight:        64,
+  contentPadding:      24,
+  contentPaddingMobile:16,
+  borderRadius:        6,
+  borderRadiusSm:      4,
+  borderRadiusLg:      8,
+} as const;
+
+// ── Breakpoints (single source of truth) ───────────────────
+export const breakpoints = {
+  xs: 480,
+  sm: 576,
+  md: 768,
+  lg: 992,
+  xl: 1200,
+  mobile: 768,   // Use this as THE mobile breakpoint everywhere
+} as const;
+
+// ── Shadows ────────────────────────────────────────────────
+export const shadows = {
+  sm:   '0 1px 2px rgba(0, 0, 0, 0.05)',
+  md:   '0 2px 8px rgba(0, 0, 0, 0.08)',
+  lg:   '0 4px 16px rgba(0, 0, 0, 0.10)',
+  card: '0 1px 3px rgba(0, 0, 0, 0.06)',
+  header: '0 1px 4px rgba(0, 0, 0, 0.06)',
+  actionBar: '0 -2px 8px rgba(0, 0, 0, 0.05)',
+} as const;
+
+// ── Motion (consistent transition durations) ───────────────
+export const motion = {
+  fast:   '0.15s',
+  normal: '0.25s',
+  slow:   '0.4s',
+  easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+} as const;
+
+// ── Modal width constants ──────────────────────────────────
+export const modalWidths = {
+  sm:   480,
+  md:   640,
+  lg:   900,
+  xl:   1100,
+} as const;
+
+// ── Pagination defaults ────────────────────────────────────
+export const paginationDefaults = {
+  pageSize: 10,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50'],
+  showTotal: (total: number) => `Total ${total} data`,
+} as const;
+
+// ── Gradient helpers ───────────────────────────────────────
+export const gradients = {
+  primary:  `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+  header:   `linear-gradient(135deg, ${brand.primary} 0%, #0C5C91 100%)`,
+  login:    `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+  progress: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+  success:  `linear-gradient(90deg, ${brand.success} 0%, #3BA06B 100%)`,
+} as const;
+
+// ── Ant Design theme config ────────────────────────────────
+export const evkinTheme: ThemeConfig = {
+  token: {
+    // Colors
+    colorPrimary:     brand.primary,
+    colorSuccess:     brand.success,
+    colorWarning:     brand.warning,
+    colorError:       brand.error,
+    colorInfo:        brand.accent,
+
+    // Typography
+    fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontSize:     14,
+    fontSizeSM:   12,
+    fontSizeLG:   16,
+    fontSizeXL:   20,
+    lineHeight:   1.5714,
+
+    // Shape
+    borderRadius:    layout.borderRadius,
+    borderRadiusSM:  layout.borderRadiusSm,
+    borderRadiusLG:  layout.borderRadiusLg,
+
+    // Spacing
+    padding:     16,
+    paddingSM:   12,
+    paddingLG:   24,
+    paddingXL:   32,
+    margin:      16,
+    marginSM:    12,
+    marginLG:    24,
+    marginXL:    32,
+
+    // Surfaces
+    colorBgLayout:    brand.bgLayout,
+    colorBgContainer: brand.bgCard,
+    colorBgElevated:  brand.bgElevated,
+
+    // Borders
+    colorBorder:      brand.border,
+    colorBorderSecondary: brand.borderLight,
+
+    // Text
+    colorText:          brand.textPrimary,
+    colorTextSecondary: brand.textSecondary,
+    colorTextTertiary:  brand.textTertiary,
+
+    // Shadows
+    boxShadow:          shadows.md,
+    boxShadowSecondary: shadows.sm,
+
+    // Motion
+    motionDurationFast: motion.fast,
+    motionDurationMid:  motion.normal,
+    motionDurationSlow: motion.slow,
+    motionEaseInOut:    motion.easing,
+
+    // Layout
+    controlHeight:   36,
+    controlHeightLG: 40,
+    controlHeightSM: 28,
+  },
+  components: {
+    Layout: {
+      headerBg:     brand.bgCard,
+      siderBg:      brand.primaryDark,
+      bodyBg:       brand.bgLayout,
+      headerHeight: layout.headerHeight,
+    },
+    Menu: {
+      darkItemBg:           brand.primaryDark,
+      darkSubMenuItemBg:    brand.primaryDark,
+      darkItemSelectedBg:   brand.primary,
+      darkItemHoverBg:      'rgba(255, 255, 255, 0.08)',
+      darkItemColor:        'rgba(255, 255, 255, 0.75)',
+      darkItemSelectedColor:'#ffffff',
+    },
+    Button: {
+      borderRadius: layout.borderRadius,
+    },
+    Card: {
+      borderRadiusLG: layout.borderRadiusLg,
+    },
+    Table: {
+      headerBg:       '#F8FAFC',
+      headerColor:    brand.textPrimary,
+      rowHoverBg:     '#EFF6FF',
+      rowSelectedBg:  '#DBEAFE',
+      rowSelectedHoverBg: '#BFDBFE',
+      borderColor:    brand.borderLight,
+    },
+    Input: {
+      borderRadius: layout.borderRadius,
+    },
+    Select: {
+      borderRadius: layout.borderRadius,
+    },
+    Modal: {
+      borderRadiusLG: layout.borderRadiusLg,
+    },
+    Notification: {
+      borderRadiusLG: layout.borderRadiusLg,
+    },
+    Tag: {
+      borderRadiusSM: layout.borderRadiusSm,
+    },
+  },
+};

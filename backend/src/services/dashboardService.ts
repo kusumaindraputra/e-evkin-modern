@@ -66,7 +66,7 @@ export async function getDashboardStats(tahun: number, bulan?: string): Promise<
 
     // Parallel queries for better performance
     const [totalLaporan, statusCounts, totalPuskesmas, puskesmasReporting] = await Promise.all([
-      Laporan.count({ where }),
+      Laporan.count({ where: { ...where, status: 'terkirim' } }),
       Laporan.findAll({
         attributes: [
           'status',

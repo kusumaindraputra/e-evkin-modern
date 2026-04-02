@@ -452,6 +452,35 @@ export class LaporanService {
       throw new Error('user_id is required');
     }
 
+    // Validate data completeness before submit
+    const pendingLaporan = await Laporan.findAll({
+      where: {
+        user_id: userId,
+        bulan,
+        tahun,
+        status: 'tersimpan'
+      }
+    });
+
+    if (pendingLaporan.length === 0) {
+      const alreadySubmittedCount = await Laporan.count({
+        where: { user_id: userId, bulan, tahun, status: 'terkirim' }
+      });
+      if (alreadySubmittedCount > 0) {
+        throw new Error(`Semua laporan untuk ${bulan} ${tahun} sudah dikirim sebelumnya`);
+      }
+      throw new Error(`Tidak ada laporan dengan status "tersimpan" untuk ${bulan} ${tahun}`);
+    }
+
+    const incomplete = pendingLaporan.filter(l => {
+      const data = l.get({ plain: true }) as any;
+      return data.realisasi_k === null || data.realisasi_k === undefined;
+    });
+
+    if (incomplete.length > 0) {
+      throw new Error(`${incomplete.length} laporan belum memiliki data realisasi kinerja. Lengkapi data sebelum mengirim.`);
+    }
+
     const [updatedCount] = await Laporan.update(
       { status: 'terkirim' },
       {

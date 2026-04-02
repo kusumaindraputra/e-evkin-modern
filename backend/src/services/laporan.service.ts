@@ -335,10 +335,20 @@ export class LaporanService {
             user_id: userId,
             id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
             id_satuan: data.id_satuan || target.id_satuan,
-            status: (data.status || 'tersimpan') as any,
+            status: 'tersimpan' as any,
           };
 
           if (data.id) {
+            // Protect terkirim laporan from being overwritten
+            const existingById = await Laporan.findOne({
+              where: { id: data.id, user_id: userId },
+              attributes: ['id', 'status'],
+              transaction,
+            });
+            if (existingById && existingById.status === 'terkirim') {
+              results.skipped++;
+              continue;
+            }
             const [updatedCount] = await Laporan.update(laporanData, {
               where: { id: data.id, user_id: userId },
               transaction,
@@ -348,6 +358,11 @@ export class LaporanService {
             const existingKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.bulan}_${data.tahun}`;
             const existing = existingLaporanMap.get(existingKey);
             if (existing) {
+              // Protect terkirim laporan from being overwritten
+              if (existing.status === 'terkirim') {
+                results.skipped++;
+                continue;
+              }
               await existing.update(laporanData, { transaction });
               results.updated++;
             } else {

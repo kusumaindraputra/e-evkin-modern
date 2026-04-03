@@ -146,6 +146,51 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
       attributes: ['id_sub_kegiatan', 'kegiatan', 'kode_sub'],
     });
 
+    // Build kode_sub lookup map for direct kode-based matching
+    const kodeSubMap = new Map<string, number>();
+    for (const sk of subKegiatanList) {
+      if (sk.kode_sub) {
+        kodeSubMap.set(sk.kode_sub, sk.id_sub_kegiatan);
+      }
+    }
+
+    // Pre-fetch SubKegiatanTarget records for sumber anggaran resolution
+    // When PDF doesn't provide sumber, we look up target records to determine it
+    const allTargets = await SubKegiatanTarget.findAll({
+      where: { tahun },
+      attributes: ['user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'target_rp'],
+      include: [{
+        model: SumberAnggaran,
+        as: 'sumberAnggaran',
+        attributes: ['id_sumber', 'sumber'],
+      }],
+    });
+
+    // Build lookup: user_id + id_sub_kegiatan -> Array<{ id_sumber, nama, target_rp }>
+    const targetSumberMap = new Map<string, Array<{ id: number; nama: string; target_rp: number }>>();
+    for (const t of allTargets) {
+      const key = `${t.user_id}_${t.id_sub_kegiatan}`;
+      if (!targetSumberMap.has(key)) {
+        targetSumberMap.set(key, []);
+      }
+      const sa = (t as any).sumberAnggaran;
+      if (sa) {
+        const arr = targetSumberMap.get(key)!;
+        // Avoid duplicates (multiple target records with same sumber)
+        if (!arr.some(s => s.id === sa.id_sumber)) {
+          arr.push({
+            id: sa.id_sumber,
+            nama: sa.sumber,
+            target_rp: Number(t.target_rp) || 0,
+          });
+        } else {
+          // Accumulate target_rp for same sumber
+          const existing = arr.find(s => s.id === sa.id_sumber)!;
+          existing.target_rp += Number(t.target_rp) || 0;
+        }
+      }
+    }
+
     // Cache sumber anggaran mappings
     const sumberAnggaranCache = new Map<string, { id: number; nama: string } | null>();
     let createdSumberAnggaran = 0;
@@ -201,19 +246,51 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
 
       // Process each row
       for (const row of puskesmasData.rows) {
-        // Get sumber anggaran from cache or find/create
+        // Step 1: Match sub_kegiatan FIRST (needed for sumber resolution)
+        // Try kode-based matching first (more reliable than name matching)
+        let idSubKegiatan: number | null = kodeSubMap.get(row.kodeRekening) || null;
+        if (!idSubKegiatan) {
+          idSubKegiatan = findBestMatch(
+            row.uraian,
+            subKegiatanList.map(sk => ({ id: sk.id_sub_kegiatan, nama: sk.kegiatan }))
+          );
+        }
+
+        // Step 2: Resolve sumber anggaran
+        // Try from PDF first
         const cacheKey = `${row.sumberAnggaranKode || ''}-${row.sumberAnggaranNama || ''}`;
         let sumberAnggaran = sumberAnggaranCache.get(cacheKey);
-        
+
         if (sumberAnggaran === undefined) {
           sumberAnggaran = await findOrCreateSumberAnggaran(
             row.sumberAnggaranKode,
             row.sumberAnggaranNama
           );
           sumberAnggaranCache.set(cacheKey, sumberAnggaran);
-          
+
           if (sumberAnggaran && !result.detectedSumberAnggaran.some(s => s.kode === row.sumberAnggaranKode)) {
             createdSumberAnggaran++;
+          }
+        }
+
+        // Step 3: If PDF didn't provide sumber, resolve from SubKegiatanTarget
+        if (!sumberAnggaran && userId && idSubKegiatan) {
+          const targetKey = `${userId}_${idSubKegiatan}`;
+          const targetSumbers = targetSumberMap.get(targetKey);
+
+          if (targetSumbers && targetSumbers.length === 1) {
+            // Single sumber - use it directly
+            sumberAnggaran = { id: targetSumbers[0].id, nama: targetSumbers[0].nama };
+          } else if (targetSumbers && targetSumbers.length > 1) {
+            // Multiple sumber - skip auto-assignment, must be input manually
+            result.skipped++;
+            result.errors.push({
+              puskesmas: puskesmasData.namaPuskesmas,
+              kodeRekening: row.kodeRekening,
+              uraian: row.uraian,
+              error: `Multi-sumber (${targetSumbers.length} sumber) — angkas harus diinput manual`,
+            });
+            continue; // Skip normal single-sumber processing below
           }
         }
 
@@ -227,16 +304,10 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
           continue;
         }
 
-        // Try to match to sub_kegiatan
-        const idSubKegiatan = findBestMatch(
-          row.uraian,
-          subKegiatanList.map(sk => ({ id: sk.id_sub_kegiatan, nama: sk.kegiatan }))
-        );
-
-        // Process each month
+        // Process each month (single sumber path)
         for (let bulan = 1; bulan <= 12; bulan++) {
           const nilai = row.bulanan[bulan - 1] || 0;
-          
+
           // Skip zero values
           if (nilai === 0) {
             result.skipped++;
@@ -270,7 +341,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
                 nilai: newNilai,
                 created_by: adminId,
               });
-              
+
               // Update cache with new record for potential future iterations
               existingAngkasMap.set(angkasKey, newAngkas);
 
@@ -301,7 +372,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
                 nilai,
                 created_by: adminId,
               });
-              
+
               // Add to cache for potential future iterations
               existingAngkasMap.set(angkasKey, newAngkas);
 
@@ -323,7 +394,7 @@ router.post('/upload', authenticate, authorizeAdmin, upload.single('file'), asyn
             result.failed++;
             // Log detailed error for debugging
             const errorDetails = error.errors ? error.errors.map((e: any) => `${e.path}: ${e.message}`).join(', ') : error.message;
-            console.error(`❌ Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
+            console.error(`Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
             result.errors.push({
               puskesmas: puskesmasData.namaPuskesmas,
               kodeRekening: row.kodeRekening,

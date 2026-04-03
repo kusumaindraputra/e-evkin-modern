@@ -17,7 +17,7 @@ export interface LaporanRowData {
   id_satuan?: number;
   target_k?: number;
   target_rp?: number;
-  angkas?: number;
+  angkas?: number | null;
   realisasi_k?: number;
   realisasi_rp?: number;
   realisasi_fisik?: number;

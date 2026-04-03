@@ -241,10 +241,10 @@ export const LaporanBulkInputPage: React.FC = () => {
               l.id_sumber_anggaran === idSumberAnggaran
           );
 
-          let angkasValue: number;
+          let angkasValue: number | null;
           if (isManualAngkas) {
             const angkasKey = `${subKegiatanId}-${idSumberAnggaran}`;
-            angkasValue = angkasFullMap.get(angkasKey) || 0;
+            angkasValue = angkasFullMap.get(angkasKey) ?? null;
           } else {
             angkasValue = angkasMap.get(subKegiatanId) || 0;
           }

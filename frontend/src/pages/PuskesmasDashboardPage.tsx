@@ -11,6 +11,8 @@ import { useAuthStore } from '../store/authStore';
 import apiClient from '../utils/apiClient';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
 import { brand } from '../theme';
+import { getChartConfig, abbreviateMonth } from '../utils/chartConfig';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import {
   LineChart,
   Line,
@@ -55,6 +57,8 @@ interface ChartData {
 
 const PuskesmasDashboardPage: React.FC = () => {
   const { user } = useAuthStore();
+  const { isMobile } = useBreakpoint();
+  const chartCfg = getChartConfig(isMobile);
   const currentDate = new Date();
 
   // Stats
@@ -366,7 +370,7 @@ const PuskesmasDashboardPage: React.FC = () => {
               <ResponsiveContainer width="100%" height={500}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" angle={0} textAnchor="middle" height={30} interval={0} tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="label" angle={chartCfg.xAxisAngle} textAnchor={chartCfg.xAxisTextAnchor} height={chartCfg.xAxisHeight} interval={chartCfg.xAxisInterval} tick={{ fontSize: chartCfg.yAxisTickFontSize }} tickFormatter={isMobile ? abbreviateMonth : undefined} />
                   <YAxis yAxisId="left" domain={[0, maxRpValue || 'auto']} tickFormatter={(v) => `Rp ${formatCurrencyAbbreviated(v)}`} />
                   <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                   <Tooltip
@@ -377,10 +381,10 @@ const PuskesmasDashboardPage: React.FC = () => {
                     labelStyle={{ color: brand.textPrimary }}
                   />
                   <Legend />
-                  {showAnggaran && <Line yAxisId="left" type="monotone" dataKey="anggaran" name="Target Anggaran (Rp)" stroke={brand.primary} strokeWidth={2} dot={{ fill: brand.primary, r: 4 }} activeDot={{ r: 6 }} />}
-                  {showAngkas && <Line yAxisId="left" type="monotone" dataKey="angkas" name="Angkas (Rp)" stroke={brand.accent} strokeWidth={2} dot={{ fill: brand.accent, r: 4 }} activeDot={{ r: 6 }} />}
-                  {showRealisasiAnggaran && <Line yAxisId="left" type="monotone" dataKey="realisasi_anggaran" name="Realisasi Anggaran (Rp)" stroke={brand.success} strokeWidth={2} dot={{ fill: brand.success, r: 4 }} activeDot={{ r: 6 }} />}
-                  {showRealisasiFisik && <Line yAxisId="right" type="monotone" dataKey="realisasi_fisik" name="Realisasi Fisik (%)" stroke={brand.warning} strokeWidth={2} dot={{ fill: brand.warning, r: 4 }} activeDot={{ r: 6 }} />}
+                  {showAnggaran && <Line yAxisId="left" type="monotone" dataKey="anggaran" name="Target Anggaran (Rp)" stroke={brand.primary} strokeWidth={2} dot={{ fill: brand.primary, r: chartCfg.dotRadius }} activeDot={{ r: chartCfg.activeDotRadius }} />}
+                  {showAngkas && <Line yAxisId="left" type="monotone" dataKey="angkas" name="Angkas (Rp)" stroke={brand.accent} strokeWidth={2} dot={{ fill: brand.accent, r: chartCfg.dotRadius }} activeDot={{ r: chartCfg.activeDotRadius }} />}
+                  {showRealisasiAnggaran && <Line yAxisId="left" type="monotone" dataKey="realisasi_anggaran" name="Realisasi Anggaran (Rp)" stroke={brand.success} strokeWidth={2} dot={{ fill: brand.success, r: chartCfg.dotRadius }} activeDot={{ r: chartCfg.activeDotRadius }} />}
+                  {showRealisasiFisik && <Line yAxisId="right" type="monotone" dataKey="realisasi_fisik" name="Realisasi Fisik (%)" stroke={brand.warning} strokeWidth={2} dot={{ fill: brand.warning, r: chartCfg.dotRadius }} activeDot={{ r: chartCfg.activeDotRadius }} />}
                 </LineChart>
               </ResponsiveContainer>
               );

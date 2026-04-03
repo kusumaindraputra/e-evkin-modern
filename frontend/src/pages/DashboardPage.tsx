@@ -12,6 +12,8 @@ import API_BASE_URL from '../config/api';
 import ChatWidget from '../components/ChatWidget';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
 import { brand } from '../theme';
+import { getChartConfig, abbreviateMonth } from '../utils/chartConfig';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import {
   LineChart,
   Line,
@@ -100,6 +102,8 @@ interface PuskesmasUser {
 
 export const DashboardPage: React.FC = () => {
   const { user, token } = useAuthStore();
+  const { isMobile } = useBreakpoint();
+  const chartCfg = getChartConfig(isMobile);
   const [monthlyBudgetData, setMonthlyBudgetData] = useState<MonthlyBudgetData[]>([]);
   const [top10Data, setTop10Data] = useState<Top10AbsorptionData[]>([]);
   const [bottom10Data, setBottom10Data] = useState<Bottom10AbsorptionData[]>([]);
@@ -693,27 +697,32 @@ export const DashboardPage: React.FC = () => {
               ) : chartData.length > 0 ? (() => {
                 const maxRpValue = Math.max(...chartData.map(d => Math.max(d.anggaran, d.angkas, d.realisasi_anggaran)));
                 return (
-                <ResponsiveContainer width="100%" height={500}>
+                <ResponsiveContainer width="100%" height={chartCfg.lineChartHeight}>
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="label"
-                      angle={0}
-                      textAnchor="middle"
-                      height={30}
-                      interval={0}
-                      tick={{ fontSize: 12 }}
+                      angle={chartCfg.xAxisAngle}
+                      textAnchor={chartCfg.xAxisTextAnchor}
+                      height={chartCfg.xAxisHeight}
+                      interval={chartCfg.xAxisInterval}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
+                      tickFormatter={isMobile ? abbreviateMonth : undefined}
                     />
                     <YAxis
                       yAxisId="left"
                       domain={[0, maxRpValue || 'auto']}
-                      tickFormatter={(value) => `Rp ${formatCurrencyAbbreviated(value)}`}
+                      tickFormatter={(value) => isMobile ? formatCurrencyAbbreviated(value) : `Rp ${formatCurrencyAbbreviated(value)}`}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
+                      width={isMobile ? 50 : 80}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
                       domain={[0, 100]}
                       tickFormatter={(value) => `${value}%`}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
+                      width={isMobile ? 35 : 60}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => {
@@ -724,7 +733,7 @@ export const DashboardPage: React.FC = () => {
                       }}
                       labelStyle={{ color: brand.textPrimary }}
                     />
-                    <Legend />
+                    {chartCfg.showLegend && <Legend />}
                     {showAnggaran && (
                       <Line
                         yAxisId="left"
@@ -733,8 +742,8 @@ export const DashboardPage: React.FC = () => {
                         name="Target Anggaran (Rp)"
                         stroke={brand.primary}
                         strokeWidth={2}
-                        dot={{ fill: brand.primary, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={{ fill: brand.primary, r: chartCfg.dotRadius }}
+                        activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
                     {showAngkas && (
@@ -745,8 +754,8 @@ export const DashboardPage: React.FC = () => {
                         name="Angkas (Rp)"
                         stroke={brand.accent}
                         strokeWidth={2}
-                        dot={{ fill: brand.accent, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={{ fill: brand.accent, r: chartCfg.dotRadius }}
+                        activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
                     {showRealisasiAnggaran && (
@@ -757,8 +766,8 @@ export const DashboardPage: React.FC = () => {
                         name="Realisasi Anggaran (Rp)"
                         stroke={brand.success}
                         strokeWidth={2}
-                        dot={{ fill: brand.success, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={{ fill: brand.success, r: chartCfg.dotRadius }}
+                        activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
                     {showRealisasiFisik && (
@@ -769,8 +778,8 @@ export const DashboardPage: React.FC = () => {
                         name="Realisasi Fisik (%)"
                         stroke={brand.warning}
                         strokeWidth={2}
-                        dot={{ fill: brand.warning, r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={{ fill: brand.warning, r: chartCfg.dotRadius }}
+                        activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
                   </LineChart>
@@ -819,23 +828,24 @@ export const DashboardPage: React.FC = () => {
               {loadingTop10 ? (
                 <ChartSkeleton height={400} />
               ) : top10Data.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={chartCfg.barChartHeight}>
                   <BarChart
                     data={top10Data}
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 30, left: chartCfg.barChartMarginLeft, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       type="number"
                       domain={[0, 100]}
                       tickFormatter={(value) => `${value}%`}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
                     />
                     <YAxis
                       type="category"
                       dataKey="puskesmas"
-                      width={200}
-                      tick={{ fontSize: 12 }}
+                      width={chartCfg.barYAxisWidth}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => {
@@ -845,7 +855,7 @@ export const DashboardPage: React.FC = () => {
                       labelStyle={{ color: brand.textPrimary, fontSize: 12 }}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Legend />
+                    {chartCfg.showLegend && <Legend />}
                     <Bar dataKey="persentase" name="Penyerapan" radius={[0, 8, 8, 0]}>
                       {top10Data.map((entry, index) => (
                         <Cell
@@ -899,23 +909,24 @@ export const DashboardPage: React.FC = () => {
               {loadingBottom10 ? (
                 <ChartSkeleton height={400} />
               ) : bottom10Data.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={chartCfg.barChartHeight}>
                   <BarChart
                     data={bottom10Data}
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 30, left: chartCfg.barChartMarginLeft, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       type="number"
                       domain={[0, 100]}
                       tickFormatter={(value) => `${value}%`}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
                     />
                     <YAxis
                       type="category"
                       dataKey="puskesmas"
-                      width={200}
-                      tick={{ fontSize: 12 }}
+                      width={chartCfg.barYAxisWidth}
+                      tick={{ fontSize: chartCfg.yAxisTickFontSize }}
                     />
                     <Tooltip
                       formatter={(value: number, name: string) => {
@@ -925,7 +936,7 @@ export const DashboardPage: React.FC = () => {
                       labelStyle={{ color: brand.textPrimary, fontSize: 12 }}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Legend />
+                    {chartCfg.showLegend && <Legend />}
                     <Bar dataKey="persentase" name="Penyerapan" radius={[0, 8, 8, 0]}>
                       {bottom10Data.map((entry, index) => (
                         <Cell

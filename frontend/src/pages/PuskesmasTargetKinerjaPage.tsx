@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Table,
@@ -18,7 +18,7 @@ import {
 import { HistoryOutlined, EditOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
 import { brand } from '../theme';
@@ -109,12 +109,29 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
   const [editAllowed, setEditAllowed] = useState<boolean>(false);
   const [permissionInfo, setPermissionInfo] = useState<{ enabled?: boolean; start_at?: string | null; end_at?: string | null }>({});
 
+  // Highlight from URL param
+  const [searchParams] = useSearchParams();
+  const highlightParam = searchParams.get('highlight');
+  const highlightSubId = highlightParam?.match(/sub:(\d+)/)?.[1];
+  const highlightDone = useRef(false);
+
   // Filters
   const [filters, setFilters] = useState({
     id_sub_kegiatan: undefined as number | undefined,
     id_sumber_anggaran: undefined as number | undefined,
     tahun: new Date().getFullYear(),
   });
+
+  // Scroll to highlighted row after data loads
+  useEffect(() => {
+    if (highlightSubId && targets.length > 0 && !highlightDone.current) {
+      highlightDone.current = true;
+      setTimeout(() => {
+        const el = document.querySelector('.highlight-row');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [highlightSubId, targets]);
 
   useEffect(() => {
     loadReferenceData();
@@ -491,6 +508,9 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           loading={loading}
           scroll={{ x: 1200, y: 500 }}
           sticky
+          rowClassName={(record: Target) =>
+            highlightSubId && record.id_sub_kegiatan === Number(highlightSubId) ? 'highlight-row' : ''
+          }
           pagination={{
             pageSize: pageSize,
             showSizeChanger: false,

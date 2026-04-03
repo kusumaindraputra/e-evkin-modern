@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   Table,
@@ -19,7 +19,7 @@ import {
 import { HistoryOutlined, EditOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
 import { brand } from '../theme';
@@ -99,12 +99,30 @@ export const PuskesmasAngkasPage: React.FC = () => {
   const [editAllowed, setEditAllowed] = useState<boolean>(false);
   const [permissionInfo, setPermissionInfo] = useState<{ enabled?: boolean; start_at?: string | null; end_at?: string | null }>({});
 
+  // Highlight from URL param
+  const [searchParams] = useSearchParams();
+  const highlightParam = searchParams.get('highlight');
+  const highlightSubId = highlightParam?.match(/sub:(\d+)/)?.[1];
+  const highlightSaId = highlightParam?.match(/sa:(\d+)/)?.[1];
+  const highlightDone = useRef(false);
+
   // Filters
   const [filters, setFilters] = useState({
     id_sub_kegiatan: undefined as number | undefined,
     id_sumber_anggaran: undefined as number | undefined,
     tahun: new Date().getFullYear(),
   });
+
+  // Scroll to highlighted row after data loads
+  useEffect(() => {
+    if (highlightSubId && angkasData.length > 0 && !highlightDone.current) {
+      highlightDone.current = true;
+      setTimeout(() => {
+        const el = document.querySelector('.highlight-row');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [highlightSubId, angkasData]);
 
   useEffect(() => {
     loadReferenceData();
@@ -480,6 +498,12 @@ export const PuskesmasAngkasPage: React.FC = () => {
           loading={loading}
           scroll={{ x: 1200, y: 500 }}
           sticky
+          rowClassName={(record: AngkasData) => {
+            if (!highlightSubId) return '';
+            const matchSub = record.id_sub_kegiatan === Number(highlightSubId);
+            const matchSa = highlightSaId ? record.id_sumber_anggaran === Number(highlightSaId) : true;
+            return matchSub && matchSa ? 'highlight-row' : '';
+          }}
           pagination={{
             pageSize: pageSize,
             showSizeChanger: false,

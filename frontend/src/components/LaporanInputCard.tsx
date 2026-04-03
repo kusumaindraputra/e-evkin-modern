@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Tag, InputNumber, Input, Tooltip } from 'antd';
-import { DownOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { DownOutlined, InfoCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { Link } from 'react-router-dom';
 import { formatNumber, formatSumberAnggaran, getSumberAnggaranColor } from '../utils/formatters';
 import { brand } from '../theme';
 
@@ -171,9 +172,13 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
             <span className="data-label">Angkas</span>
             <span className="data-value">
               Rp {formatNumber(row.angkas || 0)}
-              {row.isManualAngkas && (!row.angkas || row.angkas <= 0) && (
-                <span style={{ color: brand.warning, fontSize: 10, display: 'block' }}>
-                  Belum diinput
+              {row.isManualAngkas && row.angkas == null && (
+                <span className="warning-link">
+                  <WarningOutlined style={{ color: brand.warning }} />
+                  <span style={{ color: brand.textSecondary }}>Angkas belum diinput —</span>
+                  <Link to={`/target?tab=angkas&highlight=sub:${row.id_sub_kegiatan}-sa:${row.id_sumber_anggaran}`}>
+                    Ubah di sini
+                  </Link>
                 </span>
               )}
             </span>
@@ -182,6 +187,15 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
             <span className="data-label">Kinerja</span>
             <span className="data-value">
               {formatNumber(row.target_k || 0)} {satuanLabel || ''}
+              {(!row.target_k || row.target_k === 0) && (
+                <span className="warning-link">
+                  <WarningOutlined style={{ color: brand.warning }} />
+                  <span style={{ color: brand.textSecondary }}>Target belum diisi —</span>
+                  <Link to={`/target?tab=target-kinerja&highlight=sub:${row.id_sub_kegiatan}`}>
+                    Ubah di sini
+                  </Link>
+                </span>
+              )}
             </span>
           </div>
         </div>

@@ -552,3 +552,23 @@
 .group-body-hidden > .laporan-group-body {
   overflow: hidden;
 }
+
+/* Warning link in LaporanInputCard */
+.warning-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.warning-link a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  font-size: 11px;
+}
+
+.warning-link a:hover {
+  color: var(--color-primary-dark);
+}
+

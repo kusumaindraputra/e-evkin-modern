@@ -148,3 +148,13 @@ body {
     padding: 8px 8px !important;
   }
 }
+
+/* Highlight blink for table rows navigated from warning links */
+@keyframes highlight-blink {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(232, 150, 30, 0.2); }
+}
+
+.highlight-row td {
+  animation: highlight-blink 0.75s ease-in-out 4;
+}

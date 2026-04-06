@@ -204,7 +204,9 @@ export const LaporanBulkInputPage: React.FC = () => {
           for (let i = 0; i < bulanIndex && i < bulanan.length; i++) {
             cumulative += Number(bulanan[i]) || 0;
           }
-          angkasFullMap.set(key, cumulative);
+          if (cumulative > 0) {
+            angkasFullMap.set(key, cumulative);
+          }
         }
       }
 

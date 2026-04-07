@@ -1,0 +1,14 @@
+.evkin-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.evkin-empty-icon {
+  font-size: 48px;
+  color: var(--border-color);
+}
+
+.evkin-empty-text {
+  font-size: var(--text-md);
+  color: var(--text-tertiary);
+}

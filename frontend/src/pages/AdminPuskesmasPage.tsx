@@ -16,6 +16,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-d
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
+import { modalWidths } from '../theme';
 
 const { Title } = Typography;
 
@@ -232,7 +233,7 @@ export const AdminPuskesmasPage: React.FC = () => {
           setModalVisible(false);
           form.resetFields();
         }}
-        width={700}
+        width={modalWidths.sm}
         okText="Simpan"
         cancelText="Batal"
       >

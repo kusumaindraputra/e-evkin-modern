@@ -30,19 +30,112 @@
   --bg-layout: #F9FAFB;
   --bg-card: #FFFFFF;
 
+  /* Semantic surfaces */
+  --bg-hover: #EFF6FF;
+  --bg-selected: #DBEAFE;
+  --bg-selected-hover: #BFDBFE;
+  --bg-subtle: #F8FAFC;
+  --bg-success-subtle: #F0FDF4;
+  --bg-warning-subtle: #FFF3CD;
+  --bg-error-subtle: #FFF1F0;
+  --bg-info-subtle: #EFF6FF;
+
+  /* Semantic borders */
+  --border-success: #86EFAC;
+  --border-success-dark: #BBF7D0;
+  --border-info: #BFDBFE;
+
+  /* Progress gradients */
+  --gradient-success: linear-gradient(90deg, #34D399, var(--color-success));
+  --gradient-warning: linear-gradient(90deg, #FBBF24, var(--color-warning));
+  --gradient-error: linear-gradient(90deg, #FCA5A5, var(--color-error));
+
+  /* Radii */
   --radius-sm: 4px;
   --radius: 6px;
   --radius-lg: 8px;
 
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-action-bar: 0 -2px 8px rgba(0, 0, 0, 0.05);
 
+  /* Transitions */
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* Font sizes (semantic scale) */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+
+  /* Misc */
+  --separator: rgba(0, 0, 0, 0.04);
+  --separator-dashed: rgba(0, 0, 0, 0.06);
+  --code-bg: #F1F5F9;
+
   --breakpoint-mobile: 768px;
+}
+
+/* ── Dark mode overrides ──────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #3D8DC5;
+  --color-primary-light: #5BA3D9;
+  --color-primary-dark: #0E6BA8;
+  --color-accent: #22D3EE;
+  --color-success: #4ADE80;
+  --color-warning: #FBBF24;
+  --color-error: #FB7185;
+
+  --text-primary: #E5E7EB;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --border-color: #374151;
+  --border-light: #1F2937;
+  --bg-layout: #111827;
+  --bg-card: #1F2937;
+
+  --bg-hover: rgba(59, 130, 246, 0.1);
+  --bg-selected: rgba(59, 130, 246, 0.15);
+  --bg-selected-hover: rgba(59, 130, 246, 0.2);
+  --bg-subtle: #1a2332;
+  --bg-success-subtle: rgba(74, 222, 128, 0.1);
+  --bg-warning-subtle: rgba(251, 191, 36, 0.1);
+  --bg-error-subtle: rgba(251, 113, 133, 0.1);
+  --bg-info-subtle: rgba(59, 130, 246, 0.1);
+
+  --border-success: #166534;
+  --border-success-dark: #14532D;
+  --border-info: #1E40AF;
+
+  --gradient-success: linear-gradient(90deg, #22C55E, #16A34A);
+  --gradient-warning: linear-gradient(90deg, #F59E0B, #D97706);
+  --gradient-error: linear-gradient(90deg, #F87171, #EF4444);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-action-bar: 0 -2px 8px rgba(0, 0, 0, 0.3);
+
+  --separator: rgba(255, 255, 255, 0.06);
+  --separator-dashed: rgba(255, 255, 255, 0.08);
+  --code-bg: #1E293B;
+}
+
+/* Smooth theme transition */
+html[data-theme] body,
+html[data-theme] .ant-layout,
+html[data-theme] .layout-content,
+html[data-theme] .layout-header {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -65,32 +158,32 @@ body {
 
 /* Zebra striping */
 .ant-table-wrapper .ant-table-tbody > tr:nth-child(odd) > td {
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .ant-table-wrapper .ant-table-tbody > tr:nth-child(even) > td {
-  background-color: #F8FAFC;
+  background-color: var(--bg-subtle);
 }
 
 /* Hover */
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
-  background-color: #EFF6FF !important;
+  background-color: var(--bg-hover) !important;
 }
 
 /* Selected row */
 .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
-  background-color: #DBEAFE !important;
+  background-color: var(--bg-selected) !important;
 }
 
 /* Legacy class support */
 .table-row-light {
-  background-color: #ffffff;
+  background-color: var(--bg-card);
 }
 .table-row-dark {
-  background-color: #F8FAFC;
+  background-color: var(--bg-subtle);
 }
 .table-row-light:hover,
 .table-row-dark:hover {
-  background-color: #EFF6FF !important;
+  background-color: var(--bg-hover) !important;
 }
 
 /* ===================================
@@ -152,7 +245,7 @@ body {
 /* Highlight blink for table rows navigated from warning links */
 @keyframes highlight-blink {
   0%, 100% { background-color: transparent; }
-  50% { background-color: rgba(232, 150, 30, 0.2); }
+  50% { background-color: var(--bg-warning-subtle); }
 }
 
 .highlight-row td {

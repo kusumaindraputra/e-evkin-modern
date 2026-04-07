@@ -21,7 +21,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 
 interface Target {
   id: number;
@@ -535,7 +535,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
         okText="Simpan"
         cancelText="Batal"
         confirmLoading={saving}
-        width={500}
+        width={modalWidths.md}
       >
         {selectedTarget && (
           <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
@@ -559,7 +559,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           <Form.Item
             name="target_k"
             label="Target Kinerja (K)"
-            rules={[{ required: true, message: 'Target K harus diisi' }]}
+            rules={[{ required: true, message: 'Target K wajib diisi' }]}
           >
             <InputNumber
               style={{ width: '100%' }}
@@ -573,7 +573,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           <Form.Item
             name="id_satuan"
             label="Satuan"
-            rules={[{ required: true, message: 'Satuan harus dipilih' }]}
+            rules={[{ required: true, message: 'Satuan wajib dipilih' }]}
           >
             <Select
               placeholder="Silahkan Pilih"
@@ -589,7 +589,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           <Form.Item
             name="catatan"
             label="Catatan Perubahan"
-            rules={[{ required: true, message: 'Catatan perubahan harus diisi' }]}
+            rules={[{ required: true, message: 'Catatan perubahan wajib diisi' }]}
           >
             <Input.TextArea
               rows={3}
@@ -609,7 +609,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
             Tutup
           </Button>,
         ]}
-        width={700}
+        width={modalWidths.md}
       >
         {selectedTarget && (
           <div style={{ marginBottom: 16 }}>

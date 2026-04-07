@@ -198,11 +198,11 @@ export const evkinTheme: ThemeConfig = {
       borderRadiusLG: layout.borderRadiusLg,
     },
     Table: {
-      headerBg:       '#F8FAFC',
+      headerBg:       '#F8FAFC',    // matches --bg-subtle
       headerColor:    brand.textPrimary,
-      rowHoverBg:     '#EFF6FF',
-      rowSelectedBg:  '#DBEAFE',
-      rowSelectedHoverBg: '#BFDBFE',
+      rowHoverBg:     '#EFF6FF',    // matches --bg-hover
+      rowSelectedBg:  '#DBEAFE',    // matches --bg-selected
+      rowSelectedHoverBg: '#BFDBFE', // matches --bg-selected-hover
       borderColor:    brand.borderLight,
     },
     Input: {
@@ -219,6 +219,78 @@ export const evkinTheme: ThemeConfig = {
     },
     Tag: {
       borderRadiusSM: layout.borderRadiusSm,
+    },
+  },
+};
+
+// ── Status tag color map (for antd <Tag color="xxx">) ──
+export const statusTagColors: Record<string, string> = {
+  terkirim:     brand.statusTerkirim,    // green
+  tersimpan:    brand.statusTersimpan,   // blue
+  ditolak:      brand.statusDitolak,     // red
+  menunggu:     brand.statusMenunggu,    // amber
+  diverifikasi: brand.statusVerified,    // dark green
+  disetujui:    brand.statusVerified,    // dark green (approved)
+  // 'draft' intentionally omitted — falls back to 'default'
+};
+
+// ── Dark brand palette ────────────────────────────────
+export const brandDark = {
+  ...brand,
+  primary:      '#3D8DC5',
+  primaryLight: '#5BA3D9',
+  primaryDark:  '#0E6BA8',
+  accent:       '#22D3EE',
+  success:      '#4ADE80',
+  warning:      '#FBBF24',
+  error:        '#FB7185',
+
+  textPrimary:   '#E5E7EB',
+  textSecondary: '#9CA3AF',
+  textTertiary:  '#6B7280',
+  border:        '#374151',
+  borderLight:   '#1F2937',
+  bgLayout:      '#111827',
+  bgCard:        '#1F2937',
+  bgElevated:    '#374151',
+} as const;
+
+// ── Dark Ant Design theme config ──────────────────────
+export const evkinThemeDark: ThemeConfig = {
+  ...evkinTheme,
+  token: {
+    ...evkinTheme.token,
+    colorPrimary:     brandDark.primary,
+    colorSuccess:     brandDark.success,
+    colorWarning:     brandDark.warning,
+    colorError:       brandDark.error,
+    colorInfo:        brandDark.accent,
+    colorBgLayout:    brandDark.bgLayout,
+    colorBgContainer: brandDark.bgCard,
+    colorBgElevated:  brandDark.bgElevated,
+    colorBorder:      brandDark.border,
+    colorBorderSecondary: brandDark.borderLight,
+    colorText:          brandDark.textPrimary,
+    colorTextSecondary: brandDark.textSecondary,
+    colorTextTertiary:  brandDark.textTertiary,
+    boxShadow:          '0 2px 8px rgba(0, 0, 0, 0.4)',
+    boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.3)',
+  },
+  components: {
+    ...evkinTheme.components,
+    Layout: {
+      headerBg:     brandDark.bgCard,
+      siderBg:      brandDark.primaryDark,
+      bodyBg:       brandDark.bgLayout,
+      headerHeight: layout.headerHeight,
+    },
+    Table: {
+      headerBg:       '#1a2332',
+      headerColor:    brandDark.textPrimary,
+      rowHoverBg:     'rgba(59, 130, 246, 0.1)',
+      rowSelectedBg:  'rgba(59, 130, 246, 0.15)',
+      rowSelectedHoverBg: 'rgba(59, 130, 246, 0.2)',
+      borderColor:    brandDark.borderLight,
     },
   },
 };

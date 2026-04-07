@@ -20,6 +20,7 @@ import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 import { exportToExcel, formatRupiahForExcel, formatPercentageForExcel } from '../utils/excelExport';
 import { formatNumber } from '../utils/formatters';
+import { modalWidths, statusTagColors } from '../theme';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -647,13 +648,7 @@ export const AdminLaporanPage: React.FC = () => {
         key: 'status',
         width: 120,
         render: (status: string) => {
-          const colors: Record<string, string> = {
-            menunggu: 'orange',
-            disetujui: 'green',
-            ditolak: 'red',
-            draft: 'default',
-          };
-          return <Tag color={colors[status] || 'default'}>{status}</Tag>;
+          return <Tag color={statusTagColors[status] || 'default'}>{status}</Tag>;
         },
         sorter: (a: DetailLaporan, b: DetailLaporan) => a.status.localeCompare(b.status),
       },
@@ -803,7 +798,7 @@ export const AdminLaporanPage: React.FC = () => {
           setDetailPuskesmasFilter(undefined);
         }}
         footer={null}
-        width={1200}
+        width={modalWidths.lg}
       >
         <Space style={{ marginBottom: 16 }}>
           <Select

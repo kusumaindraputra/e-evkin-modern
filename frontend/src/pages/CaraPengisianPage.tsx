@@ -158,13 +158,13 @@ export const CaraPengisianPage: React.FC = () => {
               <div>
                 <Tag color="default">Simpan</Tag>
                 <Paragraph style={{ marginTop: 8 }}>
-                  Klik <Text strong>"Simpan"</Text> untuk menyimpan data. Status berubah ke <Tag color="orange">Tersimpan</Tag> dan masih bisa diedit.
+                  Klik <Text strong>"Simpan"</Text> untuk menyimpan data. Status berubah ke <Tag color="blue">Tersimpan</Tag> dan masih bisa diedit.
                 </Paragraph>
               </div>
               <div>
                 <Tag color="blue">Kirim Semua</Tag>
                 <Paragraph style={{ marginTop: 8 }}>
-                  Klik <Text strong>"Kirim Semua"</Text> untuk mengirim ke Dinkes. Status berubah ke <Tag color="blue">Terkirim</Tag> dan tidak bisa diedit lagi.
+                  Klik <Text strong>"Kirim Semua"</Text> untuk mengirim ke Dinkes. Status berubah ke <Tag color="green">Terkirim</Tag> dan tidak bisa diedit lagi.
                 </Paragraph>
               </div>
             </Space>
@@ -180,11 +180,11 @@ export const CaraPengisianPage: React.FC = () => {
             <Text> - Data baru, belum tersimpan ke sistem</Text>
           </div>
           <div>
-            <Tag color="orange">Tersimpan</Tag>
+            <Tag color="blue">Tersimpan</Tag>
             <Text> - Data tersimpan, masih bisa diedit</Text>
           </div>
           <div>
-            <Tag color="blue">Terkirim</Tag>
+            <Tag color="green">Terkirim</Tag>
             <Text> - Sudah dikirim ke Dinkes, tidak bisa diedit</Text>
           </div>
           <div>

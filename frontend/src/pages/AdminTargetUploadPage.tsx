@@ -25,7 +25,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 
 const { Text } = Typography;
 
@@ -660,7 +660,7 @@ const AdminTargetUploadPage: React.FC = () => {
       </Card>
 
       {/* TARGET UPLOAD MODAL */}
-      <Modal title="Upload Excel Target Anggaran" open={targetUploadModalVisible} onCancel={() => setTargetUploadModalVisible(false)} footer={null}>
+      <Modal title="Upload Excel Target Anggaran" open={targetUploadModalVisible} onCancel={() => setTargetUploadModalVisible(false)} footer={null} width={modalWidths.md}>
         <div style={{ marginTop: 20 }}>
           <p>Format Excel harus sesuai template dengan kolom: TAHUN, NAMA SUB UNIT, KODE SUB KEGIATAN, dll.</p>
           <div style={{ marginBottom: 16 }}>
@@ -698,7 +698,7 @@ const AdminTargetUploadPage: React.FC = () => {
       </Modal>
 
       {/* ANGKAS UPLOAD MODAL */}
-      <Modal title="Upload PDF Angkas" open={angkasUploadModalVisible} onCancel={() => !angkasUploading && setAngkasUploadModalVisible(false)} footer={null} closable={!angkasUploading}>
+      <Modal title="Upload PDF Angkas" open={angkasUploadModalVisible} onCancel={() => !angkasUploading && setAngkasUploadModalVisible(false)} footer={null} closable={!angkasUploading} width={modalWidths.md}>
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <Text>Tahun: <strong>{filters.tahun}</strong></Text>
           <Alert message="Format: PDF dari sistem ANGGARAN KAS SKPD" type="info" showIcon />
@@ -716,7 +716,7 @@ const AdminTargetUploadPage: React.FC = () => {
       {/* MATCH MODAL */}
       <Modal title="Hubungkan ke Sub Kegiatan" open={matchModalVisible}
         onCancel={() => { setMatchModalVisible(false); setSelectedUnmatched(null); setSelectedSubKegiatan(undefined); }}
-        onOk={handleMatchSubKegiatan} okText="Simpan" cancelText="Batal">
+        onOk={handleMatchSubKegiatan} okText="Simpan" cancelText="Batal" width={modalWidths.lg}>
         {selectedUnmatched && (
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <div><Text strong>Kode Rekening:</Text><br /><Text code>{selectedUnmatched.kode_rekening}</Text></div>
@@ -733,7 +733,7 @@ const AdminTargetUploadPage: React.FC = () => {
 
       {/* TARGET HISTORY MODAL */}
       <Modal title="History Target Anggaran" open={targetHistoryModalVisible} onCancel={() => setTargetHistoryModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setTargetHistoryModalVisible(false)}>Tutup</Button>]} width={700}>
+        footer={[<Button key="close" onClick={() => setTargetHistoryModalVisible(false)}>Tutup</Button>]} width={modalWidths.lg}>
         {selectedTarget && (
           <div style={{ marginBottom: 16 }}>
             <p><strong>Puskesmas:</strong> {selectedTarget.puskesmas?.nama}</p>
@@ -758,7 +758,7 @@ const AdminTargetUploadPage: React.FC = () => {
 
       {/* ANGKAS HISTORY MODAL */}
       <Modal title="History Angkas" open={angkasHistoryModalVisible} onCancel={() => { setAngkasHistoryModalVisible(false); setSelectedAngkasRecord(null); }}
-        footer={[<Button key="close" onClick={() => setAngkasHistoryModalVisible(false)}>Tutup</Button>]} width={800}>
+        footer={[<Button key="close" onClick={() => setAngkasHistoryModalVisible(false)}>Tutup</Button>]} width={modalWidths.lg}>
         {selectedAngkasRecord && (
           <div style={{ marginBottom: 16 }}>
             <p><strong>Puskesmas:</strong> {selectedAngkasRecord.puskesmas?.nama}</p>

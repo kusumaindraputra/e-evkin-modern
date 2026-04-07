@@ -20,7 +20,7 @@
 
 .drawer-close-btn {
   color: rgba(255, 255, 255, 0.65) !important;
-  font-size: 18px !important;
+  font-size: var(--text-md) !important;
 }
 
 .drawer-close-btn:hover {
@@ -47,11 +47,11 @@
 }
 
 .logo-text-collapsed {
-  font-size: 16px;
+  font-size: var(--text-md);
 }
 
 .logo-text-expanded {
-  font-size: 20px;
+  font-size: var(--text-lg);
 }
 
 /* ── Desktop Sider (hidden on mobile via Layout.tsx conditional) ── */
@@ -88,7 +88,7 @@
 }
 
 .trigger-button {
-  font-size: 16px !important;
+  font-size: var(--text-md) !important;
   width: 48px !important;
   height: 48px !important;
 }
@@ -104,7 +104,7 @@
 }
 
 .user-profile:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: var(--separator);
 }
 
 .user-info {
@@ -117,7 +117,7 @@
 }
 
 .user-name-text {
-  font-size: 13px;
+  font-size: var(--text-sm);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -125,7 +125,7 @@
 }
 
 .user-role-text {
-  font-size: 12px !important;
+  font-size: var(--text-sm) !important;
 }
 
 /* ── Content ── */

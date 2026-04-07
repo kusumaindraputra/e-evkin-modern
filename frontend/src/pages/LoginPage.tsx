@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
                 name="username"
                 label="Username"
                 rules={[
-                  { required: true, message: 'Username wajib diisi!' },
+                  { required: true, message: 'Username wajib diisi' },
                 ]}
               >
                 <Input
@@ -92,7 +92,7 @@ export const LoginPage: React.FC = () => {
                 name="password"
                 label="Password"
                 rules={[
-                  { required: true, message: 'Password wajib diisi!' },
+                  { required: true, message: 'Password wajib diisi' },
                 ]}
               >
                 <Input.Password

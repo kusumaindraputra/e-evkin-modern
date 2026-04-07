@@ -21,6 +21,7 @@ import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 import { showError, logError } from '../utils/errorHandler';
 import { SubKegiatanSumberAnggaranModal } from '../components/SubKegiatanSumberAnggaranModal';
+import { modalWidths } from '../theme';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -763,12 +764,13 @@ export const AdminMasterDataPage: React.FC = () => {
         open={satuanModalVisible}
         onCancel={() => setSatuanModalVisible(false)}
         footer={null}
+        width={modalWidths.sm}
       >
         <Form form={satuanForm} onFinish={handleSatuanSubmit} layout="vertical">
           <Form.Item
             name="satuannya"
             label="Nama Satuan"
-            rules={[{ required: true, message: 'Nama satuan harus diisi' }]}
+            rules={[{ required: true, message: 'Nama satuan wajib diisi' }]}
           >
             <Input placeholder="Contoh: Orang, Dokumen, Kegiatan" />
           </Form.Item>
@@ -789,12 +791,13 @@ export const AdminMasterDataPage: React.FC = () => {
         open={anggaranModalVisible}
         onCancel={() => setAnggaranModalVisible(false)}
         footer={null}
+        width={modalWidths.sm}
       >
         <Form form={anggaranForm} onFinish={handleAnggaranSubmit} layout="vertical">
           <Form.Item
             name="sumber"
             label="Nama Sumber Anggaran"
-            rules={[{ required: true, message: 'Nama sumber anggaran harus diisi' }]}
+            rules={[{ required: true, message: 'Nama sumber anggaran wajib diisi' }]}
           >
             <Input placeholder="Contoh: BLUD Puskesmas, APBD, DAK" />
           </Form.Item>
@@ -818,7 +821,7 @@ export const AdminMasterDataPage: React.FC = () => {
           setKegiatanModalVisible(false);
           kegiatanForm.resetFields();
         }}
-        width={600}
+        width={modalWidths.sm}
       >
         <Form form={kegiatanForm} layout="vertical">
           <Form.Item
@@ -854,7 +857,7 @@ export const AdminMasterDataPage: React.FC = () => {
           setSubModalVisible(false);
           subForm.resetFields();
         }}
-        width={700}
+        width={modalWidths.sm}
       >
         <Form form={subForm} layout="vertical">
           <Form.Item

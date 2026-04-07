@@ -22,7 +22,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 
 interface AngkasData {
   user_id: string;
@@ -381,7 +381,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
       width: 120,
       render: (_: any, record: AngkasData) => (
         record.isManualAngkas ? (
-          <Tag color="orange">Manual Input</Tag>
+          <Tag color="purple">Manual Input</Tag>
         ) : (
           <Tooltip title="Data dari PDF upload, tidak dapat diedit">
             <Tag color="default" icon={<LockOutlined />}>Dari PDF</Tag>
@@ -487,7 +487,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
         </Row>
 
         <p style={{ color: brand.textTertiary, fontSize: '12px', marginBottom: 16 }}>
-          * <Tag color="orange">Manual Input</Tag> = Sub kegiatan dengan lebih dari 1 sumber anggaran, dapat diedit manual<br />
+          * <Tag color="purple">Manual Input</Tag> = Sub kegiatan dengan lebih dari 1 sumber anggaran, dapat diedit manual<br />
           * <Tag color="default"><LockOutlined /> Dari PDF</Tag> = Data dari upload PDF, tidak dapat diedit di halaman ini
         </p>
 
@@ -530,7 +530,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
         cancelText="Batal"
         confirmLoading={saving}
         okButtonProps={{ disabled: !isValidTotal() }}
-        width={700}
+        width={modalWidths.md}
       >
         {selectedRecord && (
           <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
@@ -620,7 +620,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
           <Form.Item
             name="catatan"
             label="Catatan Perubahan"
-            rules={[{ required: true, message: 'Catatan perubahan harus diisi' }]}
+            rules={[{ required: true, message: 'Catatan perubahan wajib diisi' }]}
           >
             <Input.TextArea
               rows={3}
@@ -640,7 +640,7 @@ export const PuskesmasAngkasPage: React.FC = () => {
             Tutup
           </Button>,
         ]}
-        width={800}
+        width={modalWidths.md}
       >
         {selectedRecord && (
           <div style={{ marginBottom: 16 }}>

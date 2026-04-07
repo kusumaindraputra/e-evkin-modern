@@ -2,14 +2,27 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ConfigProvider } from 'antd';
 import idID from 'antd/locale/id_ID';
-import { evkinTheme } from './theme';
+import { evkinTheme, evkinThemeDark } from './theme';
+import { useTheme } from './hooks/useTheme';
 import App from './App'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ConfigProvider locale={idID} theme={evkinTheme}>
+function Root() {
+  const { isDark, algorithm } = useTheme();
+  const themeConfig = isDark ? evkinThemeDark : evkinTheme;
+
+  return (
+    <ConfigProvider
+      locale={idID}
+      theme={{ ...themeConfig, algorithm }}
+    >
       <App />
     </ConfigProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <Root />
   </React.StrictMode>,
 )

@@ -6,12 +6,15 @@ import {
   UserOutlined,
   LogoutOutlined,
   CloseOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { NAV_ITEMS } from '../config/navConfig';
 import { layout, brand } from '../theme';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { useTheme } from '../hooks/useTheme';
 import './Layout.css';
 
 const { Header, Sider, Content } = AntLayout;
@@ -28,6 +31,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { isMobile } = useBreakpoint();
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   // Close drawer on route change
   useEffect(() => {
@@ -123,6 +127,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               onClick={() => setDrawerOpen(true)}
               className="trigger-button"
             />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Button
+                type="text"
+                icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+                onClick={toggleTheme}
+                title={isDark ? 'Light mode' : 'Dark mode'}
+                style={{ fontSize: 18 }}
+              />
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <div className="user-profile">
                 <Avatar icon={<UserOutlined />} size="small" />
@@ -131,6 +143,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
             </Dropdown>
+            </div>
           </Header>
           <Content className="layout-content">
             {children}
@@ -164,17 +177,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClick={() => setCollapsed(!collapsed)}
             className="trigger-button"
           />
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div className="user-profile">
-              <Avatar icon={<UserOutlined />} style={{ marginRight: 8 }} />
-              <div className="user-info">
-                <Text strong>{user?.nama}</Text>
-                <Text type="secondary" className="user-role-text">
-                  {user?.role === 'admin' ? 'Administrator' : (user?.nama_puskesmas || 'Puskesmas')}
-                </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Button
+              type="text"
+              icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+              title={isDark ? 'Light mode' : 'Dark mode'}
+              style={{ fontSize: 18 }}
+            />
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div className="user-profile">
+                <Avatar icon={<UserOutlined />} style={{ marginRight: 8 }} />
+                <div className="user-info">
+                  <Text strong>{user?.nama}</Text>
+                  <Text type="secondary" className="user-role-text">
+                    {user?.role === 'admin' ? 'Administrator' : (user?.nama_puskesmas || 'Puskesmas')}
+                  </Text>
+                </div>
               </div>
-            </div>
-          </Dropdown>
+            </Dropdown>
+          </div>
         </Header>
         <Content className="layout-content">
           {children}

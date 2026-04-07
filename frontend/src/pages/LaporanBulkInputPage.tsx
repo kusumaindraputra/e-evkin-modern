@@ -13,7 +13,6 @@ import {
   SaveOutlined,
   SendOutlined,
   ReloadOutlined,
-  FileTextOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
 import { Spin } from 'antd';
@@ -23,7 +22,7 @@ import { useAuthStore } from '../store/authStore';
 import LaporanProgressHeader from '../components/LaporanProgressHeader';
 import LaporanGroupCard from '../components/LaporanGroupCard';
 import type { LaporanRowData } from '../components/LaporanInputCard';
-import { brand } from '../theme';
+import { EvkinEmpty } from '../components/EvkinEmpty';
 import '../components/LaporanBulkInput.css';
 
 const { Text } = Typography;
@@ -701,27 +700,17 @@ export const LaporanBulkInputPage: React.FC = () => {
 
       {/* Empty state when no data */}
       {filterBulan && filterTahun && rows.length === 0 && !loading && (
-        <div className="laporan-empty-state">
-          <FileTextOutlined className="empty-icon" />
-          <div className="empty-text">
-            Tidak ada sub kegiatan dengan target untuk periode ini
-          </div>
-        </div>
+        <EvkinEmpty
+          description="Tidak ada sub kegiatan dengan target untuk periode ini"
+        />
       )}
 
       {/* Initial state — no filter selected */}
       {(!filterBulan || !filterTahun) && (
         <Card>
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <FileTextOutlined
-              style={{ fontSize: 48, color: brand.border, marginBottom: 16 }}
-            />
-            <div>
-              <Text type="secondary" style={{ fontSize: 16 }}>
-                Pilih bulan dan tahun untuk mulai input laporan
-              </Text>
-            </div>
-          </div>
+          <EvkinEmpty
+            description="Pilih bulan dan tahun untuk mulai input laporan"
+          />
         </Card>
       )}
     </div>

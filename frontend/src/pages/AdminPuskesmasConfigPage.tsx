@@ -14,7 +14,7 @@ import { SettingOutlined, ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 
 const { Title, Text } = Typography;
 
@@ -242,7 +242,7 @@ export const AdminPuskesmasConfigPage: React.FC = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleSaveConfiguration}
-        width={800}
+        width={modalWidths.md}
         okText="Simpan"
         cancelText="Batal"
         confirmLoading={loading}

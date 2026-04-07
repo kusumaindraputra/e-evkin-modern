@@ -11,7 +11,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import ChatWidget from '../components/ChatWidget';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 import { getChartConfig, abbreviateMonth } from '../utils/chartConfig';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import {
@@ -1047,7 +1047,7 @@ export const DashboardPage: React.FC = () => {
         open={showPuskesmasModal}
         onCancel={() => setShowPuskesmasModal(false)}
         footer={null}
-        width={900}
+        width={modalWidths.lg}
       >
         <Spin spinning={loadingPuskesmasDetails}>
           <Space direction="vertical" style={{ width: '100%' }} size="large">

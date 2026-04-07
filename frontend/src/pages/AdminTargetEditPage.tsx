@@ -24,7 +24,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
-import { brand } from '../theme';
+import { brand, modalWidths } from '../theme';
 
 // ============== INTERFACES ==============
 interface Puskesmas { value: string; label: string; }
@@ -509,7 +509,7 @@ const AdminTargetEditPage: React.FC = () => {
     },
     {
       title: 'Status', key: 'status', width: 110,
-      render: (_: any, record: AngkasData) => record.isManualAngkas ? <Tag color="orange">Multi-Sumber</Tag> : <Tag color="default">Single-Sumber</Tag>,
+      render: (_: any, record: AngkasData) => record.isManualAngkas ? <Tag color="purple">Multi-Sumber</Tag> : <Tag color="default">Single-Sumber</Tag>,
     },
     {
       title: 'Aksi', key: 'action', width: 150, fixed: 'right' as const,
@@ -628,7 +628,7 @@ const AdminTargetEditPage: React.FC = () => {
               <>
                 <PermissionConfigCard scope="angkas" form={permFormAngkas} saving={savingPermAngkas} loadingStatus={loadingPermAngkasStatus} />
                 <p style={{ color: brand.textTertiary, fontSize: '12px', marginBottom: 16 }}>
-                  * <Tag color="orange">Multi-Sumber</Tag> = Puskesmas dapat input manual | Admin dapat edit semua data
+                  * <Tag color="purple">Multi-Sumber</Tag> = Puskesmas dapat input manual | Admin dapat edit semua data
                 </p>
                 <Table columns={angkasColumns} dataSource={angkasData} rowKey={(r) => `${r.user_id}-${r.id_sub_kegiatan}-${r.id_sumber_anggaran}`}
                   loading={angkasLoading} scroll={{ x: 1400, y: 500 }} sticky
@@ -643,7 +643,7 @@ const AdminTargetEditPage: React.FC = () => {
       {/* TARGET KINERJA EDIT MODAL */}
       <Modal title="Edit Target Kinerja" open={targetEditModalVisible}
         onCancel={() => { setTargetEditModalVisible(false); targetForm.resetFields(); }}
-        onOk={handleSaveTarget} okText="Simpan" cancelText="Batal" confirmLoading={targetSaving} width={500}>
+        onOk={handleSaveTarget} okText="Simpan" cancelText="Batal" confirmLoading={targetSaving} width={modalWidths.md}>
         {selectedTarget && (
           <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
             <p style={{ margin: 0 }}><strong>Puskesmas:</strong> {selectedTarget.puskesmas?.nama}</p>
@@ -653,13 +653,13 @@ const AdminTargetEditPage: React.FC = () => {
           </div>
         )}
         <Form form={targetForm} layout="vertical">
-          <Form.Item name="target_k" label="Target Kinerja (K)" rules={[{ required: true, message: 'Wajib diisi' }]}>
+          <Form.Item name="target_k" label="Target Kinerja (K)" rules={[{ required: true, message: 'Target Kinerja wajib diisi' }]}>
             <InputNumber style={{ width: '100%' }} min={0} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')} parser={(v) => v!.replace(/\./g, '') as any} />
           </Form.Item>
-          <Form.Item name="id_satuan" label="Satuan" rules={[{ required: true, message: 'Wajib dipilih' }]}>
+          <Form.Item name="id_satuan" label="Satuan" rules={[{ required: true, message: 'Satuan wajib dipilih' }]}>
             <Select placeholder="Pilih Satuan" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} options={satuanList} />
           </Form.Item>
-          <Form.Item name="catatan" label="Catatan Perubahan" rules={[{ required: true, message: 'Wajib diisi' }]}>
+          <Form.Item name="catatan" label="Catatan Perubahan" rules={[{ required: true, message: 'Catatan perubahan wajib diisi' }]}>
             <Input.TextArea rows={3} placeholder="Contoh: Penyesuaian target sesuai RAK" />
           </Form.Item>
         </Form>
@@ -667,7 +667,7 @@ const AdminTargetEditPage: React.FC = () => {
 
       {/* TARGET KINERJA HISTORY MODAL */}
       <Modal title="History Target Kinerja" open={targetHistoryModalVisible} onCancel={() => setTargetHistoryModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setTargetHistoryModalVisible(false)}>Tutup</Button>]} width={700}>
+        footer={[<Button key="close" onClick={() => setTargetHistoryModalVisible(false)}>Tutup</Button>]} width={modalWidths.lg}>
         {selectedTarget && (
           <div style={{ marginBottom: 16 }}>
             <p><strong>Puskesmas:</strong> {selectedTarget.puskesmas?.nama}</p>
@@ -692,7 +692,7 @@ const AdminTargetEditPage: React.FC = () => {
       {/* ANGKAS EDIT MODAL */}
       <Modal title="Edit Angkas" open={angkasEditModalVisible}
         onCancel={() => { setAngkasEditModalVisible(false); angkasForm.resetFields(); setAngkasFormTotal(0); }}
-        onOk={handleSaveAngkas} okText="Simpan" cancelText="Batal" confirmLoading={angkasSaving} okButtonProps={{ disabled: !isValidAngkasTotal() }} width={700}>
+        onOk={handleSaveAngkas} okText="Simpan" cancelText="Batal" confirmLoading={angkasSaving} okButtonProps={{ disabled: !isValidAngkasTotal() }} width={modalWidths.md}>
         {selectedAngkas && (
           <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
             <p style={{ margin: 0 }}><strong>Puskesmas:</strong> {selectedAngkas.puskesmas?.nama}</p>
@@ -752,7 +752,7 @@ const AdminTargetEditPage: React.FC = () => {
               </Col>
             ))}
           </Row>
-          <Form.Item name="catatan" label="Catatan Perubahan" rules={[{ required: true, message: 'Wajib diisi' }]}>
+          <Form.Item name="catatan" label="Catatan Perubahan" rules={[{ required: true, message: 'Catatan perubahan wajib diisi' }]}>
             <Input.TextArea rows={3} placeholder="Contoh: Penyesuaian angkas sesuai revisi anggaran" />
           </Form.Item>
         </Form>
@@ -760,7 +760,7 @@ const AdminTargetEditPage: React.FC = () => {
 
       {/* ANGKAS HISTORY MODAL */}
       <Modal title="History Angkas" open={angkasHistoryModalVisible} onCancel={() => { setAngkasHistoryModalVisible(false); setSelectedAngkas(null); }}
-        footer={[<Button key="close" onClick={() => setAngkasHistoryModalVisible(false)}>Tutup</Button>]} width={800}>
+        footer={[<Button key="close" onClick={() => setAngkasHistoryModalVisible(false)}>Tutup</Button>]} width={modalWidths.lg}>
         {selectedAngkas && (
           <div style={{ marginBottom: 16 }}>
             <p><strong>Puskesmas:</strong> {selectedAngkas.puskesmas?.nama}</p>

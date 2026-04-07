@@ -57,11 +57,11 @@
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-family: 'Courier New', monospace;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .markdown-content pre {
-  background-color: #F1F5F9;
+  background-color: var(--code-bg);
   padding: 8px;
   border-radius: var(--radius-sm);
   overflow-x: auto;

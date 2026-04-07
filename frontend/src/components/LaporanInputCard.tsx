@@ -3,7 +3,7 @@ import { Tag, InputNumber, Input, Tooltip } from 'antd';
 import { DownOutlined, InfoCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { formatNumber, formatSumberAnggaran, getSumberAnggaranColor } from '../utils/formatters';
-import { brand } from '../theme';
+
 
 const { TextArea } = Input;
 
@@ -48,10 +48,10 @@ const getCapaianColor = (pct: number): string => {
 };
 
 const getCapaianTextColor = (pct: number): string => {
-  if (pct >= 90) return brand.success;
-  if (pct >= 70) return brand.primary;
-  if (pct >= 50) return brand.warning;
-  return brand.error;
+  if (pct >= 90) return 'var(--color-success)';
+  if (pct >= 70) return 'var(--color-primary)';
+  if (pct >= 50) return 'var(--color-warning)';
+  return 'var(--color-error)';
 };
 
 const numberFormatter = (val: number | string | undefined) => {
@@ -174,8 +174,8 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
               Rp {formatNumber(row.angkas || 0)}
               {row.isManualAngkas && row.angkas == null && (
                 <span className="warning-link">
-                  <WarningOutlined style={{ color: brand.warning }} />
-                  <span style={{ color: brand.textSecondary }}>Angkas belum diinput —</span>
+                  <WarningOutlined style={{ color: 'var(--color-warning)' }} />
+                  <span style={{ color: 'var(--text-secondary)' }}>Angkas belum diinput —</span>
                   <Link to={`/target?tab=angkas&highlight=sub:${row.id_sub_kegiatan}-sa:${row.id_sumber_anggaran}`}>
                     Ubah di sini
                   </Link>
@@ -189,8 +189,8 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
               {formatNumber(row.target_k || 0)} {satuanLabel || ''}
               {(!row.target_k || row.target_k === 0) && (
                 <span className="warning-link">
-                  <WarningOutlined style={{ color: brand.warning }} />
-                  <span style={{ color: brand.textSecondary }}>Target belum diisi —</span>
+                  <WarningOutlined style={{ color: 'var(--color-warning)' }} />
+                  <span style={{ color: 'var(--text-secondary)' }}>Target belum diisi —</span>
                   <Link to={`/target?tab=target-kinerja&highlight=sub:${row.id_sub_kegiatan}`}>
                     Ubah di sini
                   </Link>

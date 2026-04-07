@@ -11,7 +11,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import ChatWidget from '../components/ChatWidget';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
-import { brand, modalWidths } from '../theme';
+import { modalWidths } from '../theme';
 import { getChartConfig, abbreviateMonth } from '../utils/chartConfig';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import {
@@ -480,7 +480,7 @@ export const DashboardPage: React.FC = () => {
                     title="Total Laporan Terkirim"
                     value={stats.terkirim}
                     prefix={<CheckCircleOutlined />}
-                    valueStyle={{ color: brand.success }}
+                    valueStyle={{ color: 'var(--color-success)' }}
                   />
                 </Card>
               </Col>
@@ -490,7 +490,7 @@ export const DashboardPage: React.FC = () => {
                     title="Laporan Tersimpan (Draft)"
                     value={stats.tersimpan}
                     prefix={<ClockCircleOutlined />}
-                    valueStyle={{ color: brand.warning }}
+                    valueStyle={{ color: 'var(--color-warning)' }}
                   />
                 </Card>
               </Col>
@@ -507,12 +507,12 @@ export const DashboardPage: React.FC = () => {
                     value={stats.puskesmasReporting}
                     prefix={<BarChartOutlined />}
                     suffix={`/ ${stats.totalPuskesmas}`}
-                    valueStyle={{ color: brand.accent }}
+                    valueStyle={{ color: 'var(--color-accent)' }}
                   />
                   <Progress
                     percent={stats.persentasePuskesmasReporting}
                     status="active"
-                    strokeColor={brand.accent}
+                    strokeColor={'var(--color-accent)'}
                     style={{ marginTop: 8 }}
                   />
                 </Card>
@@ -531,7 +531,7 @@ export const DashboardPage: React.FC = () => {
                 title="Total Target Anggaran YTD"
                 value={totalStats.totalTarget}
                 prefix={<DollarOutlined />}
-                valueStyle={{ color: brand.primary }}
+                valueStyle={{ color: 'var(--color-primary)' }}
                 formatter={(value) => formatCurrencyWithPrefix(value as number)}
               />
             </Card>
@@ -542,7 +542,7 @@ export const DashboardPage: React.FC = () => {
                 title="Total Realisasi Anggaran YTD"
                 value={totalStats.totalRealisasi}
                 prefix={<DollarOutlined />}
-                valueStyle={{ color: brand.success }}
+                valueStyle={{ color: 'var(--color-success)' }}
                 formatter={(value) => formatCurrencyWithPrefix(value as number)}
               />
             </Card>
@@ -556,8 +556,8 @@ export const DashboardPage: React.FC = () => {
                 suffix="%"
                 precision={2}
                 valueStyle={{
-                  color: totalStats.persentaseRealisasi >= 80 ? brand.success :
-                    totalStats.persentaseRealisasi >= 60 ? brand.warning : brand.error
+                  color: totalStats.persentaseRealisasi >= 80 ? 'var(--color-success)' :
+                    totalStats.persentaseRealisasi >= 60 ? 'var(--color-warning)' : 'var(--color-error)'
                 }}
               />
             </Card>
@@ -655,36 +655,36 @@ export const DashboardPage: React.FC = () => {
                           checked={showAnggaran}
                           onChange={setShowAnggaran}
                           size="small"
-                          style={{ backgroundColor: showAnggaran ? brand.primary : undefined }}
+                          style={{ backgroundColor: showAnggaran ? 'var(--color-primary)' : undefined }}
                         />
-                        <Text style={{ color: showAnggaran ? brand.primary : brand.textTertiary }}>Anggaran</Text>
+                        <Text style={{ color: showAnggaran ? 'var(--color-primary)' : 'var(--text-tertiary)' }}>Anggaran</Text>
                       </Space>
                       <Space>
                         <Switch
                           checked={showAngkas}
                           onChange={setShowAngkas}
                           size="small"
-                          style={{ backgroundColor: showAngkas ? brand.accent : undefined }}
+                          style={{ backgroundColor: showAngkas ? 'var(--color-accent)' : undefined }}
                         />
-                        <Text style={{ color: showAngkas ? brand.accent : brand.textTertiary }}>Angkas</Text>
+                        <Text style={{ color: showAngkas ? 'var(--color-accent)' : 'var(--text-tertiary)' }}>Angkas</Text>
                       </Space>
                       <Space>
                         <Switch
                           checked={showRealisasiAnggaran}
                           onChange={setShowRealisasiAnggaran}
                           size="small"
-                          style={{ backgroundColor: showRealisasiAnggaran ? brand.success : undefined }}
+                          style={{ backgroundColor: showRealisasiAnggaran ? 'var(--color-success)' : undefined }}
                         />
-                        <Text style={{ color: showRealisasiAnggaran ? brand.success : brand.textTertiary }}>Realisasi Anggaran</Text>
+                        <Text style={{ color: showRealisasiAnggaran ? 'var(--color-success)' : 'var(--text-tertiary)' }}>Realisasi Anggaran</Text>
                       </Space>
                       <Space>
                         <Switch
                           checked={showRealisasiFisik}
                           onChange={setShowRealisasiFisik}
                           size="small"
-                          style={{ backgroundColor: showRealisasiFisik ? brand.warning : undefined }}
+                          style={{ backgroundColor: showRealisasiFisik ? 'var(--color-warning)' : undefined }}
                         />
-                        <Text style={{ color: showRealisasiFisik ? brand.warning : brand.textTertiary }}>Realisasi Fisik (%)</Text>
+                        <Text style={{ color: showRealisasiFisik ? 'var(--color-warning)' : 'var(--text-tertiary)' }}>Realisasi Fisik (%)</Text>
                       </Space>
                     </Space>
                   </Col>
@@ -731,7 +731,7 @@ export const DashboardPage: React.FC = () => {
                         }
                         return formatCurrencyWithPrefix(value);
                       }}
-                      labelStyle={{ color: brand.textPrimary }}
+                      labelStyle={{ color: 'var(--text-primary)' }}
                     />
                     {chartCfg.showLegend && <Legend />}
                     {showAnggaran && (
@@ -740,9 +740,9 @@ export const DashboardPage: React.FC = () => {
                         type="monotone"
                         dataKey="anggaran"
                         name="Target Anggaran (Rp)"
-                        stroke={brand.primary}
+                        stroke={'var(--color-primary)'}
                         strokeWidth={2}
-                        dot={{ fill: brand.primary, r: chartCfg.dotRadius }}
+                        dot={{ fill: 'var(--color-primary)', r: chartCfg.dotRadius }}
                         activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
@@ -752,9 +752,9 @@ export const DashboardPage: React.FC = () => {
                         type="monotone"
                         dataKey="angkas"
                         name="Angkas (Rp)"
-                        stroke={brand.accent}
+                        stroke={'var(--color-accent)'}
                         strokeWidth={2}
-                        dot={{ fill: brand.accent, r: chartCfg.dotRadius }}
+                        dot={{ fill: 'var(--color-accent)', r: chartCfg.dotRadius }}
                         activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
@@ -764,9 +764,9 @@ export const DashboardPage: React.FC = () => {
                         type="monotone"
                         dataKey="realisasi_anggaran"
                         name="Realisasi Anggaran (Rp)"
-                        stroke={brand.success}
+                        stroke={'var(--color-success)'}
                         strokeWidth={2}
-                        dot={{ fill: brand.success, r: chartCfg.dotRadius }}
+                        dot={{ fill: 'var(--color-success)', r: chartCfg.dotRadius }}
                         activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
@@ -776,9 +776,9 @@ export const DashboardPage: React.FC = () => {
                         type="monotone"
                         dataKey="realisasi_fisik"
                         name="Realisasi Fisik (%)"
-                        stroke={brand.warning}
+                        stroke={'var(--color-warning)'}
                         strokeWidth={2}
-                        dot={{ fill: brand.warning, r: chartCfg.dotRadius }}
+                        dot={{ fill: 'var(--color-warning)', r: chartCfg.dotRadius }}
                         activeDot={{ r: chartCfg.activeDotRadius }}
                       />
                     )}
@@ -852,7 +852,7 @@ export const DashboardPage: React.FC = () => {
                         if (name === 'Penyerapan') return `${value.toFixed(2)}%`;
                         return value;
                       }}
-                      labelStyle={{ color: brand.textPrimary, fontSize: 12 }}
+                      labelStyle={{ color: 'var(--text-primary)', fontSize: 12 }}
                       contentStyle={{ fontSize: 12 }}
                     />
                     {chartCfg.showLegend && <Legend />}
@@ -860,7 +860,7 @@ export const DashboardPage: React.FC = () => {
                       {top10Data.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={entry.persentase >= 90 ? brand.success : entry.persentase >= 70 ? brand.warning : brand.error}
+                          fill={entry.persentase >= 90 ? 'var(--color-success)' : entry.persentase >= 70 ? 'var(--color-warning)' : 'var(--color-error)'}
                         />
                       ))}
                     </Bar>
@@ -933,7 +933,7 @@ export const DashboardPage: React.FC = () => {
                         if (name === 'Penyerapan') return `${value.toFixed(2)}%`;
                         return value;
                       }}
-                      labelStyle={{ color: brand.textPrimary, fontSize: 12 }}
+                      labelStyle={{ color: 'var(--text-primary)', fontSize: 12 }}
                       contentStyle={{ fontSize: 12 }}
                     />
                     {chartCfg.showLegend && <Legend />}
@@ -941,7 +941,7 @@ export const DashboardPage: React.FC = () => {
                       {bottom10Data.map((entry, index) => (
                         <Cell
                           key={`cell-bottom-${index}`}
-                          fill={entry.persentase >= 70 ? brand.warning : entry.persentase >= 50 ? brand.warning : brand.error}
+                          fill={entry.persentase >= 70 ? 'var(--color-warning)' : entry.persentase >= 50 ? 'var(--color-warning)' : 'var(--color-error)'}
                         />
                       ))}
                     </Bar>
@@ -993,7 +993,7 @@ export const DashboardPage: React.FC = () => {
                 <Row gutter={[16, 16]}>
                   {monthlyBudgetData.map((item, index) => (
                     <Col xs={24} sm={12} lg={8} xl={6} key={index}>
-                      <Card size="small" style={{ background: brand.bgLayout, height: '100%' }}>
+                      <Card size="small" style={{ background: 'var(--bg-layout)', height: '100%' }}>
                         <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>
                           {item.sub_kegiatan}
                         </Text>
@@ -1007,7 +1007,7 @@ export const DashboardPage: React.FC = () => {
                           </div>
                           <div>
                             <Text style={{ fontSize: 11 }}>Realisasi: </Text>
-                            <Text strong style={{ fontSize: 11, color: brand.success }}>
+                            <Text strong style={{ fontSize: 11, color: 'var(--color-success)' }}>
                               {formatCurrencyWithPrefix(item.realisasi_rp)}
                             </Text>
                           </div>
@@ -1015,8 +1015,8 @@ export const DashboardPage: React.FC = () => {
                             percent={item.persentase}
                             size="small"
                             strokeColor={
-                              item.persentase >= 80 ? brand.success :
-                                item.persentase >= 60 ? brand.warning : brand.error
+                              item.persentase >= 80 ? 'var(--color-success)' :
+                                item.persentase >= 60 ? 'var(--color-warning)' : 'var(--color-error)'
                             }
                           />
                         </Space>
@@ -1102,7 +1102,7 @@ export const DashboardPage: React.FC = () => {
 
             {/* Puskesmas Belum Melaporkan */}
             <div>
-              <Title level={5} style={{ marginBottom: 12, color: brand.error }}>
+              <Title level={5} style={{ marginBottom: 12, color: 'var(--color-error)' }}>
                 Puskesmas Belum Melaporkan ({puskesmasBelumLapor.length})
               </Title>
               <Table

@@ -1,0 +1,79 @@
+≡ƒöì COMPREHENSIVE DEBUG: Dashboard Data Flow
+
+====================================================================================================
+Executing (default): SELECT "id", "user_id", "bulan", "tahun", "id_kegiatan", "id_sub_kegiatan", "id_sumber_anggaran", "id_satuan", "target_k", "angkas", "target_rp", "target_angkas", "realisasi_k", "realisasi_rp", "realisasi_fisik", "permasalahan", "upaya", "status", "catatan", "verified_by", "verified_at", "created_at" AS "createdAt", "updated_at" AS "updatedAt" FROM "laporan" AS "Laporan" WHERE "Laporan"."tahun" = 2025 AND "Laporan"."status" IN ('terkirim', 'menunggu', 'diverifikasi') LIMIT 1;
+
+≡ƒôî Testing User ID: 4c7c891a...
+Executing (default): SELECT "id", "user_id", "id_sub_kegiatan", "id_sumber_anggaran", "id_satuan", "target_k", "target_rp", "bulan", "tahun", "catatan", "created_by", "created_at" AS "createdAt", "updated_at" AS "updatedAt" FROM "sub_kegiatan_target" AS "SubKegiatanTarget" WHERE "SubKegiatanTarget"."user_id" = '4c7c891a-520e-4a22-95d2-9600561b045c' AND "SubKegiatanTarget"."tahun" = 2025 ORDER BY "createdAt" ASC;
+
+≡ƒôè TARGETS (SubKegiatanTarget) - 32 records:
+   2025-01-01 | SubKeg 5 | Sumber 2 | 286.392.799
+   2025-01-01 | SubKeg 3 | Sumber 3 | 121.261.466
+   2025-01-01 | SubKeg 4 | Sumber 4 | 584.809.082
+   2025-01-01 | SubKeg 4 | Sumber 1 | 363.383.617
+   2025-01-01 | SubKeg 1 | Sumber 3 | 621.726.398
+   2025-01-01 | SubKeg 2 | Sumber 1 | 282.981.854
+   2025-01-01 | SubKeg 5 | Sumber 1 | 369.396.140
+   2025-01-01 | SubKeg 1 | Sumber 4 | 49.589.092
+   2025-03-15 | SubKeg 4 | Sumber 1 | 417.891.160
+   2025-03-15 | SubKeg 1 | Sumber 4 | 57.027.456
+   2025-03-15 | SubKeg 1 | Sumber 3 | 714.985.358
+   2025-03-15 | SubKeg 5 | Sumber 1 | 424.805.561
+   2025-03-15 | SubKeg 5 | Sumber 2 | 329.351.719
+   2025-03-15 | SubKeg 2 | Sumber 1 | 325.429.132
+   2025-03-15 | SubKeg 3 | Sumber 3 | 139.450.686
+   2025-03-15 | SubKeg 4 | Sumber 4 | 672.530.444
+   2025-07-10 | SubKeg 2 | Sumber 1 | 299.394.801
+   2025-07-10 | SubKeg 1 | Sumber 4 | 52.465.260
+   2025-07-10 | SubKeg 1 | Sumber 3 | 657.786.529
+   2025-07-10 | SubKeg 3 | Sumber 3 | 128.294.631
+   2025-07-10 | SubKeg 4 | Sumber 4 | 618.728.008
+   2025-07-10 | SubKeg 4 | Sumber 1 | 384.459.867
+   2025-07-10 | SubKeg 5 | Sumber 2 | 303.003.581
+   2025-07-10 | SubKeg 5 | Sumber 1 | 390.821.116
+   2025-10-05 | SubKeg 1 | Sumber 3 | 710.409.451
+   2025-10-05 | SubKeg 1 | Sumber 4 | 56.662.481
+   2025-10-05 | SubKeg 4 | Sumber 1 | 415.216.656
+   2025-10-05 | SubKeg 5 | Sumber 2 | 327.243.867
+   2025-10-05 | SubKeg 5 | Sumber 1 | 422.086.805
+   2025-10-05 | SubKeg 4 | Sumber 4 | 668.226.249
+   2025-10-05 | SubKeg 3 | Sumber 3 | 138.558.201
+   2025-10-05 | SubKeg 2 | Sumber 1 | 323.346.385
+Executing (default): SELECT "id", "user_id", "id_sub_kegiatan", "id_sumber_anggaran", "kode_rekening", "uraian", "tahun", "bulan", "nilai", "created_by", "created_at" AS "createdAt", "updated_at" AS "updatedAt" FROM "anggaran_kas" AS "AnggaranKas" WHERE "AnggaranKas"."user_id" = '4c7c891a-520e-4a22-95d2-9600561b045c' AND "AnggaranKas"."tahun" = 2025 ORDER BY "AnggaranKas"."bulan" ASC;
+
+≡ƒôè ANGKAS (AnggaranKas) - 96 records
+Executing (default): SELECT "id", "user_id", "bulan", "tahun", "id_kegiatan", "id_sub_kegiatan", "id_sumber_anggaran", "id_satuan", "target_k", "angkas", "target_rp", "target_angkas", "realisasi_k", "realisasi_rp", "realisasi_fisik", "permasalahan", "upaya", "status", "catatan", "verified_by", "verified_at", "created_at" AS "createdAt", "updated_at" AS "updatedAt" FROM "laporan" AS "Laporan" WHERE "Laporan"."user_id" = '4c7c891a-520e-4a22-95d2-9600561b045c' AND "Laporan"."tahun" = 2025 AND "Laporan"."status" IN ('terkirim', 'menunggu', 'diverifikasi') ORDER BY "Laporan"."bulan" ASC;
+≡ƒôè LAPORANS - 89 records
+
+====================================================================================================
+DASHBOARD SIMULATION (Same logic as /api/admin/dashboard/chart-data)
+====================================================================================================
+
+Month       Anggaran          Angkas(Cum)       FinVal(Cum)       PhysVal           Phys%   Valid?
+----------------------------------------------------------------------------------------------------
+Januari     2.679.540.448     161.858.973       141.256.759       143.221.437       5.35    Γ£à
+Februari    2.679.540.448     323.717.946       270.941.369       275.992.666       10.30   Γ£à
+Maret       3.081.471.516     526.051.949       434.413.407       445.234.116       14.45   Γ£à
+April       3.081.471.516     736.781.348       608.963.565       629.082.410       20.41   Γ£à
+Mei         3.081.471.516     972.655.760       808.683.062       836.080.259       27.13   Γ£à
+Juni        3.081.471.516     1.228.621.750     1.011.649.900     1.063.030.636     34.50   Γ£à
+Juli        2.834.953.793     1.491.855.413     1.222.667.250     1.283.206.397     45.26   Γ£à
+Agustus     2.834.953.793     1.768.204.855     1.436.601.172     1.504.722.599     53.08   Γ£à
+September   2.834.953.793     2.043.426.572     1.676.181.106     1.749.768.918     61.72   Γ£à
+Oktober     3.061.750.095     2.306.952.108     1.833.742.380     2.009.273.500     65.62   Γ£à
+November    3.061.750.095     2.521.315.343     1.983.936.902     2.068.518.364     67.56   Γ£à
+Desember    3.061.750.095     2.679.540.448     2.053.834.382     2.191.753.806     71.59   Γ£à
+----------------------------------------------------------------------------------------------------
+
+Γ£à ALL MONTHS VALID!
+
+====================================================================================================
+RAW LAPORAN DATA (first 5 records):
+====================================================================================================
+Bulan       realisasi_rp      realisasi_fisik   angkas (stored)   
+----------------------------------------------------------------------
+Agustus     19.703.824        54.10             189.019.248       
+Agustus     45.030.299        52.26             385.973.995       
+Agustus     22.163.768        52.71             243.801.451       
+Agustus     55.955.376        55.82             422.773.952       
+Agustus     11.786.614        55.19             82.457.798        

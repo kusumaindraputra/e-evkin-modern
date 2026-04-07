@@ -93,7 +93,7 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
   }, [row.target_k, row.realisasi_k]);
 
   const capaianRp = useMemo(() => {
-    const base = row.angkas && row.angkas > 0 ? row.angkas : row.target_rp;
+    const base = row.angkas != null ? row.angkas : row.target_rp;
     if (!base || base === 0) return 0;
     return Math.round(((row.realisasi_rp || 0) / base) * 100);
   }, [row.target_rp, row.angkas, row.realisasi_rp]);

@@ -203,9 +203,8 @@ export const LaporanBulkInputPage: React.FC = () => {
           for (let i = 0; i < bulanIndex && i < bulanan.length; i++) {
             cumulative += Number(bulanan[i]) || 0;
           }
-          if (cumulative > 0) {
-            angkasFullMap.set(key, cumulative);
-          }
+          // Always store the value, even if 0 — a 0 angkas for a month is valid
+          angkasFullMap.set(key, cumulative);
         }
       }
 
@@ -340,7 +339,7 @@ export const LaporanBulkInputPage: React.FC = () => {
       (row) => row.id_sumber_anggaran && row.id_satuan
     );
     const missingAngkas = rowsToSave.filter(
-      (row) => row.isManualAngkas && (!row.angkas || row.angkas <= 0)
+      (row) => row.isManualAngkas && row.angkas == null
     );
 
     if (missingAngkas.length > 0) {
@@ -363,7 +362,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         id_sumber_anggaran: row.id_sumber_anggaran,
         id_satuan: row.id_satuan,
         target_k: row.target_k || 0,
-        angkas: row.angkas || 0,
+        angkas: row.angkas ?? 0,
         target_rp: row.target_rp || 0,
         realisasi_k: row.realisasi_k || 0,
         realisasi_rp: row.realisasi_rp || 0,
@@ -499,7 +498,7 @@ export const LaporanBulkInputPage: React.FC = () => {
     ).length;
     const totalTargetRp = rows.reduce((sum, r) => sum + (r.target_rp || 0), 0);
     const totalAngkas = rows.reduce(
-      (sum, r) => sum + (r.angkas && r.angkas > 0 ? r.angkas : r.target_rp || 0),
+      (sum, r) => sum + (r.angkas != null ? r.angkas : r.target_rp || 0),
       0
     );
     const totalRealisasiRp = rows.reduce(

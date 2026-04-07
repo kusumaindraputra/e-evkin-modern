@@ -44,7 +44,7 @@ const LaporanGroupCard: React.FC<LaporanGroupCardProps> = ({
     if (allSubmitted) return 'var(--color-success)';
     if (filledCount === rows.length) return 'var(--color-primary)';
     if (filledCount > 0) return 'var(--color-warning)';
-    return '#d9d9d9';
+    return 'var(--border-color)';
   }, [allSubmitted, filledCount, rows.length]);
 
   return (

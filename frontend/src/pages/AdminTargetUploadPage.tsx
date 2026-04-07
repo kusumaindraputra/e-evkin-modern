@@ -667,7 +667,7 @@ const AdminTargetUploadPage: React.FC = () => {
             <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>Catatan Perubahan <span style={{ color: 'red' }}>*</span></label>
             <input type="text" value={targetUploadCatatan} onChange={(e) => setTargetUploadCatatan(e.target.value)}
               placeholder="Contoh: Pagu Murni / Perubahan Parsial 1" disabled={targetUploading}
-              style={{ width: '100%', padding: '8px 12px', border: targetUploadCatatan.trim() ? `1px solid var(--border-color)` : '1px solid #ff7875', borderRadius: 6 }}
+              style={{ width: '100%', padding: '8px 12px', border: targetUploadCatatan.trim() ? `1px solid var(--border-color)` : '1px solid var(--color-error)', borderRadius: 6 }}
             />
           </div>
           <div style={{ marginBottom: 16 }}>

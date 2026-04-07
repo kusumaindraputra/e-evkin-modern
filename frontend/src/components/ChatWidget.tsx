@@ -152,7 +152,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                     marginBottom: 6,
                     padding: '6px 8px',
                     borderRadius: 4,
-                    backgroundColor: msg.type === 'user' ? '#EFF6FF' : 'var(--bg-layout)',
+                    backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--bg-layout)',
                     borderLeft: `2px solid ${msg.type === 'user' ? 'var(--color-primary)' : 'var(--color-success)'}`,
                     fontSize: 12,
                   }}
@@ -232,7 +232,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                   marginBottom: 12,
                   padding: '10px 14px',
                   borderRadius: 6,
-                  backgroundColor: msg.type === 'user' ? '#EFF6FF' : 'var(--bg-layout)',
+                  backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--bg-layout)',
                   borderLeft: `3px solid ${msg.type === 'user' ? 'var(--color-primary)' : 'var(--color-success)'}`,
                 }}
               >

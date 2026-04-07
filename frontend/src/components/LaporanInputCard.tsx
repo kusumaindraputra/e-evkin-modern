@@ -148,7 +148,7 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
         
         <Tooltip title="Lihat indikator kinerja">
           <InfoCircleOutlined
-            style={{ color: '#8c8c8c', cursor: 'pointer', fontSize: 14 }}
+            style={{ color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14 }}
             onClick={() => setShowIndikator((v) => !v)}
           />
         </Tooltip>

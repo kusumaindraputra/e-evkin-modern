@@ -256,33 +256,77 @@ export const brandDark = {
 } as const;
 
 // ── Dark Ant Design theme config ──────────────────────
+// NOTE: darkAlgorithm derives colorBgContainer from colorBgBase.
+// We set colorBgBase so the algorithm produces correct dark surfaces.
 export const evkinThemeDark: ThemeConfig = {
-  ...evkinTheme,
   token: {
-    ...evkinTheme.token,
+    // Seed tokens (darkAlgorithm derives everything from these)
     colorPrimary:     brandDark.primary,
     colorSuccess:     brandDark.success,
     colorWarning:     brandDark.warning,
     colorError:       brandDark.error,
     colorInfo:        brandDark.accent,
-    colorBgLayout:    brandDark.bgLayout,
-    colorBgContainer: brandDark.bgCard,
-    colorBgElevated:  brandDark.bgElevated,
-    colorBorder:      brandDark.border,
-    colorBorderSecondary: brandDark.borderLight,
-    colorText:          brandDark.textPrimary,
-    colorTextSecondary: brandDark.textSecondary,
-    colorTextTertiary:  brandDark.textTertiary,
+    colorBgBase:      '#111827',   // dark base → algorithm derives container/elevated/layout
+    colorTextBase:    '#E5E7EB',   // light text base → algorithm derives text hierarchy
+
+    // Typography (carry over from light theme)
+    fontFamily: evkinTheme.token!.fontFamily,
+    fontSize:     14,
+    fontSizeSM:   12,
+    fontSizeLG:   16,
+    fontSizeXL:   20,
+    lineHeight:   1.5714,
+
+    // Shape
+    borderRadius:    layout.borderRadius,
+    borderRadiusSM:  layout.borderRadiusSm,
+    borderRadiusLG:  layout.borderRadiusLg,
+
+    // Spacing
+    padding:     16,
+    paddingSM:   12,
+    paddingLG:   24,
+    paddingXL:   32,
+    margin:      16,
+    marginSM:    12,
+    marginLG:    24,
+    marginXL:    32,
+
+    // Shadows (darker for dark mode)
     boxShadow:          '0 2px 8px rgba(0, 0, 0, 0.4)',
     boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.3)',
+
+    // Motion
+    motionDurationFast: motion.fast,
+    motionDurationMid:  motion.normal,
+    motionDurationSlow: motion.slow,
+    motionEaseInOut:    motion.easing,
+
+    // Layout
+    controlHeight:   36,
+    controlHeightLG: 40,
+    controlHeightSM: 28,
   },
   components: {
-    ...evkinTheme.components,
     Layout: {
       headerBg:     brandDark.bgCard,
       siderBg:      brandDark.primaryDark,
       bodyBg:       brandDark.bgLayout,
       headerHeight: layout.headerHeight,
+    },
+    Menu: {
+      darkItemBg:           brandDark.primaryDark,
+      darkSubMenuItemBg:    brandDark.primaryDark,
+      darkItemSelectedBg:   brandDark.primary,
+      darkItemHoverBg:      'rgba(255, 255, 255, 0.08)',
+      darkItemColor:        'rgba(255, 255, 255, 0.75)',
+      darkItemSelectedColor:'#ffffff',
+    },
+    Button: {
+      borderRadius: layout.borderRadius,
+    },
+    Card: {
+      borderRadiusLG: layout.borderRadiusLg,
     },
     Table: {
       headerBg:       '#1a2332',
@@ -291,6 +335,21 @@ export const evkinThemeDark: ThemeConfig = {
       rowSelectedBg:  'rgba(59, 130, 246, 0.15)',
       rowSelectedHoverBg: 'rgba(59, 130, 246, 0.2)',
       borderColor:    brandDark.borderLight,
+    },
+    Input: {
+      borderRadius: layout.borderRadius,
+    },
+    Select: {
+      borderRadius: layout.borderRadius,
+    },
+    Modal: {
+      borderRadiusLG: layout.borderRadiusLg,
+    },
+    Notification: {
+      borderRadiusLG: layout.borderRadiusLg,
+    },
+    Tag: {
+      borderRadiusSM: layout.borderRadiusSm,
     },
   },
 };

@@ -126,7 +126,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
       <Card title="Capaian Kinerja" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#f0f5ff' }}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: 'var(--bg-info-subtle)' }}>
               <Text type="secondary">Target Kinerja</Text>
               <Title level={3} style={{ margin: '8px 0' }}>
                 {formatNumber(laporan.target_k)}
@@ -135,7 +135,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
             </Card>
           </Col>
           <Col span={8}>
-            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#f6ffed' }}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: 'var(--bg-success-subtle)' }}>
               <Text type="secondary">Realisasi Kinerja</Text>
               <Title level={3} style={{ margin: '8px 0', color: 'var(--color-success)' }}>
                 {formatNumber(laporan.realisasi_k)}
@@ -163,7 +163,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
       <Card title="Realisasi Fisik" style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={12}>
-            <Card size="small" style={{ textAlign: 'center', backgroundColor: '#fef5e7' }}>
+            <Card size="small" style={{ textAlign: 'center', backgroundColor: 'var(--bg-warning-subtle)' }}>
               <Text type="secondary">Realisasi Fisik</Text>
               <Title level={2} style={{ margin: '8px 0', color: getProgressColor(laporan.realisasi_fisik) }}>
                 {laporan.realisasi_fisik}%
@@ -176,7 +176,7 @@ const LaporanDetail: React.FC<LaporanDetailProps> = ({ laporan }) => {
             </Card>
           </Col>
           <Col span={12}>
-            <Card size="small" style={{ padding: '12px', backgroundColor: '#f5f5f5' }}>
+            <Card size="small" style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)' }}>
               <Text type="secondary">Keterangan</Text>
               <div style={{ marginTop: '8px', fontSize: '13px', lineHeight: '1.6' }}>
                 <p>Realisasi Fisik menunjukkan persentase kemajuan fisik pekerjaan atau pencapaian target program.</p>

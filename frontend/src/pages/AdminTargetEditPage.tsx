@@ -705,8 +705,8 @@ const AdminTargetEditPage: React.FC = () => {
           <div style={{
             marginBottom: 16,
             padding: 12,
-            background: isValidAngkasTotal() ? '#f6ffed' : '#fff2e8',
-            border: `1px solid ${isValidAngkasTotal() ? '#b7eb8f' : '#ffbb96'}`,
+            background: isValidAngkasTotal() ? 'var(--bg-success-subtle)' : 'var(--bg-warning-subtle)',
+            border: `1px solid ${isValidAngkasTotal() ? 'var(--color-success)' : 'var(--color-error)'}`,
             borderRadius: 6
           }}>
             <Row gutter={16}>
@@ -736,7 +736,7 @@ const AdminTargetEditPage: React.FC = () => {
               </Col>
             </Row>
             {!isValidAngkasTotal() && (
-              <div style={{ marginTop: 12, padding: '8px 12px', background: '#FFF8E1', border: `1px solid var(--color-warning)`, borderRadius: 4 }}>
+              <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bg-warning-subtle)', border: `1px solid var(--color-warning)`, borderRadius: 4 }}>
                 <span style={{ color: 'var(--color-warning)' }}>⚠️ Total angkas harus sama dengan target anggaran untuk dapat menyimpan</span>
               </div>
             )}

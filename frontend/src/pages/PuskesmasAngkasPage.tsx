@@ -554,8 +554,8 @@ export const PuskesmasAngkasPage: React.FC = () => {
           <div style={{
             marginBottom: 16,
             padding: 12,
-            background: isValidTotal() ? '#f6ffed' : '#fff2e8',
-            border: `1px solid ${isValidTotal() ? '#b7eb8f' : '#ffbb96'}`,
+            background: isValidTotal() ? 'var(--bg-success-subtle)' : 'var(--bg-warning-subtle)',
+            border: `1px solid ${isValidTotal() ? 'var(--color-success)' : 'var(--color-error)'}`,
             borderRadius: 6
           }}>
             <Row gutter={16}>

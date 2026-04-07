@@ -12,7 +12,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { NAV_ITEMS } from '../config/navConfig';
-import { layout, brand } from '../theme';
+import { layout } from '../theme';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useTheme } from '../hooks/useTheme';
 import './Layout.css';
@@ -104,7 +104,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           closable={false}
           className="mobile-drawer"
           styles={{
-            body: { padding: 0, background: brand.primaryDark },
+            body: { padding: 0, background: 'var(--color-primary-dark)' },
             header: { display: 'none' },
           }}
         >

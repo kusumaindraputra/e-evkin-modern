@@ -77,6 +77,8 @@ async function main() {
       return modal ? modal.innerHTML : 'NO MODAL FOUND';
     });
     console.log(`Modal HTML length: ${modalContent.length}`);
+    // Show first 800 chars to debug
+    console.log(`Modal HTML preview: ${modalContent.substring(0, 800)}`);
 
     // Check for bulan_penetapan select in modal
     const bulanSelect = await adminPage.$('.ant-modal select, .ant-modal-body select');

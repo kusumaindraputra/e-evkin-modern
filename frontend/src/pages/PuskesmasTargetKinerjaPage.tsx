@@ -21,7 +21,7 @@ import API_BASE_URL from '../config/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { formatNumber, formatDateTime } from '../utils/formatters';
-import { brand, modalWidths } from '../theme';
+import { modalWidths } from '../theme';
 
 interface Target {
   id: number;
@@ -376,7 +376,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
       width: 100,
       align: 'right' as const,
       render: (value: number) => (
-        <span style={{ color: value === 0 ? brand.warning : undefined }}>
+        <span style={{ color: value === 0 ? 'var(--color-warning)' : undefined }}>
           {formatNumber(value)}
         </span>
       ),
@@ -496,7 +496,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
           </Col>
         </Row>
 
-        <p style={{ color: brand.textTertiary, fontSize: '12px', marginBottom: 16 }}>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', marginBottom: 16 }}>
           * Target dengan nilai 0 dan satuan "Silahkan Pilih" perlu diupdate<br />
           * Target Anggaran (Rp) diset oleh Admin dan tidak dapat diubah di sini
         </p>
@@ -538,7 +538,7 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
         width={modalWidths.md}
       >
         {selectedTarget && (
-          <div style={{ marginBottom: 16, padding: 12, background: brand.bgLayout, borderRadius: 6 }}>
+          <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg-layout)', borderRadius: 6 }}>
             <p style={{ margin: 0 }}>
               <strong>Sub Kegiatan:</strong> {selectedTarget.subKegiatan?.kode_sub || 'N/A'} -{' '}
               {selectedTarget.subKegiatan?.kegiatan || 'N/A'}
@@ -639,16 +639,16 @@ export const PuskesmasTargetKinerjaPage: React.FC = () => {
                   Target (K): <strong>{formatNumber(record.target_k)}</strong>
                 </div>
                 <div>
-                  Satuan: <strong>{record.satuan?.satuannya || <i style={{ color: brand.textTertiary }}>Belum dipilih</i>}</strong>
+                  Satuan: <strong>{record.satuan?.satuannya || <i style={{ color: 'var(--text-tertiary)' }}>Belum dipilih</i>}</strong>
                 </div>
-                <div style={{ color: brand.textTertiary, fontSize: '12px' }}>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '12px' }}>
                   Target Anggaran (Rp): {formatNumber(record.target_rp)}
                 </div>
-                <div style={{ marginTop: 4, fontSize: '12px', color: brand.textTertiary }}>
+                <div style={{ marginTop: 4, fontSize: '12px', color: 'var(--text-tertiary)' }}>
                   Dibuat oleh: {record.creator?.nama || record.creator?.username || 'N/A'}
                 </div>
                 {record.catatan && (
-                  <div style={{ marginTop: 6, padding: '6px 10px', background: brand.bgLayout, borderRadius: 4, fontSize: '12px', color: brand.textSecondary }}>
+                  <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--bg-layout)', borderRadius: 4, fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <strong>Catatan:</strong> {record.catatan}
                   </div>
                 )}

@@ -1,41 +1,49 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { theme as antdTheme } from 'antd';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 type ThemeMode = 'light' | 'dark';
 
-const STORAGE_KEY = 'evkin-theme';
-
-function getInitialTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'light';
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+interface ThemeState {
+  mode: ThemeMode;
+  toggle: () => void;
+  setMode: (mode: ThemeMode) => void;
 }
+
+const getSystemTheme = (): ThemeMode => {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const useThemeStore = create<ThemeState>()(
+  persist(
+    (set) => ({
+      mode: getSystemTheme(),
+      toggle: () => set((state) => ({ mode: state.mode === 'light' ? 'dark' : 'light' })),
+      setMode: (mode) => set({ mode }),
+    }),
+    {
+      name: 'evkin-theme',
+    }
+  )
+);
 
 function applyThemeToDOM(mode: ThemeMode) {
   document.documentElement.setAttribute('data-theme', mode);
 }
 
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>(getInitialTheme);
-
+  const { mode, toggle, setMode } = useThemeStore();
+  
+  // Sync with DOM whenever mode changes
   useEffect(() => {
     applyThemeToDOM(mode);
-    localStorage.setItem(STORAGE_KEY, mode);
   }, [mode]);
 
-  // Apply on first render
-  useEffect(() => {
-    applyThemeToDOM(getInitialTheme());
-  }, []);
-
-  const toggle = useCallback(() => {
-    setMode(prev => prev === 'light' ? 'dark' : 'light');
-  }, []);
-
   const isDark = mode === 'dark';
-
   const algorithm = isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm;
 
-  return { mode, toggle, isDark, algorithm };
+  return { mode, toggle, setMode, isDark, algorithm };
 }
+

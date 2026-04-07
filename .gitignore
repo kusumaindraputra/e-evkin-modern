@@ -99,3 +99,7 @@ MENU_ACCESS.md
 
 # Beads issue tracking
 .beads/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+.beads-credential-key

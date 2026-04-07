@@ -29,11 +29,15 @@
     "setup-db": "./scripts/create-database.bat"
   },
   "devDependencies": {
+    "@beads/bd": "^0.63.3",
     "concurrently": "^8.2.2",
     "prettier": "^3.1.0"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
   }
 }

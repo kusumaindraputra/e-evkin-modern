@@ -6,6 +6,7 @@ import Kegiatan from '../models/Kegiatan';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
 import PuskesmasEditPermission from '../models/PuskesmasEditPermission';
+import sequelize from '../config/database';
 
 const router = Router();
 
@@ -80,22 +81,25 @@ router.post('/puskesmas/:userId/sub-kegiatan', authenticate, authorizeAdmin, asy
       return res.status(404).json({ message: 'Puskesmas tidak ditemukan' });
     }
 
-    // Delete existing assignments for this puskesmas
-    await PuskesmasSubKegiatan.destroy({
-      where: { user_id: userId },
-    });
-
-    // Create new assignments
-    if (subKegiatanIds.length > 0) {
-      const assignments = subKegiatanIds.map((id_sub_kegiatan) => ({
-        user_id: userId, // UUID string, not number
-        id_sub_kegiatan: Number(id_sub_kegiatan),
-      }));
-
-      await PuskesmasSubKegiatan.bulkCreate(assignments, {
-        ignoreDuplicates: true,
+    // Delete and recreate assignments atomically
+    await sequelize.transaction(async (t) => {
+      await PuskesmasSubKegiatan.destroy({
+        where: { user_id: userId },
+        transaction: t,
       });
-    }
+
+      if (subKegiatanIds.length > 0) {
+        const assignments = subKegiatanIds.map((id_sub_kegiatan) => ({
+          user_id: userId,
+          id_sub_kegiatan: Number(id_sub_kegiatan),
+        }));
+
+        await PuskesmasSubKegiatan.bulkCreate(assignments, {
+          ignoreDuplicates: true,
+          transaction: t,
+        });
+      }
+    });
 
     // Return updated assignments
     const updatedAssignments = await PuskesmasSubKegiatan.findAll({

@@ -9,6 +9,8 @@ import SubKegiatanSumberAnggaran from './SubKegiatanSumberAnggaran';
 import SubKegiatanTarget from './SubKegiatanTarget';
 import AnggaranKas from './AnggaranKas';
 import PuskesmasEditPermission from './PuskesmasEditPermission';
+import LraUploadBatch from './LraUploadBatch';
+import LraRealisasi from './LraRealisasi';
 import { sequelize } from '../config/database';
 
 // Define associations
@@ -132,17 +134,30 @@ SumberAnggaran.hasMany(AnggaranKas, {
   as: 'anggaranKas',
 });
 
-export { 
-  User, 
-  Laporan, 
-  SumberAnggaran, 
-  Satuan, 
-  Kegiatan, 
-  SubKegiatan, 
+// LraUploadBatch associations
+LraUploadBatch.hasMany(LraRealisasi, { foreignKey: 'batch_id', as: 'rows' });
+LraRealisasi.belongsTo(LraUploadBatch, { foreignKey: 'batch_id', as: 'batch' });
+
+LraUploadBatch.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader' });
+User.hasMany(LraUploadBatch, { foreignKey: 'uploaded_by', as: 'lraBatches' });
+
+LraRealisasi.belongsTo(User, { foreignKey: 'user_id', as: 'puskesmas' });
+LraRealisasi.belongsTo(SubKegiatan, { foreignKey: 'id_sub_kegiatan', as: 'subKegiatan' });
+LraRealisasi.belongsTo(SumberAnggaran, { foreignKey: 'id_sumber_anggaran', as: 'sumberAnggaran' });
+
+export {
+  User,
+  Laporan,
+  SumberAnggaran,
+  Satuan,
+  Kegiatan,
+  SubKegiatan,
   PuskesmasSubKegiatan,
   SubKegiatanSumberAnggaran,
   SubKegiatanTarget,
   AnggaranKas,
+  LraUploadBatch,
+  LraRealisasi,
   sequelize,
   PuskesmasEditPermission,
 };

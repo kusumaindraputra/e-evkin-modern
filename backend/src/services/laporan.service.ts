@@ -441,6 +441,10 @@ export class LaporanService {
       throw new Error('Forbidden: Anda tidak bisa menghapus laporan puskesmas lain');
     }
 
+    if (requesterRole === 'puskesmas' && laporan.status === 'terkirim') {
+      throw new Error('Forbidden: Laporan yang sudah terkirim tidak bisa dihapus');
+    }
+
     await laporan.destroy();
     return true;
   }

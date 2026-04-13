@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { gradients } from '../theme';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
+import logoImg from '../assets/logo.png';
 
 const { Title, Text } = Typography;
 
@@ -60,8 +61,9 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
+              <img src={logoImg} alt="e-evkin logo" style={{ width: 80, height: 'auto', marginBottom: 12, filter: 'brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1038%) hue-rotate(178deg) brightness(91%) contrast(96%)' }} />
               <Title level={2} style={{ marginBottom: 8, color: 'var(--color-primary)' }}>
-                E-EVKIN
+                e-evkin
               </Title>
               <Text type="secondary">
                 Sistem Evaluasi Kinerja Puskesmas
@@ -122,7 +124,7 @@ export const LoginPage: React.FC = () => {
 
             <div style={{ textAlign: 'center', marginTop: 24 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                © 2024 E-EVKIN. All rights reserved.
+                © 2024 e-evkin. All rights reserved.
               </Text>
             </div>
           </Card>

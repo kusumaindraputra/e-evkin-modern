@@ -1,5 +1,5 @@
 /**
- * E-EVKIN Design System — "Health Government Blue"
+ * e-evkin Design System — "Health Government Blue"
  *
  * Centralized theme tokens for Ant Design v5 ConfigProvider.
  * All colors, spacing, border-radius, shadows, and transitions

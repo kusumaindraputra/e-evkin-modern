@@ -23,6 +23,7 @@ const AdminPuskesmasConfigPage = lazy(() => import('./pages/AdminPuskesmasConfig
 // Consolidated pages
 const AdminTargetUploadPage = lazy(() => import('./pages/AdminTargetUploadPage'));
 const AdminTargetEditPage = lazy(() => import('./pages/AdminTargetEditPage'));
+const AdminLraUploadPage = lazy(() => import('./pages/AdminLraUploadPage'));
 const AdminLaporanPage = lazy(() => import('./pages/AdminLaporanPage'));
 
 // Loading fallback component
@@ -184,6 +185,14 @@ function App() {
           element={
             <AdminRoute>
               <PageWrapper component={AdminTargetEditPage} />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/lra-upload"
+          element={
+            <AdminRoute>
+              <PageWrapper component={AdminLraUploadPage} />
             </AdminRoute>
           }
         />

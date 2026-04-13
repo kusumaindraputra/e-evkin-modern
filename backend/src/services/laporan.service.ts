@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget } from '../models';
+import { getLraRealisasiMap } from './lraParserService';
 
 interface CreateLaporanParams {
   user_id: string;
@@ -50,7 +51,7 @@ export class LaporanService {
     if (tahun) where.tahun = tahun;
     if (status) where.status = status;
 
-    return Laporan.findAndCountAll({
+    const result = await Laporan.findAndCountAll({
       where,
       limit,
       offset,
@@ -83,6 +84,22 @@ export class LaporanService {
       ],
       order: [['created_at', 'DESC']]
     });
+
+    // Enrich with LRA realisasi if querying for a specific puskesmas + bulan + tahun
+    if (user_id && bulan && tahun) {
+      const lraMap = await getLraRealisasiMap(user_id, bulan, tahun);
+      const enrichedRows = result.rows.map(lap => {
+        const key = `${(lap as any).id_sub_kegiatan}_${(lap as any).id_sumber_anggaran}`;
+        const lraRp = lraMap.get(key);
+        const json = lap.toJSON() as any;
+        json.realisasi_rp_lra = lraRp ?? 0;
+        json.lra_available = lraRp !== undefined;
+        return json;
+      });
+      return { count: result.count, rows: enrichedRows };
+    }
+
+    return result;
   }
 
   static async findById(id: string, requesterId: string, requesterRole: string) {

@@ -68,7 +68,11 @@ const AdminLraUploadPage: React.FC = () => {
 
   const buildFormData = () => {
     const fd = new FormData();
-    fd.append('file', fileList[0].originFileObj as File);
+    // fileList[0] is an RcFile (extends File) stored directly from beforeUpload;
+    // originFileObj is only set on the UploadFile wrapper, not on the raw RcFile,
+    // so use the file object itself which IS a File.
+    const file = (fileList[0].originFileObj ?? fileList[0]) as unknown as File;
+    fd.append('file', file);
     if (bulan) fd.append('bulan', bulan);
     if (tahun) fd.append('tahun', String(tahun));
     return fd;

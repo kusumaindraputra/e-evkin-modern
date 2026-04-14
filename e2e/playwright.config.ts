@@ -5,6 +5,7 @@ import * as path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 export default defineConfig({
+  globalSetup: require.resolve('./global-setup'),
   testDir: './tests',
   timeout: 30_000,
   retries: 1,

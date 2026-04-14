@@ -19,14 +19,14 @@ interface LraUploadBatchCreationAttributes
 class LraUploadBatch
   extends Model<LraUploadBatchAttributes, LraUploadBatchCreationAttributes>
   implements LraUploadBatchAttributes {
-  public id!: string;
-  public filename!: string;
-  public bulan!: string;
-  public tahun!: number;
-  public uploaded_by!: string;
-  public row_count!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  declare id: string;
+  declare filename: string;
+  declare bulan: string;
+  declare tahun: number;
+  declare uploaded_by: string;
+  declare row_count: number;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date;
 }
 
 LraUploadBatch.init(

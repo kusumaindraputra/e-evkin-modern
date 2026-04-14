@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
             id: user.id,
             username: user.username,
             role: user.role
-        }, config_1.config.jwt.secret, { expiresIn: '7d' });
+        }, config_1.config.jwt.secret, { expiresIn: config_1.config.jwt.expiresIn });
         // Return user data (without password)
         return res.json({
             token,

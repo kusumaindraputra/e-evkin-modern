@@ -27,11 +27,11 @@ const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const report_routes_1 = __importDefault(require("./routes/report.routes"));
 const puskesmas_config_routes_1 = __importDefault(require("./routes/puskesmas-config.routes"));
 const sub_kegiatan_sumber_anggaran_routes_1 = __importDefault(require("./routes/sub-kegiatan-sumber-anggaran.routes"));
-const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const target_routes_1 = __importDefault(require("./routes/target.routes"));
 const target_upload_routes_1 = __importDefault(require("./routes/target-upload.routes"));
 const angkas_routes_1 = __importDefault(require("./routes/angkas.routes"));
 const puskesmas_dashboard_routes_1 = __importDefault(require("./routes/puskesmas-dashboard.routes"));
+const lra_routes_1 = __importDefault(require("./routes/lra.routes"));
 const app = (0, express_1.default)();
 // Trust proxy (behind nginx)
 app.set('trust proxy', 1);
@@ -104,10 +104,10 @@ app.use('/api/users', users_routes_1.default);
 app.use('/api/report', report_routes_1.default);
 app.use('/api/puskesmas-config', puskesmas_config_routes_1.default);
 app.use('/api/sub-kegiatan-sumber-anggaran', sub_kegiatan_sumber_anggaran_routes_1.default);
-app.use('/api/admin', chat_routes_1.default);
 app.use('/api/target', target_routes_1.default);
 app.use('/api/target', target_upload_routes_1.default);
 app.use('/api/angkas', angkas_routes_1.default);
+app.use('/api/lra', lra_routes_1.default);
 app.use('/api/puskesmas/dashboard', puskesmas_dashboard_routes_1.default);
 // 404 handler for unmatched routes
 app.use(errorHandler_1.notFoundHandler);

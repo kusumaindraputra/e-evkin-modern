@@ -219,98 +219,14 @@ router.post('/upload', auth_1.authenticate, authorize_1.authorizeAdmin, upload.s
                         sumberAnggaran = { id: targetSumbers[0].id, nama: targetSumbers[0].nama };
                     }
                     else if (targetSumbers && targetSumbers.length > 1) {
-                        // Multiple sumber - split proportionally by target_rp
-                        const totalTargetRp = targetSumbers.reduce((sum, s) => sum + s.target_rp, 0);
-                        for (const targetSumber of targetSumbers) {
-                            const ratio = totalTargetRp > 0 ? targetSumber.target_rp / totalTargetRp : 1 / targetSumbers.length;
-                            // Process each month with proportional split
-                            for (let bulan = 1; bulan <= 12; bulan++) {
-                                const nilaiTotal = row.bulanan[bulan - 1] || 0;
-                                if (nilaiTotal === 0) {
-                                    result.skipped++;
-                                    continue;
-                                }
-                                const nilai = Math.round(nilaiTotal * ratio);
-                                if (nilai === 0) {
-                                    result.skipped++;
-                                    continue;
-                                }
-                                try {
-                                    const angkasKey = `${userId}_${row.kodeRekening}_${targetSumber.id}_${bulan}`;
-                                    const existingRecord = existingAngkasMap.get(angkasKey) || null;
-                                    if (existingRecord) {
-                                        const existingNilai = Number(existingRecord.nilai);
-                                        if (existingNilai === nilai) {
-                                            result.skipped++;
-                                            continue;
-                                        }
-                                        const newAngkas = await models_1.AnggaranKas.create({
-                                            user_id: userId,
-                                            id_sub_kegiatan: idSubKegiatan,
-                                            id_sumber_anggaran: targetSumber.id,
-                                            kode_rekening: row.kodeRekening,
-                                            uraian: row.uraian,
-                                            tahun,
-                                            bulan,
-                                            nilai,
-                                            created_by: adminId,
-                                        });
-                                        existingAngkasMap.set(angkasKey, newAngkas);
-                                        result.updated++;
-                                        result.success++;
-                                        result.successList.push({
-                                            type: 'updated',
-                                            puskesmas: puskesmasData.namaPuskesmas,
-                                            kodeRekening: row.kodeRekening,
-                                            uraian: row.uraian,
-                                            sumberAnggaran: targetSumber.nama,
-                                            tahun,
-                                            bulan,
-                                            oldValue: existingNilai,
-                                            newValue: nilai,
-                                        });
-                                    }
-                                    else {
-                                        const newAngkas = await models_1.AnggaranKas.create({
-                                            user_id: userId,
-                                            id_sub_kegiatan: idSubKegiatan,
-                                            id_sumber_anggaran: targetSumber.id,
-                                            kode_rekening: row.kodeRekening,
-                                            uraian: row.uraian,
-                                            tahun,
-                                            bulan,
-                                            nilai,
-                                            created_by: adminId,
-                                        });
-                                        existingAngkasMap.set(angkasKey, newAngkas);
-                                        result.inserted++;
-                                        result.success++;
-                                        result.successList.push({
-                                            type: 'inserted',
-                                            puskesmas: puskesmasData.namaPuskesmas,
-                                            kodeRekening: row.kodeRekening,
-                                            uraian: row.uraian,
-                                            sumberAnggaran: targetSumber.nama,
-                                            tahun,
-                                            bulan,
-                                            newValue: nilai,
-                                        });
-                                    }
-                                }
-                                catch (error) {
-                                    result.failed++;
-                                    const errorDetails = error.errors ? error.errors.map((e) => `${e.path}: ${e.message}`).join(', ') : error.message;
-                                    console.error(`Insert error for ${puskesmasData.namaPuskesmas} - ${row.uraian}:`, errorDetails);
-                                    result.errors.push({
-                                        puskesmas: puskesmasData.namaPuskesmas,
-                                        kodeRekening: row.kodeRekening,
-                                        uraian: row.uraian,
-                                        error: errorDetails,
-                                    });
-                                }
-                            }
-                            // Already processed all months for this sumber - skip the normal flow
-                        }
+                        // Multiple sumber - skip auto-assignment, must be input manually
+                        result.skipped++;
+                        result.errors.push({
+                            puskesmas: puskesmasData.namaPuskesmas,
+                            kodeRekening: row.kodeRekening,
+                            uraian: row.uraian,
+                            error: `Multi-sumber (${targetSumbers.length} sumber) — angkas harus diinput manual`,
+                        });
                         continue; // Skip normal single-sumber processing below
                     }
                 }

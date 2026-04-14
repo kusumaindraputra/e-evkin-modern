@@ -21,16 +21,16 @@ interface LraRealisasiCreationAttributes
 class LraRealisasi
   extends Model<LraRealisasiAttributes, LraRealisasiCreationAttributes>
   implements LraRealisasiAttributes {
-  public id!: number;
-  public batch_id!: string;
-  public user_id!: string;
-  public id_sub_kegiatan!: number;
-  public id_sumber_anggaran!: number;
-  public bulan!: string;
-  public tahun!: number;
-  public realisasi_rp!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  declare id: number;
+  declare batch_id: string;
+  declare user_id: string;
+  declare id_sub_kegiatan: number;
+  declare id_sumber_anggaran: number;
+  declare bulan: string;
+  declare tahun: number;
+  declare realisasi_rp: number;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date;
 }
 
 LraRealisasi.init(

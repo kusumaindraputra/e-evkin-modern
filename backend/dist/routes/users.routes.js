@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const bcrypt_1 = __importDefault(require("bcrypt"));
 const User_1 = __importDefault(require("../models/User"));
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
@@ -57,12 +56,10 @@ router.post('/puskesmas', auth_1.authenticate, authorize_1.authorizeAdmin, async
         if (existingUser) {
             return res.status(400).json({ message: 'Username already exists' });
         }
-        // Hash password
-        const hashedPassword = await bcrypt_1.default.hash(password, 10);
-        // Create user
+        // Create user (model beforeCreate hook handles password hashing)
         const newUser = await User_1.default.create({
             username,
-            password: hashedPassword,
+            password,
             nama,
             role: 'puskesmas',
             kode_puskesmas: kode_puskesmas || null,
@@ -107,9 +104,9 @@ router.put('/puskesmas/:id', auth_1.authenticate, authorize_1.authorizeAdmin, as
             kecamatan: kecamatan !== undefined ? kecamatan : user.kecamatan,
             wilayah: wilayah !== undefined ? wilayah : user.wilayah,
         };
-        // Hash new password if provided
+        // Set plain-text password — model beforeUpdate hook handles hashing
         if (password) {
-            updateData.password = await bcrypt_1.default.hash(password, 10);
+            updateData.password = password;
         }
         await user.update(updateData);
         // Return without password

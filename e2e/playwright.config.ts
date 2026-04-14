@@ -8,7 +8,7 @@ export default defineConfig({
   globalSetup: require.resolve('./global-setup'),
   testDir: './tests',
   timeout: 30_000,
-  retries: 1,
+  retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: process.env.TEST_BASE_URL ?? 'https://192.168.102.123',
@@ -21,7 +21,7 @@ export default defineConfig({
       name: 'api',
       testDir: './tests/api',
       use: { ...devices['Desktop Chrome'] },
-      workers: 2,
+      workers: 1,
     },
     {
       name: 'browser',

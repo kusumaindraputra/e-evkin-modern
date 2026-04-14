@@ -40,7 +40,7 @@ export async function setupAuth(browser: import('@playwright/test').Browser) {
 
   const baseURL = process.env.TEST_BASE_URL ?? 'https://192.168.102.123';
 
-  // Save admin state
+  // Save admin state + token for API tests to reuse (avoids extra login requests)
   const adminCtx = await browser.newContext({ ignoreHTTPSErrors: true });
   const adminPage = await adminCtx.newPage();
   await adminPage.goto(baseURL + '/login');
@@ -49,6 +49,17 @@ export async function setupAuth(browser: import('@playwright/test').Browser) {
   await adminPage.getByRole('button', { name: 'Masuk' }).click();
   await adminPage.waitForURL(url => !url.pathname.includes('/login'), { timeout: 15_000 });
   await adminCtx.storageState({ path: ADMIN_STATE });
+  // Extract JWT from Zustand persisted auth store while context is still open
+  const adminToken = await adminPage.evaluate(() => {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return null;
+    try { return JSON.parse(raw)?.state?.token ?? null; } catch { return null; }
+  });
+  fs.writeFileSync(
+    path.resolve(authDir, 'tokens.json'),
+    JSON.stringify({ adminToken }),
+    'utf-8',
+  );
   await adminCtx.close();
 
   // Save puskesmas state (skip gracefully if password not set)

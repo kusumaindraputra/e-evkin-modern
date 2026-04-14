@@ -1,15 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { ADMIN, PUSKESMAS, API, TEST_BULAN, TEST_TAHUN } from '../../helpers/test-data';
+import * as path from 'path';
+import * as fs from 'fs';
+import { PUSKESMAS, API, TEST_BULAN, TEST_TAHUN } from '../../helpers/test-data';
 
 test.describe('Laporan API', () => {
   let adminToken: string;
 
-  test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${API}/auth/login`, {
-      data: { username: ADMIN.username, password: ADMIN.password },
-    });
-    const body = await res.json();
-    adminToken = body.token;
+  test.beforeAll(async () => {
+    // Reuse token saved by globalSetup — avoids extra login requests that can hit rate limits
+    const tokensPath = path.resolve(__dirname, '../../.auth/tokens.json');
+    const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+    adminToken = tokens.adminToken;
   });
 
   test('GET /laporan as admin with user_id returns rows', async ({ request }) => {

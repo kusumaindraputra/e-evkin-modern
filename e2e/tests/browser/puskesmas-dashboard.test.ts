@@ -12,7 +12,8 @@ test.describe('Puskesmas dashboard', () => {
     await page.goto('/puskesmas/dashboard');
     await expect(page.locator('h1, h2, h3, h4').first()).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('body')).not.toContainText('Something went wrong');
-    const chart = page.locator('canvas').first();
+    // recharts renders SVG, not canvas
+    const chart = page.locator('.recharts-wrapper, svg.recharts-surface').first();
     await expect(chart).toBeVisible({ timeout: 15_000 });
   });
 

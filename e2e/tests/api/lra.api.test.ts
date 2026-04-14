@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ADMIN, API, TEST_BULAN, TEST_TAHUN } from '../../helpers/test-data';
+import { API, TEST_BULAN, TEST_TAHUN } from '../../helpers/test-data';
 
 const LRA_FILE = path.resolve(__dirname, '../../fixtures/files/lra_sample_maret.xlsx');
 
 test.describe('LRA API', () => {
   let adminToken: string;
 
-  test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${API}/auth/login`, {
-      data: { username: ADMIN.username, password: ADMIN.password },
-    });
-    adminToken = (await res.json()).token;
+  test.beforeAll(async () => {
+    // Reuse token saved by globalSetup — avoids extra login requests that can hit rate limits
+    const tokensPath = path.resolve(__dirname, '../../.auth/tokens.json');
+    const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf-8'));
+    adminToken = tokens.adminToken;
   });
 
   test('POST /lra/preview with file returns matchedCount >= 100', async ({ request }) => {

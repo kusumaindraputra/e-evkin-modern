@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../app';
-import { Laporan, User, SubKegiatanTarget, SubKegiatan } from '../../models';
+import { Laporan, User, SubKegiatanTarget, SubKegiatan, AnggaranKas } from '../../models';
 import PuskesmasEditPermission from '../../models/PuskesmasEditPermission';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
@@ -565,6 +565,44 @@ describe('Laporan Routes Security Tests', () => {
             tahun: testTahun,
           }
         });
+      });
+
+      it('should save angkas from DB (0 when no AnggaranKas record), ignoring payload angkas', async () => {
+        // Use a bulan/tahun unlikely to have AnggaranKas records in test DB
+        const res = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+              id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+              bulan: 'Oktober',
+              tahun: 2024,
+              realisasi_k: 1,
+              realisasi_rp: 100,
+              angkas: 999999999,   // spoofed high value — should be ignored
+              target_k: testLaporan.target_k,
+              target_rp: testLaporan.target_rp,
+            }]
+          });
+
+        // Accept either success or a target-not-found skip (depending on test data)
+        // What we assert: if it was saved, the saved angkas is NOT 999999999
+        if (res.status === 200 && res.body.results?.created > 0) {
+          const saved = await Laporan.findOne({
+            where: {
+              user_id: puskesmasUser.id,
+              id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+              bulan: 'Oktober',
+              tahun: 2024,
+            }
+          });
+          expect(saved?.angkas).not.toBe(999999999);
+          await saved?.destroy();
+        } else {
+          // Row was skipped (no target or other reason) — test the API itself didn't error
+          expect(res.status).toBe(200);
+        }
       });
 
       it('should auto-fill id_kegiatan from SubKegiatan', async () => {

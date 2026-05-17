@@ -232,7 +232,7 @@ export class LaporanService {
         });
 
         for (const rec of angkasRecords) {
-          const key = `${rec.user_id}_${rec.id_sub_kegiatan}_${rec.id_sumber_anggaran}_${rec.bulan}_${rec.tahun}`;
+          const key = `${rec.id_sub_kegiatan}_${rec.id_sumber_anggaran}_${rec.bulan}_${rec.tahun}`;
           angkasMap.set(key, (angkasMap.get(key) || 0) + Number(rec.nilai));
         }
       }
@@ -258,10 +258,16 @@ export class LaporanService {
             continue;
           }
 
-          const bulanNum = BULAN_MAP[data.bulan] ?? 0;
-          const angkasKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${bulanNum}_${data.tahun}`;
+          const bulanNum = BULAN_MAP[data.bulan];
+          if (bulanNum === undefined) {
+            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Nama bulan tidak valid: "${data.bulan}"`);
+            results.skipped++;
+            continue;
+          }
+          const angkasKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${bulanNum}_${data.tahun}`;
           const angkasFromDB = angkasMap.get(angkasKey) ?? 0;
 
+          // angkasFromDB = 0 means no AnggaranKas record exists — no ceiling applied (admin hasn't uploaded PDF yet)
           if (angkasFromDB > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > angkasFromDB) {
             results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi angkas (Rp ${angkasFromDB.toLocaleString('id-ID')})`);
             results.skipped++;

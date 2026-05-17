@@ -1,17 +1,20 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
+import User from '../models/User';
+import { authenticate } from '../middleware/auth';
+import { authorizeAdmin } from '../middleware/authorize';
 
 const router = Router();
 
-// Puskesmas routes placeholder
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    res.json({ message: 'Puskesmas list endpoint' });
-  } catch (error: any) {
-    console.error('Puskesmas list error:', error);
-    res.status(500).json({ 
-      message: 'Gagal memuat daftar puskesmas', 
-      error: process.env.NODE_ENV !== 'production' ? error.message : undefined
+    const puskesmas = await User.findAll({
+      where: { role: 'puskesmas' },
+      attributes: ['id', 'username', 'nama', 'nama_puskesmas', 'kecamatan', 'wilayah'],
+      order: [['nama_puskesmas', 'ASC']],
     });
+    return res.json(puskesmas);
+  } catch (error) {
+    return next(error);
   }
 });
 

@@ -375,7 +375,8 @@ export class LaporanService {
       }
     }
 
-    await laporan.update(data);
+    const { status: _status, ...safeData } = data;
+    await laporan.update(safeData);
     return laporan;
   }
 

@@ -8,3 +8,12 @@ export const rateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: config.env === 'development' ? 1000 : 10,
+  message: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? 'unknown',
+});

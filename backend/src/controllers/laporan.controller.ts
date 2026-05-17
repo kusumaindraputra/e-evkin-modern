@@ -26,7 +26,7 @@ export class LaporanController {
                 ...(req.user?.role === 'admin' && req.query.user_id ? { user_id: req.query.user_id as string } : {})
             });
 
-            res.json({
+            return void res.json({
                 data: result.rows,
                 pagination: {
                     total: result.count,
@@ -37,7 +37,7 @@ export class LaporanController {
             });
         } catch (error: any) {
             console.error('Error fetching laporan:', error);
-            res.status(500).json({ success: false, error: 'Gagal mengambil data laporan' });
+            return void res.status(500).json({ success: false, error: 'Gagal mengambil data laporan' });
         }
     }
 
@@ -48,14 +48,14 @@ export class LaporanController {
                 return;
             }
             const laporan = await LaporanService.findById(req.params.id, req.user.id, req.user.role);
-            res.json(laporan);
+            return void res.json(laporan);
         } catch (error: any) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan tidak ditemukan' });
+                return void res.status(404).json({ error: 'Laporan tidak ditemukan' });
             } else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Akses ditolak' });
+                return void res.status(403).json({ error: 'Akses ditolak' });
             } else {
-                res.status(500).json({ success: false, error: 'Gagal mengambil laporan' });
+                return void res.status(500).json({ success: false, error: 'Gagal mengambil laporan' });
             }
         }
     }
@@ -78,7 +78,7 @@ export class LaporanController {
 
             const result = await LaporanService.bulkUpsert(req.body.laporanArray, req.user.id, req.user.role);
             invalidateDashboardCaches();
-            res.status(200).json({
+            return void res.status(200).json({
                 success: true,
                 message: `Bulk upsert completed: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped`,
                 results: result,
@@ -86,7 +86,7 @@ export class LaporanController {
         } catch (error: any) {
             const isValidation = error.message.includes('laporanArray');
             console.error('Bulk upsert error:', error);
-            res.status(isValidation ? 400 : 500).json({
+            return void res.status(isValidation ? 400 : 500).json({
                 success: false,
                 error: isValidation ? error.message : 'Gagal menyimpan laporan',
             });
@@ -107,17 +107,17 @@ export class LaporanController {
                 data: req.body
             });
             invalidateDashboardCaches();
-            res.json(result);
+            return void res.json(result);
         } catch (error: any) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan tidak ditemukan' });
+                return void res.status(404).json({ error: 'Laporan tidak ditemukan' });
             } else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Akses ditolak' });
+                return void res.status(403).json({ error: 'Akses ditolak' });
             } else if (error.message.includes('Validation') || error.message.includes('Target')) {
-                res.status(400).json({ error: 'Validasi gagal', message: error.message });
+                return void res.status(400).json({ error: 'Validasi gagal', message: error.message });
             } else {
                 console.error('Update laporan error:', error);
-                res.status(500).json({ success: false, error: 'Gagal mengupdate laporan' });
+                return void res.status(500).json({ success: false, error: 'Gagal mengupdate laporan' });
             }
         }
     }
@@ -131,15 +131,15 @@ export class LaporanController {
 
             await LaporanService.delete(req.params.id, req.user.id, req.user.role);
             invalidateDashboardCaches();
-            res.json({ message: 'Laporan deleted successfully' });
+            return void res.json({ message: 'Laporan deleted successfully' });
         } catch (error: any) {
             if (error.message.includes('not found')) {
-                res.status(404).json({ error: 'Laporan tidak ditemukan' });
+                return void res.status(404).json({ error: 'Laporan tidak ditemukan' });
             } else if (error.message.includes('Forbidden')) {
-                res.status(403).json({ error: 'Akses ditolak' });
+                return void res.status(403).json({ error: 'Akses ditolak' });
             } else {
                 console.error('Delete laporan error:', error);
-                res.status(500).json({ success: false, error: 'Gagal menghapus laporan' });
+                return void res.status(500).json({ success: false, error: 'Gagal menghapus laporan' });
             }
         }
     }
@@ -159,15 +159,15 @@ export class LaporanController {
 
             const count = await LaporanService.submit(bulan, tahun, req.user.id, req.user.role, user_id);
             invalidateDashboardCaches();
-            res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
+            return void res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
         } catch (error: any) {
             if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id') || error.message.includes('realisasi anggaran')) {
-                res.status(400).json({ error: 'Validasi gagal', message: error.message });
+                return void res.status(400).json({ error: 'Validasi gagal', message: error.message });
             } else if (error.message.includes('Tidak ada laporan')) {
-                res.status(404).json({ error: 'Tidak ada laporan ditemukan', message: error.message });
+                return void res.status(404).json({ error: 'Tidak ada laporan ditemukan', message: error.message });
             } else {
                 console.error('Submit laporan error:', error);
-                res.status(500).json({ success: false, error: 'Gagal mengirim laporan' });
+                return void res.status(500).json({ success: false, error: 'Gagal mengirim laporan' });
             }
         }
     }

@@ -86,6 +86,7 @@ export const aggregateLaporanData = async (): Promise<LaporanAnalysis> => {
         bulan: currentMonth,
         tahun: currentYear,
       },
+      limit: 1000,
       include: [
         {
           model: SubKegiatan,

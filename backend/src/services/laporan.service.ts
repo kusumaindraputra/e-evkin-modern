@@ -17,7 +17,7 @@ interface CreateLaporanParams {
   realisasi_k?: number;
   realisasi_rp?: number | null;
   angkas?: number;
-  status?: any;
+  status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak' | 'tersimpan';
   [key: string]: any;
 }
 
@@ -281,7 +281,7 @@ export class LaporanService {
             id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
             id_satuan: data.id_satuan || target.id_satuan,
             angkas: angkasFromDB,   // always from DB, not payload
-            status: 'tersimpan' as any,
+            status: 'tersimpan' as const,
           };
 
           if (data.id) {
@@ -375,7 +375,8 @@ export class LaporanService {
       }
     }
 
-    await laporan.update(data);
+    const { status: _status, ...safeData } = data;
+    await laporan.update(safeData);
     return laporan;
   }
 
@@ -399,7 +400,7 @@ export class LaporanService {
     const userId = requesterRole === 'puskesmas' ? requesterId : userIdParam;
 
     if (!userId) {
-      throw new Error('user_id is required');
+      throw new Error('Missing user_id for admin submit');
     }
 
     // Validate data completeness before submit

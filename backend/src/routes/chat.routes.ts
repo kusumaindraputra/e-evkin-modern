@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
 import { getAIInsights, getSuggestedQuestions, aggregateLaporanData } from '../services/aiService';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -14,9 +15,16 @@ router.post('/chat', authenticate, authorizeAdmin, async (req: Request, res: Res
     const { question } = req.body;
 
     if (!question || question.trim().length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Question is required',
         message: 'Silakan masukkan pertanyaan untuk AI'
+      });
+    }
+
+    if (question.length > 2000) {
+      return res.status(400).json({
+        error: 'Question too long',
+        message: 'Pertanyaan maksimal 2000 karakter'
       });
     }
 
@@ -29,7 +37,7 @@ router.post('/chat', authenticate, authorizeAdmin, async (req: Request, res: Res
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Error in chat endpoint:', error);
+    logger.error('Error in chat endpoint:', error);
     return res.status(500).json({
       error: 'Failed to get AI insights',
       message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
@@ -46,7 +54,7 @@ router.get('/suggested-questions', authenticate, authorizeAdmin, async (req: Req
     const questions = getSuggestedQuestions();
     res.json({ questions });
   } catch (error: any) {
-    console.error('Error getting suggested questions:', error);
+    logger.error('Error getting suggested questions:', error);
     res.status(500).json({
       error: 'Failed to get suggested questions',
       message: process.env.NODE_ENV !== 'production' ? error.message : undefined,
@@ -63,7 +71,7 @@ router.get('/context', authenticate, authorizeAdmin, async (req: Request, res: R
     const context = await aggregateLaporanData();
     res.json(context);
   } catch (error: any) {
-    console.error('Error getting context:', error);
+    logger.error('Error getting context:', error);
     res.status(500).json({
       error: 'Failed to get context',
       message: process.env.NODE_ENV !== 'production' ? error.message : undefined,

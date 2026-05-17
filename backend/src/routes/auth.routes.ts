@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { config } from '../config';
+import { loginRateLimiter } from '../middleware/rateLimiter';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -41,7 +43,7 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 

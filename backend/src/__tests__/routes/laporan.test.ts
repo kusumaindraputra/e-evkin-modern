@@ -402,11 +402,10 @@ describe('Laporan Routes Security Tests', () => {
         .set('Authorization', `Bearer ${puskesmasToken}`)
         .send({ bulan: 'Desember', tahun: 2025 });
 
-      // Must not be rejected for realisasi_rp reason
+      // Should not be rejected due to realisasi_rp
+      expect(res.body.message ?? '').not.toMatch(/realisasi anggaran/i);
+      // Should not be a server error
       expect(res.status).not.toBe(500);
-      if (res.status === 400) {
-        expect(res.body.message).not.toMatch(/realisasi anggaran/i);
-      }
 
       // Cleanup
       await Laporan.update(

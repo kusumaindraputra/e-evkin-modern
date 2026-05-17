@@ -9,7 +9,7 @@ interface CreateLaporanParams {
   tahun: number;
   bulan: string;
   realisasi_k?: number;
-  realisasi_rp?: number;
+  realisasi_rp?: number | null;
   angkas?: number;
   status?: any;
   [key: string]: any;

@@ -403,6 +403,7 @@ describe('Laporan Routes Security Tests', () => {
         .send({ bulan: 'Desember', tahun: 2025 });
 
       // Must not be rejected for realisasi_rp reason
+      expect(res.status).not.toBe(500);
       if (res.status === 400) {
         expect(res.body.message).not.toMatch(/realisasi anggaran/i);
       }

@@ -5,10 +5,10 @@
 
 .evkin-empty-icon {
   font-size: 48px;
-  color: var(--border-color);
+  color: var(--c-border);
 }
 
 .evkin-empty-text {
   font-size: var(--text-md);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
 }

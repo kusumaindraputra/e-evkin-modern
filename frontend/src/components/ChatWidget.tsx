@@ -114,7 +114,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
         size="small"
         title={
           <Space size="small">
-            <RobotOutlined style={{ color: 'var(--color-primary)', fontSize: 14 }} />
+            <RobotOutlined style={{ color: 'var(--c-prim)', fontSize: 14 }} />
             <span style={{ fontSize: 13 }}>Asisten Analis</span>
           </Space>
         }
@@ -152,8 +152,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                     marginBottom: 6,
                     padding: '6px 8px',
                     borderRadius: 4,
-                    backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--bg-layout)',
-                    borderLeft: `2px solid ${msg.type === 'user' ? 'var(--color-primary)' : 'var(--color-success)'}`,
+                    backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--c-bg)',
+                    borderLeft: `2px solid ${msg.type === 'user' ? 'var(--c-prim)' : 'var(--c-success)'}`,
                     fontSize: 12,
                   }}
                 >
@@ -193,7 +193,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
       className="chat-widget-full"
       title={
         <Space>
-          <RobotOutlined style={{ color: 'var(--color-primary)' }} />
+          <RobotOutlined style={{ color: 'var(--c-prim)' }} />
           <span>Asisten Analis Kinerja Puskesmas</span>
         </Space>
       }
@@ -212,7 +212,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
       >
         {messages.length === 0 ? (
           <div style={{ padding: '20px 0' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>
+            <p style={{ color: 'var(--c-txt-2)', fontSize: 13, marginBottom: 16 }}>
               Saya siap membantu menganalisis data kinerja Puskesmas. Pilih pertanyaan atau ketik langsung:
             </p>
             <Space direction="vertical" style={{ width: '100%' }}>
@@ -232,11 +232,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
                   marginBottom: 12,
                   padding: '10px 14px',
                   borderRadius: 6,
-                  backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--bg-layout)',
-                  borderLeft: `3px solid ${msg.type === 'user' ? 'var(--color-primary)' : 'var(--color-success)'}`,
+                  backgroundColor: msg.type === 'user' ? 'var(--bg-info-subtle)' : 'var(--c-bg)',
+                  borderLeft: `3px solid ${msg.type === 'user' ? 'var(--c-prim)' : 'var(--c-success)'}`,
                 }}
               >
-                <p style={{ margin: 0, marginBottom: 4, fontWeight: 500, fontSize: 12, color: 'var(--text-secondary)' }}>
+                <p style={{ margin: 0, marginBottom: 4, fontWeight: 500, fontSize: 12, color: 'var(--c-txt-2)' }}>
                   {msg.type === 'user' ? '👤 Pertanyaan' : '🤖 Analisis'}
                 </p>
                 {msg.type === 'assistant' ? (
@@ -249,7 +249,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ compact = false }) => {
             {loading && (
               <div style={{ textAlign: 'center', padding: 12 }}>
                 <Spin size="default" />
-                <p style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: 12 }}>Menganalisis data...</p>
+                <p style={{ marginTop: 8, color: 'var(--c-txt-2)', fontSize: 12 }}>Menganalisis data...</p>
               </div>
             )}
             <div ref={messagesEndRef} />

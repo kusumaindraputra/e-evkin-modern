@@ -712,7 +712,7 @@ export const AdminLaporanPage: React.FC = () => {
               value={overallPersentase}
               suffix="%"
               precision={2}
-              valueStyle={{ color: overallPersentase >= 70 ? 'var(--color-success)' : 'var(--color-error)' }}
+              valueStyle={{ color: overallPersentase >= 70 ? 'var(--c-success)' : 'var(--c-err)' }}
             />
           </Card>
         </Col>

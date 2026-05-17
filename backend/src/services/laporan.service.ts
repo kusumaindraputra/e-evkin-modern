@@ -399,7 +399,7 @@ export class LaporanService {
     const userId = requesterRole === 'puskesmas' ? requesterId : userIdParam;
 
     if (!userId) {
-      throw new Error('user_id is required');
+      throw new Error('Missing user_id for admin submit');
     }
 
     // Validate data completeness before submit

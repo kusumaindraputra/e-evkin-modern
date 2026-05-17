@@ -353,6 +353,67 @@ describe('Laporan Routes Security Tests', () => {
       // The endpoint should ignore user_id from body for puskesmas
       expect([200, 400, 404]).toContain(response.status);
     });
+
+    it('should reject submit when any laporan has null realisasi_rp', async () => {
+      const laporanNullRp = await Laporan.create({
+        user_id: puskesmasUser.id,
+        id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+        id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+        id_kegiatan: testLaporan.id_kegiatan,
+        id_satuan: testLaporan.id_satuan,
+        tahun: 2025,
+        bulan: 'November',
+        target_k: 10,
+        target_rp: 1000000,
+        realisasi_k: 5,
+        realisasi_rp: null,
+        status: 'tersimpan',
+      } as any);
+
+      const res = await request(app)
+        .post('/api/laporan/submit')
+        .set('Authorization', `Bearer ${puskesmasToken}`)
+        .send({ bulan: 'November', tahun: 2025 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/realisasi anggaran/i);
+
+      await laporanNullRp.destroy();
+    });
+
+    it('should allow submit when realisasi_rp is 0', async () => {
+      const laporan0Rp = await Laporan.create({
+        user_id: puskesmasUser.id,
+        id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+        id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+        id_kegiatan: testLaporan.id_kegiatan,
+        id_satuan: testLaporan.id_satuan,
+        tahun: 2025,
+        bulan: 'Desember',
+        target_k: 10,
+        target_rp: 1000000,
+        realisasi_k: 0,
+        realisasi_rp: 0,
+        status: 'tersimpan',
+      } as any);
+
+      const res = await request(app)
+        .post('/api/laporan/submit')
+        .set('Authorization', `Bearer ${puskesmasToken}`)
+        .send({ bulan: 'Desember', tahun: 2025 });
+
+      // Must not be rejected for realisasi_rp reason
+      if (res.status === 400) {
+        expect(res.body.message).not.toMatch(/realisasi anggaran/i);
+      }
+
+      // Cleanup
+      await Laporan.update(
+        { status: 'tersimpan' },
+        { where: { user_id: puskesmasUser.id, bulan: 'Desember', tahun: 2025 } }
+      );
+      await laporan0Rp.destroy();
+    });
   });
 
   describe('Validation Tests - Realisasi vs Target', () => {

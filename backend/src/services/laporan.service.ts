@@ -389,6 +389,15 @@ export class LaporanService {
       throw new Error(`${incomplete.length} laporan belum memiliki data realisasi kinerja. Lengkapi data sebelum mengirim.`);
     }
 
+    const incompleteRp = pendingLaporan.filter(l => {
+      const data = l.get({ plain: true }) as any;
+      return data.realisasi_rp === null || data.realisasi_rp === undefined;
+    });
+
+    if (incompleteRp.length > 0) {
+      throw new Error(`${incompleteRp.length} laporan belum memiliki data realisasi anggaran (Rp). Upload LRA terlebih dahulu sebelum mengirim.`);
+    }
+
     const [updatedCount] = await Laporan.update(
       { status: 'terkirim' },
       {

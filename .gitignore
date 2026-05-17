@@ -19,7 +19,6 @@ pnpm-debug.log*
 # Keep example and template files
 !.env.example
 !.env.staging
-!.env.production
 
 # IDE
 .vscode/*

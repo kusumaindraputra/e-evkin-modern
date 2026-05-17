@@ -1,0 +1,83 @@
+.uc {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  background: var(--c-surf);
+  box-shadow: var(--s-sm);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.uc-hd {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.uc-hd:hover {
+  background: var(--c-hover);
+}
+
+.uc-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--c-prim);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.uc-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-txt);
+  flex: 1;
+}
+
+.uc-chevron {
+  font-size: 18px;
+  color: var(--c-txt-2);
+  transition: transform var(--transition-fast);
+  display: inline-block;
+  margin-left: auto;
+}
+
+.uc-chevron--open {
+  transform: rotate(180deg);
+}
+
+.uc-body {
+  padding: 20px;
+  border-top: 1px solid var(--c-border);
+}
+
+.uc-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .uc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.uc-result {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

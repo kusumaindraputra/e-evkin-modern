@@ -42,7 +42,12 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
     }
     if (f.size > maxSize) {
       setState('fail');
-      setErrorMsg(`Ukuran file melebihi batas maksimum`);
+      const sizeLabel = maxSize >= 1024 * 1024
+        ? `${Math.round(maxSize / 1024 / 1024)} MB`
+        : maxSize >= 1024
+          ? `${Math.round(maxSize / 1024)} KB`
+          : `${maxSize} B`;
+      setErrorMsg(`Ukuran file melebihi batas ${sizeLabel}`);
       return;
     }
     setFile(f);
@@ -68,7 +73,7 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
 
     onDrop: useCallback((e: React.DragEvent) => {
       e.preventDefault();
-      const f = (e.dataTransfer as any)?.files?.[0];
+      const f = e.dataTransfer?.files?.[0];
       if (f) acceptFile(f);
     }, [acceptFile]),
 

@@ -100,6 +100,6 @@ describe('useDropZone', () => {
     const bigFile = new File([new ArrayBuffer(200)], 'big.xlsx');
     act(() => result.current.handlers.onDrop(dragEvent([bigFile])));
     expect(result.current.state).toBe('fail');
-    expect(result.current.errorMsg).toBeTruthy();
+    expect(result.current.errorMsg).toContain('100 B');
   });
 });

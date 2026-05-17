@@ -14,9 +14,16 @@ router.post('/chat', authenticate, authorizeAdmin, async (req: Request, res: Res
     const { question } = req.body;
 
     if (!question || question.trim().length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Question is required',
         message: 'Silakan masukkan pertanyaan untuk AI'
+      });
+    }
+
+    if (question.length > 2000) {
+      return res.status(400).json({
+        error: 'Question too long',
+        message: 'Pertanyaan maksimal 2000 karakter'
       });
     }
 

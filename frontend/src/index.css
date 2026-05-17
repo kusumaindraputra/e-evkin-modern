@@ -21,7 +21,7 @@
   --c-success: #2E8B57;
   --c-warn:    #E8961E;
   --c-err:     #CF1322;
-  --sider:     #094D7A;
+  --c-sider:   #094D7A;
 
   /* ── Text ─────────────────────────────────────────── */
   --c-txt:   #1F2937;
@@ -86,6 +86,7 @@
   --breakpoint-mobile: 768px;
 }
 
+/* ── Dark mode overrides ──────────────────────────────── */
 [data-theme="dark"] {
   color-scheme: dark;
 
@@ -96,7 +97,7 @@
   --c-success: #4ADE80;
   --c-warn:    #FBBF24;
   --c-err:     #FB7185;
-  --sider:     #0A1628;
+  --c-sider:   #0A1628;
 
   --c-txt:   #E5E7EB;
   --c-txt-2: #9CA3AF;
@@ -132,6 +133,8 @@
   --separator:        rgba(255, 255, 255, 0.06);
   --separator-dashed: rgba(255, 255, 255, 0.08);
   --code-bg:          #1E293B;
+
+  /* Shape, Motion, Type scale — inherit from :root */
 }
 
 /* Smooth theme transition */

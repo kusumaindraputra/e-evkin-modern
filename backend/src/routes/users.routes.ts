@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import bcrypt from 'bcrypt';
 import User from '../models/User';
 import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
@@ -69,13 +68,10 @@ router.post('/puskesmas', authenticate, authorizeAdmin, async (req: Request, res
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
+    // Create user (model beforeCreate hook handles password hashing)
     const newUser = await User.create({
       username,
-      password: hashedPassword,
+      password,
       nama,
       role: 'puskesmas',
       kode_puskesmas: kode_puskesmas || null,
@@ -135,9 +131,9 @@ router.put('/puskesmas/:id', authenticate, authorizeAdmin, async (req: Request, 
       wilayah: wilayah !== undefined ? wilayah : user.wilayah,
     };
 
-    // Hash new password if provided
+    // Set plain-text password — model beforeUpdate hook handles hashing
     if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
+      updateData.password = password;
     }
 
     await user.update(updateData);

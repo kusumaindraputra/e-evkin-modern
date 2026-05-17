@@ -11,13 +11,7 @@ router.get('/', authenticate, LaporanController.findAll);
 // Get laporan by ID
 router.get('/:id', authenticate, LaporanController.findById);
 
-// Create new laporan
-router.post('/', authenticate, checkEditPermission('laporan'), LaporanController.create);
-
-// Bulk create laporan
-router.post('/bulk', authenticate, checkEditPermission('laporan'), LaporanController.bulkCreate);
-
-// Bulk upsert laporan (optimized)
+// Bulk upsert laporan (optimized) — sole write path for puskesmas
 router.post('/bulk-upsert', authenticate, checkEditPermission('laporan'), LaporanController.bulkUpsert);
 
 // Update laporan

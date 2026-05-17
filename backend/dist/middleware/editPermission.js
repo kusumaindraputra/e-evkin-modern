@@ -44,14 +44,16 @@ const checkEditPermission = (scope) => {
             }
             // Get permission config: user-specific takes absolute priority over global
             // Single query fetches both user-specific and global, ordered so user-specific comes first
-            const bulanCondition = bulan ? { [sequelize_1.Op.or]: [bulan, null] } : null;
+            const whereClause = {
+                scope,
+                tahun,
+                user_id: { [sequelize_1.Op.or]: [user.id, null] },
+            };
+            if (bulan) {
+                whereClause.bulan = { [sequelize_1.Op.or]: [bulan, null] };
+            }
             const permissions = await PuskesmasEditPermission_1.default.findAll({
-                where: {
-                    scope,
-                    bulan: bulanCondition,
-                    tahun,
-                    user_id: { [sequelize_1.Op.or]: [user.id, null] },
-                },
+                where: whereClause,
                 order: [
                     // User-specific first (non-null user_id), then global (null)
                     [PuskesmasEditPermission_1.default.sequelize.literal('CASE WHEN user_id IS NOT NULL THEN 0 ELSE 1 END'), 'ASC'],

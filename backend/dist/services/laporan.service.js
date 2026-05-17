@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LaporanService = void 0;
 const sequelize_1 = require("sequelize");
 const models_1 = require("../models");
+const lraParserService_1 = require("./lraParserService");
 class LaporanService {
     static async findAll(params) {
         const { user_id, role, bulan, tahun, status, page = 1, limit = 50 } = params;
@@ -21,7 +22,7 @@ class LaporanService {
             where.tahun = tahun;
         if (status)
             where.status = status;
-        return models_1.Laporan.findAndCountAll({
+        const result = await models_1.Laporan.findAndCountAll({
             where,
             limit,
             offset,
@@ -54,6 +55,20 @@ class LaporanService {
             ],
             order: [['created_at', 'DESC']]
         });
+        // Enrich with LRA realisasi if querying for a specific puskesmas + bulan + tahun
+        if (user_id && bulan && tahun) {
+            const lraMap = await (0, lraParserService_1.getLraRealisasiMap)(user_id, bulan, tahun);
+            const enrichedRows = result.rows.map(lap => {
+                const key = `${lap.id_sub_kegiatan}_${lap.id_sumber_anggaran}`;
+                const lraRp = lraMap.get(key);
+                const json = lap.toJSON();
+                json.realisasi_rp_lra = lraRp ?? 0;
+                json.lra_available = lraRp !== undefined;
+                return json;
+            });
+            return { count: result.count, rows: enrichedRows };
+        }
+        return result;
     }
     static async findById(id, requesterId, requesterRole) {
         const laporan = await models_1.Laporan.findByPk(id, {
@@ -363,6 +378,9 @@ class LaporanService {
             throw new Error('Laporan not found');
         if (requesterRole === 'puskesmas' && laporan.user_id !== requesterId) {
             throw new Error('Forbidden: Anda tidak bisa menghapus laporan puskesmas lain');
+        }
+        if (requesterRole === 'puskesmas' && laporan.status === 'terkirim') {
+            throw new Error('Forbidden: Laporan yang sudah terkirim tidak bisa dihapus');
         }
         await laporan.destroy();
         return true;

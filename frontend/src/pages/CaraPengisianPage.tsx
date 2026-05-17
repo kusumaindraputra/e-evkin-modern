@@ -18,9 +18,9 @@ const { Panel } = Collapse;
 export const CaraPengisianPage: React.FC = () => {
   return (
     <div>
-      <Title level={3}>Panduan Pengisian E-EVKIN</Title>
+      <Title level={3}>Panduan Pengisian e-evkin</Title>
       <Paragraph type="secondary">
-        Panduan lengkap penggunaan sistem E-EVKIN untuk pelaporan evaluasi kinerja puskesmas.
+        Panduan lengkap penggunaan sistem e-evkin untuk pelaporan evaluasi kinerja puskesmas.
       </Paragraph>
 
       <Alert

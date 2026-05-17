@@ -11,6 +11,7 @@ const Kegiatan_1 = __importDefault(require("../models/Kegiatan"));
 const auth_1 = require("../middleware/auth");
 const authorize_1 = require("../middleware/authorize");
 const PuskesmasEditPermission_1 = __importDefault(require("../models/PuskesmasEditPermission"));
+const database_1 = __importDefault(require("../config/database"));
 const router = (0, express_1.Router)();
 // GET all sub kegiatan assigned to a specific puskesmas
 router.get('/puskesmas/:userId/sub-kegiatan', auth_1.authenticate, async (req, res) => {
@@ -74,20 +75,23 @@ router.post('/puskesmas/:userId/sub-kegiatan', auth_1.authenticate, authorize_1.
         if (!puskesmas) {
             return res.status(404).json({ message: 'Puskesmas tidak ditemukan' });
         }
-        // Delete existing assignments for this puskesmas
-        await PuskesmasSubKegiatan_1.default.destroy({
-            where: { user_id: userId },
-        });
-        // Create new assignments
-        if (subKegiatanIds.length > 0) {
-            const assignments = subKegiatanIds.map((id_sub_kegiatan) => ({
-                user_id: userId, // UUID string, not number
-                id_sub_kegiatan: Number(id_sub_kegiatan),
-            }));
-            await PuskesmasSubKegiatan_1.default.bulkCreate(assignments, {
-                ignoreDuplicates: true,
+        // Delete and recreate assignments atomically
+        await database_1.default.transaction(async (t) => {
+            await PuskesmasSubKegiatan_1.default.destroy({
+                where: { user_id: userId },
+                transaction: t,
             });
-        }
+            if (subKegiatanIds.length > 0) {
+                const assignments = subKegiatanIds.map((id_sub_kegiatan) => ({
+                    user_id: userId,
+                    id_sub_kegiatan: Number(id_sub_kegiatan),
+                }));
+                await PuskesmasSubKegiatan_1.default.bulkCreate(assignments, {
+                    ignoreDuplicates: true,
+                    transaction: t,
+                });
+            }
+        });
         // Return updated assignments
         const updatedAssignments = await PuskesmasSubKegiatan_1.default.findAll({
             where: { user_id: userId },

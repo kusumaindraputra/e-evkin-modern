@@ -9,7 +9,6 @@ import {
 import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
-import ChatWidget from '../components/ChatWidget';
 import { formatCurrencyWithPrefix, formatCurrencyAbbreviated } from '../utils/formatters';
 import { modalWidths } from '../theme';
 import { getChartConfig, abbreviateMonth } from '../utils/chartConfig';
@@ -1032,13 +1031,6 @@ export const DashboardPage: React.FC = () => {
             </Card>
           </Col>
         )}
-      </Row>
-
-      {/* AI Chat Widget - Di bagian paling bawah */}
-      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-        <Col xs={24}>
-          <ChatWidget compact={false} />
-        </Col>
       </Row>
 
       {/* Modal Detail Puskesmas Melaporkan */}

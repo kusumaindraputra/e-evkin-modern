@@ -60,65 +60,6 @@ export class LaporanController {
         }
     }
 
-    static async create(req: Request, res: Response): Promise<void> {
-        try {
-            if (!req.user) {
-                res.status(401).json({ error: 'Unauthorized' });
-                return;
-            }
-
-            const payload = { ...req.body };
-            // Security: Puskesmas creates for themselves
-            if (req.user.role === 'puskesmas') {
-                payload.user_id = req.user.id;
-            }
-
-            const result = await LaporanService.create(payload);
-            invalidateDashboardCaches();
-            res.status(201).json(result);
-        } catch (error: any) {
-            if (error.message.includes('Target belum diset') || error.message.includes('melebihi target')) {
-                res.status(400).json({ error: 'Validasi gagal', message: error.message });
-            } else {
-                console.error('Create laporan error:', error);
-                res.status(500).json({ success: false, error: 'Gagal membuat laporan' });
-            }
-        }
-    }
-
-    static async bulkCreate(req: Request, res: Response): Promise<void> {
-        try {
-            if (!req.user) {
-                res.status(401).json({ error: 'Unauthorized' });
-                return;
-            }
-
-            if (!Array.isArray(req.body.laporanArray) || req.body.laporanArray.length === 0) {
-                res.status(400).json({ success: false, error: 'laporanArray harus berupa array dan tidak boleh kosong' });
-                return;
-            }
-            if (req.body.laporanArray.length > MAX_BULK_SIZE) {
-                res.status(400).json({ success: false, error: `Maksimal ${MAX_BULK_SIZE} item per batch` });
-                return;
-            }
-
-            const result = await LaporanService.bulkCreate(req.body.laporanArray, req.user.id, req.user.role);
-            invalidateDashboardCaches();
-            res.status(201).json({
-                success: true,
-                count: result.length,
-                data: result,
-            });
-        } catch (error: any) {
-            const isValidation = error.message.includes('laporanArray');
-            console.error('Bulk create error:', error);
-            res.status(isValidation ? 400 : 500).json({
-                success: false,
-                error: isValidation ? error.message : 'Gagal menyimpan laporan',
-            });
-        }
-    }
-
     static async bulkUpsert(req: Request, res: Response): Promise<void> {
         try {
             if (!req.user) {
@@ -220,7 +161,7 @@ export class LaporanController {
             invalidateDashboardCaches();
             res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
         } catch (error: any) {
-            if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id')) {
+            if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id') || error.message.includes('realisasi anggaran')) {
                 res.status(400).json({ error: 'Validasi gagal', message: error.message });
             } else if (error.message.includes('Tidak ada laporan')) {
                 res.status(404).json({ error: 'Tidak ada laporan ditemukan', message: error.message });

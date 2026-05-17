@@ -85,6 +85,12 @@ export const NAV_ITEMS: NavItem[] = [
         roles: ['admin'],
     },
     {
+        key: '/admin/lra-upload',
+        icon: <UploadOutlined />,
+        label: 'Upload LRA',
+        roles: ['admin'],
+    },
+    {
         key: '/admin/master-data',
         icon: <SettingOutlined />,
         label: 'Master Data',

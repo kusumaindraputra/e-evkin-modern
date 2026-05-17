@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../app';
-import { Laporan, User, SubKegiatanTarget, SubKegiatan } from '../../models';
+import { Laporan, User, SubKegiatanTarget, SubKegiatan, AnggaranKas } from '../../models';
 import PuskesmasEditPermission from '../../models/PuskesmasEditPermission';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config';
@@ -201,70 +201,6 @@ describe('Laporan Routes Security Tests', () => {
     });
   });
 
-  describe('POST /api/laporan - Create Laporan', () => {
-    const newLaporanData = {
-      id_kegiatan: 1,
-      id_sub_kegiatan: 1,
-      id_sumber_anggaran: 1,
-      id_satuan: 1,
-      target_k: 100,
-      angkas: 1000000,
-      target_rp: 1000000,
-      realisasi_k: 50,
-      realisasi_rp: 500000,
-      realisasi_fisik: 75,
-      permasalahan: 'Test permasalahan',
-      upaya: 'Test upaya',
-      bulan: 'Januari',
-      tahun: 2025,
-    };
-
-    it('should return 401 without token', async () => {
-      const response = await request(app)
-        .post('/api/laporan')
-        .send(newLaporanData);
-
-      expect(response.status).toBe(401);
-    });
-
-    it('should create laporan with auto user_id for puskesmas', async () => {
-      const response = await request(app)
-        .post('/api/laporan')
-        .set('Authorization', `Bearer ${puskesmasToken}`)
-        .send(newLaporanData);
-
-      expect(response.status).toBe(201);
-      expect(response.body.user_id).toBe(puskesmasUser.id);
-
-      // Cleanup
-      if (response.body.id) {
-        await Laporan.destroy({ where: { id: response.body.id } });
-      }
-    });
-
-    it('should not allow puskesmas to create laporan for other user', async () => {
-      const dataWithOtherUser = {
-        ...newLaporanData,
-        user_id: otherPuskesmasUser.id
-      };
-
-      const response = await request(app)
-        .post('/api/laporan')
-        .set('Authorization', `Bearer ${puskesmasToken}`)
-        .send(dataWithOtherUser);
-
-      expect(response.status).toBe(201);
-      // user_id should be overridden to authenticated user
-      expect(response.body.user_id).toBe(puskesmasUser.id);
-      expect(response.body.user_id).not.toBe(otherPuskesmasUser.id);
-
-      // Cleanup
-      if (response.body.id) {
-        await Laporan.destroy({ where: { id: response.body.id } });
-      }
-    });
-  });
-
   describe('PUT /api/laporan/:id - Update Laporan', () => {
     it('should return 401 without token', async () => {
       const response = await request(app)
@@ -417,6 +353,73 @@ describe('Laporan Routes Security Tests', () => {
       // The endpoint should ignore user_id from body for puskesmas
       expect([200, 400, 404]).toContain(response.status);
     });
+
+    it('should reject submit when any laporan has null realisasi_rp', async () => {
+      const laporanNullRp = await Laporan.create({
+        user_id: puskesmasUser.id,
+        id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+        id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+        id_kegiatan: testLaporan.id_kegiatan,
+        id_satuan: testLaporan.id_satuan,
+        tahun: 2025,
+        bulan: 'November',
+        target_k: 10,
+        target_rp: 1000000,
+        realisasi_k: 5,
+        realisasi_rp: null,
+        angkas: 0,
+        permasalahan: '',
+        upaya: '',
+        status: 'tersimpan',
+      } as any);
+
+      const res = await request(app)
+        .post('/api/laporan/submit')
+        .set('Authorization', `Bearer ${puskesmasToken}`)
+        .send({ bulan: 'November', tahun: 2025 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/realisasi anggaran/i);
+
+      await laporanNullRp.destroy();
+    });
+
+    it('should allow submit when realisasi_rp is 0', async () => {
+      const laporan0Rp = await Laporan.create({
+        user_id: puskesmasUser.id,
+        id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+        id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+        id_kegiatan: testLaporan.id_kegiatan,
+        id_satuan: testLaporan.id_satuan,
+        tahun: 2025,
+        bulan: 'Desember',
+        target_k: 10,
+        target_rp: 1000000,
+        realisasi_k: 0,
+        realisasi_rp: 0,
+        angkas: 0,
+        permasalahan: '',
+        upaya: '',
+        status: 'tersimpan',
+      } as any);
+
+      const res = await request(app)
+        .post('/api/laporan/submit')
+        .set('Authorization', `Bearer ${puskesmasToken}`)
+        .send({ bulan: 'Desember', tahun: 2025 });
+
+      // Should not be rejected due to realisasi_rp
+      expect(res.body.message ?? '').not.toMatch(/realisasi anggaran/i);
+      // Should not be a server error
+      expect(res.status).not.toBe(500);
+
+      // Cleanup
+      await Laporan.update(
+        { status: 'tersimpan' },
+        { where: { user_id: puskesmasUser.id, bulan: 'Desember', tahun: 2025 } }
+      );
+      await laporan0Rp.destroy();
+    });
   });
 
   describe('Validation Tests - Realisasi vs Target', () => {
@@ -568,6 +571,44 @@ describe('Laporan Routes Security Tests', () => {
             tahun: testTahun,
           }
         });
+      });
+
+      it('should save angkas from DB (0 when no AnggaranKas record), ignoring payload angkas', async () => {
+        // Use a bulan/tahun unlikely to have AnggaranKas records in test DB
+        const res = await request(app)
+          .post('/api/laporan/bulk-upsert')
+          .set('Authorization', `Bearer ${puskesmasToken}`)
+          .send({
+            laporanArray: [{
+              id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+              id_sumber_anggaran: testLaporan.id_sumber_anggaran,
+              bulan: 'Oktober',
+              tahun: testTahun,
+              realisasi_k: 1,
+              realisasi_rp: 100,
+              angkas: 999999999,   // spoofed high value — should be ignored
+              target_k: testLaporan.target_k,
+              target_rp: testLaporan.target_rp,
+            }]
+          });
+
+        // Accept either success or a target-not-found skip (depending on test data)
+        // What we assert: if it was saved, the saved angkas is NOT 999999999
+        if (res.status === 200 && res.body.results?.created > 0) {
+          const saved = await Laporan.findOne({
+            where: {
+              user_id: puskesmasUser.id,
+              id_sub_kegiatan: testLaporan.id_sub_kegiatan,
+              bulan: 'Oktober',
+              tahun: testTahun,
+            }
+          });
+          expect(saved?.angkas).not.toBe(999999999);
+          await saved?.destroy();
+        } else {
+          // Row was skipped (no target or other reason) — test the API itself didn't error
+          expect(res.status).toBe(200);
+        }
       });
 
       it('should auto-fill id_kegiatan from SubKegiatan', async () => {

@@ -26,6 +26,8 @@ export interface LaporanRowData {
   laporan_id?: string;
   status?: string;
   isManualAngkas?: boolean;
+  realisasi_rp_lra?: number;
+  lra_available?: boolean;
 }
 
 interface LaporanInputCardProps {
@@ -208,20 +210,20 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
           <div className="data-row">
             <span className="data-label">Anggaran</span>
             <div className="data-input">
-              <InputNumber
-                value={row.realisasi_rp}
-                onChange={(v) => handleChange('realisasi_rp', v)}
-                min={0}
-                max={row.angkas || undefined}
-                step={1}
-                controls={false}
-                changeOnBlur={false}
-                formatter={numberFormatter}
-                parser={numberParser}
-                disabled={isDisabled}
-                placeholder="0"
-                size="small"
-              />
+              <div style={{ paddingTop: 2 }}>
+                <span style={{ fontWeight: 500 }}>
+                  Rp {formatNumber(row.realisasi_rp_lra ?? row.realisasi_rp ?? 0)}
+                </span>
+                {row.lra_available ? (
+                  <div style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 1 }}>
+                    Dari LRA
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
+                    LRA belum diupload
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

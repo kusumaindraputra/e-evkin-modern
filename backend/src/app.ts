@@ -22,11 +22,11 @@ import usersRoutes from './routes/users.routes';
 import reportRoutes from './routes/report.routes';
 import puskesmasConfigRoutes from './routes/puskesmas-config.routes';
 import subKegiatanSumberAnggaranRoutes from './routes/sub-kegiatan-sumber-anggaran.routes';
-import chatRoutes from './routes/chat.routes';
 import targetRoutes from './routes/target.routes';
 import targetUploadRoutes from './routes/target-upload.routes';
 import angkasRoutes from './routes/angkas.routes';
 import puskesmasDashboardRoutes from './routes/puskesmas-dashboard.routes';
+import lraRoutes from './routes/lra.routes';
 
 const app: Application = express();
 
@@ -110,10 +110,10 @@ app.use('/api/users', usersRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/puskesmas-config', puskesmasConfigRoutes);
 app.use('/api/sub-kegiatan-sumber-anggaran', subKegiatanSumberAnggaranRoutes);
-app.use('/api/admin', chatRoutes);
 app.use('/api/target', targetRoutes);
 app.use('/api/target', targetUploadRoutes);
 app.use('/api/angkas', angkasRoutes);
+app.use('/api/lra', lraRoutes);
 app.use('/api/puskesmas/dashboard', puskesmasDashboardRoutes);
 
 // 404 handler for unmatched routes

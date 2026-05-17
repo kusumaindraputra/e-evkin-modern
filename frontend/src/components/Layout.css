@@ -29,12 +29,20 @@
 
 /* ── Logo ── */
 .logo-container {
-  height: 64px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .logo-text {

@@ -28,8 +28,8 @@ interface LaporanFilterParams {
 }
 export declare class LaporanService {
     static findAll(params: LaporanFilterParams): Promise<{
-        rows: Laporan[];
         count: number;
+        rows: any[];
     }>;
     static findById(id: string, requesterId: string, requesterRole: string): Promise<Laporan>;
     static create(params: CreateLaporanParams): Promise<Laporan>;

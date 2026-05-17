@@ -13,7 +13,7 @@ const router = Router();
 // GET laporan aggregated by sub kegiatan (admin only)
 router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
-    const { bulan, tahun, id_sub_kegiatan, status, page, limit: limitParam } = req.query;
+    const { bulan, tahun, id_sub_kegiatan, page, limit: limitParam } = req.query;
 
     // Build where clause with validation
     const whereClause: any = {};
@@ -24,8 +24,6 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
 
     const parsedSubKegiatan = id_sub_kegiatan ? Number(id_sub_kegiatan) : undefined;
     if (parsedSubKegiatan && !isNaN(parsedSubKegiatan)) whereClause.id_sub_kegiatan = parsedSubKegiatan;
-
-    if (status) whereClause.status = status;
 
     // Pagination
     const parsedPage = page ? Math.max(1, parseInt(page as string)) : undefined;
@@ -41,7 +39,8 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
         [sequelize.fn('SUM', sequelize.col('target_k')), 'total_target_k'],
         [sequelize.fn('SUM', sequelize.col('target_rp')), 'total_target_rp'],
         [sequelize.fn('SUM', sequelize.col('realisasi_k')), 'total_realisasi_k'],
-        [sequelize.fn('SUM', sequelize.col('realisasi_rp')), 'total_realisasi_rp'],
+        [sequelize.literal(`SUM(CASE WHEN "Laporan"."realisasi_rp" IS NOT NULL THEN "Laporan"."realisasi_rp" ELSE 0 END)`), 'total_realisasi_rp'],
+        [sequelize.literal(`SUM(CASE WHEN "Laporan"."status" = 'terkirim' THEN COALESCE("Laporan"."realisasi_fisik", 0) ELSE 0 END)`), 'total_realisasi_fisik'],
         [sequelize.fn('SUM', sequelize.col('angkas')), 'total_angkas'],
       ],
       where: whereClause,
@@ -96,6 +95,7 @@ router.get('/by-sub-kegiatan', authenticate, authorizeAdmin, async (req: Request
         jumlah_laporan: Number(item.getDataValue('jumlah_laporan')),
         total_target_k: totalTargetK,
         total_realisasi_k: totalRealisasiK,
+        total_realisasi_fisik: Math.round((Number(item.getDataValue('total_realisasi_fisik')) || 0) * 100) / 100,
         total_target_rp: totalTargetRp,
         total_realisasi_rp: totalRealisasiRp,
         total_angkas: Number(item.getDataValue('total_angkas')) || 0,
@@ -159,14 +159,13 @@ router.get('/by-sub-kegiatan/detail', authenticate, authorizeAdmin, async (req: 
 // GET laporan aggregated by sumber anggaran (admin only)
 router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Request, res: Response) => {
   try {
-    const { bulan, tahun, id_sumber_anggaran, status, page, limit: limitParam } = req.query;
+    const { bulan, tahun, id_sumber_anggaran, page, limit: limitParam } = req.query;
 
     // Build where clause
     const whereClause: any = {};
     if (bulan) whereClause.bulan = bulan;
     if (tahun) whereClause.tahun = Number(tahun);
     if (id_sumber_anggaran) whereClause.id_sumber_anggaran = Number(id_sumber_anggaran);
-    if (status) whereClause.status = status;
 
     // Pagination
     const parsedPage = page ? Math.max(1, parseInt(page as string)) : undefined;
@@ -182,7 +181,8 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
         [sequelize.fn('SUM', sequelize.col('target_k')), 'total_target_k'],
         [sequelize.fn('SUM', sequelize.col('target_rp')), 'total_target_rp'],
         [sequelize.fn('SUM', sequelize.col('realisasi_k')), 'total_realisasi_k'],
-        [sequelize.fn('SUM', sequelize.col('realisasi_rp')), 'total_realisasi_rp'],
+        [sequelize.literal(`SUM(CASE WHEN "Laporan"."realisasi_rp" IS NOT NULL THEN "Laporan"."realisasi_rp" ELSE 0 END)`), 'total_realisasi_rp'],
+        [sequelize.literal(`SUM(CASE WHEN "Laporan"."status" = 'terkirim' THEN COALESCE("Laporan"."realisasi_fisik", 0) ELSE 0 END)`), 'total_realisasi_fisik'],
         [sequelize.fn('SUM', sequelize.col('angkas')), 'total_angkas'],
       ],
       where: whereClause,
@@ -224,6 +224,7 @@ router.get('/by-sumber-anggaran', authenticate, authorizeAdmin, async (req: Requ
         jumlah_laporan: Number(item.getDataValue('jumlah_laporan')),
         total_target_k: totalTargetK,
         total_realisasi_k: totalRealisasiK,
+        total_realisasi_fisik: Math.round((Number(item.getDataValue('total_realisasi_fisik')) || 0) * 100) / 100,
         total_target_rp: totalTargetRp,
         total_realisasi_rp: totalRealisasiRp,
         total_angkas: Number(item.getDataValue('total_angkas')) || 0,

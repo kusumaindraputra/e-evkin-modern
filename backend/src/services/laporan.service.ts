@@ -1,5 +1,12 @@
 import { Op } from 'sequelize';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget } from '../models';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget, AnggaranKas } from '../models';
+import { getLraRealisasiMap } from './lraParserService';
+
+const BULAN_MAP: Record<string, number> = {
+  Januari: 1, Februari: 2, Maret: 3, April: 4,
+  Mei: 5, Juni: 6, Juli: 7, Agustus: 8,
+  September: 9, Oktober: 10, November: 11, Desember: 12,
+};
 
 interface CreateLaporanParams {
   user_id: string;
@@ -8,7 +15,7 @@ interface CreateLaporanParams {
   tahun: number;
   bulan: string;
   realisasi_k?: number;
-  realisasi_rp?: number;
+  realisasi_rp?: number | null;
   angkas?: number;
   status?: any;
   [key: string]: any;
@@ -50,7 +57,7 @@ export class LaporanService {
     if (tahun) where.tahun = tahun;
     if (status) where.status = status;
 
-    return Laporan.findAndCountAll({
+    const result = await Laporan.findAndCountAll({
       where,
       limit,
       offset,
@@ -83,6 +90,22 @@ export class LaporanService {
       ],
       order: [['created_at', 'DESC']]
     });
+
+    // Enrich with LRA realisasi if querying for a specific puskesmas + bulan + tahun
+    if (user_id && bulan && tahun) {
+      const lraMap = await getLraRealisasiMap(user_id, bulan, tahun);
+      const enrichedRows = result.rows.map(lap => {
+        const key = `${(lap as any).id_sub_kegiatan}_${(lap as any).id_sumber_anggaran}`;
+        const lraRp = lraMap.get(key);
+        const json = lap.toJSON() as any;
+        json.realisasi_rp_lra = lraRp ?? 0;
+        json.lra_available = lraRp !== undefined;
+        return json;
+      });
+      return { count: result.count, rows: enrichedRows };
+    }
+
+    return result;
   }
 
   static async findById(id: string, requesterId: string, requesterRole: string) {
@@ -123,119 +146,6 @@ export class LaporanService {
     }
 
     return laporan;
-  }
-
-  static async create(params: CreateLaporanParams) {
-    const { user_id, id_sub_kegiatan, id_sumber_anggaran, tahun, realisasi_k, realisasi_rp } = params;
-
-    // VALIDATION: Check Target
-    const target = await SubKegiatanTarget.findOne({
-      where: {
-        user_id,
-        id_sub_kegiatan,
-        id_sumber_anggaran,
-        bulan: null,
-        tahun,
-      },
-      order: [['created_at', 'DESC']],
-    });
-
-    if (!target || (target.target_k === 0 && target.target_rp === 0)) {
-      throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${tahun}. Hubungi admin.`);
-    }
-
-    // VALIDATION: Realisasi vs Target
-    if (realisasi_k !== undefined && realisasi_k > target.target_k) {
-      throw new Error(`Realisasi kinerja (${realisasi_k}) tidak boleh melebihi target (${target.target_k})`);
-    }
-
-    const angkasValue = params.angkas;
-    if (angkasValue !== undefined && realisasi_rp !== undefined && realisasi_rp > angkasValue) {
-      throw new Error(`Realisasi anggaran (Rp ${realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${angkasValue?.toLocaleString('id-ID')})`);
-    }
-
-    // Auto-fill
-    let id_kegiatan = params.id_kegiatan;
-    if (!id_kegiatan) {
-      const subKegiatan = await SubKegiatan.findByPk(id_sub_kegiatan, { attributes: ['id_kegiatan'] });
-      id_kegiatan = subKegiatan?.id_kegiatan || 0;
-    }
-
-    const id_satuan = params.id_satuan || target.id_satuan;
-    const status = params.status || 'tersimpan';
-
-    return Laporan.create({
-      ...params,
-      id_kegiatan,
-      id_satuan,
-      status: status as any
-    } as any);
-  }
-
-  static async bulkCreate(laporanArray: any[], requesterId: string, requesterRole: string) {
-    if (!Array.isArray(laporanArray) || laporanArray.length === 0) {
-      throw new Error('laporanArray harus berupa array dan tidak boleh kosong');
-    }
-
-    const userId = requesterRole === 'puskesmas' ? requesterId : laporanArray[0].user_id;
-
-    // OPTIMIZATION: Pre-fetch targets to avoid N+1 queries
-    const subKegiatanIds = [...new Set(laporanArray.map((d: any) => d.id_sub_kegiatan).filter(Boolean))];
-    const tahunValues = [...new Set(laporanArray.map((d: any) => d.tahun).filter(Boolean))];
-    const sumberAnggaranIds = [...new Set(laporanArray.map((d: any) => d.id_sumber_anggaran).filter(Boolean))];
-
-    const targetMap = new Map<string, any>();
-
-    if (subKegiatanIds.length > 0 && tahunValues.length > 0 && sumberAnggaranIds.length > 0) {
-      const targets = await SubKegiatanTarget.findAll({
-        where: {
-          user_id: userId,
-          id_sub_kegiatan: { [Op.in]: subKegiatanIds },
-          id_sumber_anggaran: { [Op.in]: sumberAnggaranIds },
-          bulan: null,
-          tahun: { [Op.in]: tahunValues },
-        },
-        order: [['created_at', 'DESC']],
-      });
-
-      for (const t of targets) {
-        // Create unique key for lookup
-        const key = `${t.id_sub_kegiatan}_${t.id_sumber_anggaran}_${t.tahun}`;
-        // Store only the latest target (due to order DESC) if duplicates exist logic
-        if (!targetMap.has(key)) targetMap.set(key, t);
-      }
-    }
-
-    const processedData = [];
-
-    for (const data of laporanArray) {
-      if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
-        throw new Error('Setiap laporan harus memiliki id_sub_kegiatan dan id_sumber_anggaran');
-      }
-
-      const targetKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${data.tahun}`;
-      const target = targetMap.get(targetKey);
-
-      if (!target || (target.target_k === 0 && target.target_rp === 0)) {
-        throw new Error(`Target belum diset untuk sub kegiatan dan sumber anggaran ini di tahun ${data.tahun}. Hubungi admin.`);
-      }
-
-      if (data.realisasi_k > target.target_k) {
-        throw new Error(`Realisasi kinerja (${data.realisasi_k}) tidak boleh melebihi target (${target.target_k})`);
-      }
-
-      if (data.angkas !== undefined && data.realisasi_rp > data.angkas) {
-        throw new Error(`Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) tidak boleh melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
-      }
-
-      processedData.push({
-        ...data,
-        user_id: userId,
-        status: data.status || 'tersimpan',
-      });
-    }
-
-    return Laporan.bulkCreate(processedData, { validate: true, returning: true });
   }
 
   static async bulkUpsert(laporanArray: any[], requesterId: string, requesterRole: string) {
@@ -302,6 +212,31 @@ export class LaporanService {
         }
       }
 
+      // Pre-fetch AnggaranKas from DB (L4 fix — angkas must come from DB, not payload)
+      const angkasMap = new Map<string, number>();
+      const bulanNums = [...new Set(
+        laporanArray.map((d: any) => BULAN_MAP[d.bulan]).filter(Boolean)
+      )];
+
+      if (subKegiatanIds.length > 0 && bulanNums.length > 0 && sumberAnggaranIds.length > 0) {
+        const angkasRecords = await AnggaranKas.findAll({
+          where: {
+            user_id: userId,
+            id_sub_kegiatan: { [Op.in]: subKegiatanIds },
+            id_sumber_anggaran: { [Op.in]: sumberAnggaranIds },
+            bulan: { [Op.in]: bulanNums },
+            tahun: { [Op.in]: tahunValues },
+          },
+          attributes: ['user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'bulan', 'tahun', 'nilai'],
+          transaction,
+        });
+
+        for (const rec of angkasRecords) {
+          const key = `${rec.id_sub_kegiatan}_${rec.id_sumber_anggaran}_${rec.bulan}_${rec.tahun}`;
+          angkasMap.set(key, (angkasMap.get(key) || 0) + Number(rec.nilai));
+        }
+      }
+
       for (const data of laporanArray) {
         try {
           if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
@@ -323,8 +258,18 @@ export class LaporanService {
             continue;
           }
 
-          if (data.angkas > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
-            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
+          const bulanNum = BULAN_MAP[data.bulan];
+          if (bulanNum === undefined) {
+            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Nama bulan tidak valid: "${data.bulan}"`);
+            results.skipped++;
+            continue;
+          }
+          const angkasKey = `${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${bulanNum}_${data.tahun}`;
+          const angkasFromDB = angkasMap.get(angkasKey) ?? 0;
+
+          // angkasFromDB = 0 means no AnggaranKas record exists — no ceiling applied (admin hasn't uploaded PDF yet)
+          if (angkasFromDB > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > angkasFromDB) {
+            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi angkas (Rp ${angkasFromDB.toLocaleString('id-ID')})`);
             results.skipped++;
             continue;
           }
@@ -335,6 +280,7 @@ export class LaporanService {
             user_id: userId,
             id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
             id_satuan: data.id_satuan || target.id_satuan,
+            angkas: angkasFromDB,   // always from DB, not payload
             status: 'tersimpan' as any,
           };
 
@@ -441,6 +387,10 @@ export class LaporanService {
       throw new Error('Forbidden: Anda tidak bisa menghapus laporan puskesmas lain');
     }
 
+    if (requesterRole === 'puskesmas' && laporan.status === 'terkirim') {
+      throw new Error('Forbidden: Laporan yang sudah terkirim tidak bisa dihapus');
+    }
+
     await laporan.destroy();
     return true;
   }
@@ -479,6 +429,15 @@ export class LaporanService {
 
     if (incomplete.length > 0) {
       throw new Error(`${incomplete.length} laporan belum memiliki data realisasi kinerja. Lengkapi data sebelum mengirim.`);
+    }
+
+    const incompleteRp = pendingLaporan.filter(l => {
+      const data = l.get({ plain: true }) as any;
+      return data.realisasi_rp === null || data.realisasi_rp === undefined;
+    });
+
+    if (incompleteRp.length > 0) {
+      throw new Error(`${incompleteRp.length} laporan belum memiliki data realisasi anggaran (Rp). Upload LRA terlebih dahulu sebelum mengirim.`);
     }
 
     const [updatedCount] = await Laporan.update(

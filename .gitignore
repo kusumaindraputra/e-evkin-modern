@@ -65,6 +65,8 @@ test-output*.txt
 
 # Keep test files in docs/test files (tracked)
 !docs/test files/
+# Keep e2e fixture files (tracked)
+!e2e/fixtures/files/
 
 # Package manager
 package-lock.json
@@ -103,3 +105,9 @@ MENU_ACCESS.md
 # Beads / Dolt files (added by bd init)
 .dolt/
 .beads-credential-key
+
+# E2E testing
+e2e/.auth/
+e2e/.env.test
+e2e/test-results/
+e2e/playwright-report/

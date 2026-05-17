@@ -279,7 +279,31 @@ export const LaporanBulkInputPage: React.FC = () => {
       }
 
       setKegiatanParentMap(parentMap);
-      setRows(mappedRows);
+
+      // Fetch LRA realisasi map for this bulan/tahun
+      let lraMap: Record<string, number> = {};
+      try {
+        const lraRes = await axios.get(
+          `${API_BASE_URL}/lra/realisasi?bulan=${filterBulan}&tahun=${filterTahun}`,
+          config
+        );
+        if (lraRes.data.available) {
+          lraMap = lraRes.data.realisasi;
+        }
+      } catch {
+        // LRA not available — silently ignore
+      }
+
+      // Attach LRA data to each row
+      const finalRows = mappedRows.map(row => {
+        const key = `${row.id_sub_kegiatan}_${row.id_sumber_anggaran}`;
+        return {
+          ...row,
+          realisasi_rp_lra: lraMap[key] ?? 0,
+          lra_available: key in lraMap,
+        };
+      });
+      setRows(finalRows);
     } catch (error: any) {
       console.error('Error loading data:', error);
       message.error(error.response?.data?.message || 'Gagal memuat data');
@@ -365,7 +389,7 @@ export const LaporanBulkInputPage: React.FC = () => {
         angkas: row.angkas ?? 0,
         target_rp: row.target_rp || 0,
         realisasi_k: row.realisasi_k || 0,
-        realisasi_rp: row.realisasi_rp || 0,
+        realisasi_rp: row.realisasi_rp_lra ?? row.realisasi_rp ?? 0,
         realisasi_fisik: row.realisasi_fisik || 0,
         permasalahan: row.permasalahan || '',
         upaya: row.upaya || '',

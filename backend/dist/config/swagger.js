@@ -107,6 +107,8 @@ const options = {
 };
 const swaggerSpec = (0, swagger_jsdoc_1.default)(options);
 function setupSwagger(app) {
+    if (process.env.NODE_ENV === 'production')
+        return;
     // Swagger UI
     app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerSpec, {
         customCss: '.swagger-ui .topbar { display: none }',

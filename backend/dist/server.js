@@ -22,9 +22,6 @@ const startServer = async () => {
         // Test database connection
         await database_1.default.authenticate();
         console.log('✅ Database connected successfully');
-        // Create tables if they don't exist
-        await database_1.default.sync({ force: false });
-        console.log('✅ Database synchronized');
         // Start server
         const server = app_1.default.listen(config_1.config.port, () => {
             logger_1.default.info(`🚀 Server running on port ${config_1.config.port}`);

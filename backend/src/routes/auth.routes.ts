@@ -70,7 +70,7 @@ router.post('/login', async (req: Request, res: Response) => {
         role: user.role 
       },
       config.jwt.secret,
-      { expiresIn: '7d' }
+      { expiresIn: config.jwt.expiresIn as any }
     );
 
     // Return user data (without password)

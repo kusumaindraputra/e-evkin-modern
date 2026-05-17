@@ -338,10 +338,7 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
 
     const targetFilter: any = { tahun };
     const angkasFilter: any = { tahun };
-    const laporanFilter: any = {
-      tahun,
-      status: { [Op.in]: ['terkirim', 'menunggu', 'diverifikasi'] }
-    };
+    const laporanFilter: any = { tahun };
 
     if (userId) {
       targetFilter.user_id = userId;
@@ -438,9 +435,16 @@ export async function getChartData(tahun: number, userId?: string, sumberAnggara
       const anggaranForMonth = targetsForMonth.reduce((sum: number, t: any) => sum + (Number(t.target_rp) || 0), 0);
       const cumulativeAngkas = getCumulativeAngkas(allAngkas, tahun, monthNum);
       const laporanForMonth = laporanData.filter((l: any) => l.bulan === monthName);
-      const realisasiRp = laporanForMonth.reduce((sum: number, l: any) => sum + (Number(l.realisasi_rp) || 0), 0);
-      const totalFisik = laporanForMonth.reduce((sum: number, l: any) => sum + (Number(l.realisasi_fisik) || 0), 0);
-      const countFisik = laporanForMonth.length;
+
+      // realisasi_rp: include all laporan with LRA data (not null), regardless of submit status
+      const realisasiRp = laporanForMonth
+        .filter((l: any) => l.realisasi_rp != null)
+        .reduce((sum: number, l: any) => sum + (Number(l.realisasi_rp) || 0), 0);
+
+      // realisasi_fisik: only from submitted (terkirim) laporan
+      const terkirimForMonth = laporanForMonth.filter((l: any) => l.status === 'terkirim');
+      const totalFisik = terkirimForMonth.reduce((sum: number, l: any) => sum + (Number(l.realisasi_fisik) || 0), 0);
+      const countFisik = terkirimForMonth.length;
       const avgFisik = countFisik > 0 ? totalFisik / countFisik : 0;
 
       return {

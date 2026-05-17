@@ -5,7 +5,8 @@
   "private": true,
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "e2e"
   ],
   "scripts": {
     "beads": "node scripts/beads.js",
@@ -14,6 +15,10 @@
     "dev:frontend": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
     "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
+    "test:e2e": "npm run test --workspace=e2e",
+    "test:e2e:api": "npm run test:api --workspace=e2e",
+    "test:e2e:browser": "npm run test:browser --workspace=e2e",
+    "test:e2e:ui": "npm run test:ui --workspace=e2e",
     "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "deploy": "./deploy.sh",

@@ -15,6 +15,7 @@ import { NAV_ITEMS } from '../config/navConfig';
 import { layout } from '../theme';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useTheme } from '../hooks/useTheme';
+import logoImg from '../assets/logo.png';
 import './Layout.css';
 
 const { Header, Sider, Content } = AntLayout;
@@ -76,12 +77,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const siderMenu = (
     <>
       <div className="logo-container">
-        <Text
-          strong
-          className={`logo-text ${isMobile || !collapsed ? 'logo-text-expanded' : 'logo-text-collapsed'}`}
-        >
-          {!isMobile && collapsed ? 'E-EV' : 'E-EVKIN'}
-        </Text>
+        <img src={logoImg} alt="e-evkin logo" className="logo-image" />
+        {(isMobile || !collapsed) && (
+          <Text
+            strong
+            className="logo-text logo-text-expanded"
+          >
+            e-evkin
+          </Text>
+        )}
       </div>
       <Menu
         theme="dark"

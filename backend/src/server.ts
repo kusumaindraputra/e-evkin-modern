@@ -20,10 +20,6 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully');
 
-    // Create tables if they don't exist
-    await sequelize.sync({ force: false });
-    console.log('✅ Database synchronized');
-
     // Start server
     const server = app.listen(config.port, () => {
       logger.info(`🚀 Server running on port ${config.port}`);

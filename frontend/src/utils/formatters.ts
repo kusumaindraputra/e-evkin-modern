@@ -1,5 +1,5 @@
 /**
- * Centralized number formatting utilities for E-EVKIN Modern
+ * Centralized number formatting utilities for e-evkin Modern
  * All currency/number formatting should use these functions for consistency
  * 
  * IMPORTANT: Prefix (Rp) should be in column headers, not in cell values

@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import { authorizeAdmin } from '../middleware/authorize';
 import { Op } from 'sequelize';
 import { getDashboardStats, getBudgetMonthly, getTop10Absorption, getBottom10Absorption, getBudgetYTD, getChartData, getPuskesmasReportingDetails } from '../services/dashboardService';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -96,7 +97,7 @@ router.get('/verifikasi', authenticate, authorizeAdmin, async (req: Request, res
       }
     });
   } catch (error: any) {
-    console.error('Admin verifikasi error:', error);
+    logger.error('Admin verifikasi error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data verifikasi' });
   }
 });
@@ -157,7 +158,7 @@ router.get('/laporan/:userId/:bulan/:tahun', authenticate, authorizeAdmin, async
       }
     });
   } catch (error: any) {
-    console.error('Admin laporan detail error:', error);
+    logger.error('Admin laporan detail error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil detail laporan' });
   }
 });
@@ -190,7 +191,7 @@ router.put('/laporan/:id/return', authenticate, authorizeAdmin, async (req: Requ
       data: laporan
     });
   } catch (error: any) {
-    console.error('Return laporan error:', error);
+    logger.error('Return laporan error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengembalikan laporan' });
   }
 });
@@ -226,7 +227,7 @@ router.post('/laporan/bulk-return', authenticate, authorizeAdmin, async (req: Re
       updated
     });
   } catch (error: any) {
-    console.error('Bulk return error:', error);
+    logger.error('Bulk return error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengembalikan laporan' });
   }
 });
@@ -249,7 +250,7 @@ router.get('/dashboard/stats', authenticate, authorizeAdmin, async (req: Request
       bulan: currentMonth
     });
   } catch (error: any) {
-    console.error('Dashboard stats error:', error);
+    logger.error('Dashboard stats error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil statistik dashboard' });
   }
 });
@@ -278,7 +279,7 @@ router.get('/dashboard/budget-monthly', authenticate, authorizeAdmin, async (req
       bulan: currentMonth
     });
   } catch (error: any) {
-    console.error('Monthly budget error:', error);
+    logger.error('Monthly budget error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data anggaran bulanan' });
   }
 });
@@ -306,7 +307,7 @@ router.get('/dashboard/top-10-absorption', authenticate, authorizeAdmin, async (
       bulan: currentMonth
     });
   } catch (error: any) {
-    console.error('Top 10 absorption error:', error);
+    logger.error('Top 10 absorption error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data top 10 penyerapan' });
   }
 });
@@ -334,7 +335,7 @@ router.get('/dashboard/bottom-10-absorption', authenticate, authorizeAdmin, asyn
       bulan: currentMonth
     });
   } catch (error: any) {
-    console.error('Bottom 10 absorption error:', error);
+    logger.error('Bottom 10 absorption error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data bottom 10 penyerapan' });
   }
 });
@@ -353,7 +354,7 @@ router.get('/dashboard/budget-ytd', authenticate, authorizeAdmin, async (req: Re
       tahun: currentYear
     });
   } catch (error: any) {
-    console.error('Budget YTD error:', error);
+    logger.error('Budget YTD error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data anggaran' });
   }
 });
@@ -373,7 +374,7 @@ router.get('/dashboard/chart-data', authenticate, authorizeAdmin, async (req: Re
       ...result
     });
   } catch (error: any) {
-    console.error('Error in chart data:', error);
+    logger.error('Error in chart data:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil data chart' });
   }
 });
@@ -394,7 +395,7 @@ router.get('/dashboard/puskesmas-reporting-details', authenticate, authorizeAdmi
       bulan: currentMonth
     });
   } catch (error: any) {
-    console.error('Puskesmas reporting details error:', error);
+    logger.error('Puskesmas reporting details error:', error);
     res.status(500).json({ success: false, message: 'Gagal mengambil detail puskesmas' });
   }
 });

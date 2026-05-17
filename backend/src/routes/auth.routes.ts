@@ -89,7 +89,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     return res.status(500).json({ error: 'Login gagal. Silakan coba lagi.' });
   }
 });
@@ -120,7 +120,7 @@ router.get('/me', async (req: Request, res: Response) => {
       wilayah: user.wilayah,
     });
   } catch (error: any) {
-    console.error('Auth verification error:', error);
+    logger.error('Auth verification error:', error);
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 });
@@ -131,7 +131,7 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
     // Clear any server-side session if exists (future enhancement)
     res.json({ message: 'Logout successful' });
   } catch (error: any) {
-    console.error('Logout error:', error);
+    logger.error('Logout error:', error);
     res.status(500).json({
       message: 'Logout gagal',
     });

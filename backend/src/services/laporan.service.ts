@@ -1,6 +1,12 @@
 import { Op } from 'sequelize';
-import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget } from '../models';
+import { Laporan, User, SumberAnggaran, Satuan, SubKegiatan, Kegiatan, SubKegiatanTarget, AnggaranKas } from '../models';
 import { getLraRealisasiMap } from './lraParserService';
+
+const BULAN_MAP: Record<string, number> = {
+  Januari: 1, Februari: 2, Maret: 3, April: 4,
+  Mei: 5, Juni: 6, Juli: 7, Agustus: 8,
+  September: 9, Oktober: 10, November: 11, Desember: 12,
+};
 
 interface CreateLaporanParams {
   user_id: string;
@@ -206,6 +212,31 @@ export class LaporanService {
         }
       }
 
+      // Pre-fetch AnggaranKas from DB (L4 fix — angkas must come from DB, not payload)
+      const angkasMap = new Map<string, number>();
+      const bulanNums = [...new Set(
+        laporanArray.map((d: any) => BULAN_MAP[d.bulan]).filter(Boolean)
+      )];
+
+      if (subKegiatanIds.length > 0 && bulanNums.length > 0 && sumberAnggaranIds.length > 0) {
+        const angkasRecords = await AnggaranKas.findAll({
+          where: {
+            user_id: userId,
+            id_sub_kegiatan: { [Op.in]: subKegiatanIds },
+            id_sumber_anggaran: { [Op.in]: sumberAnggaranIds },
+            bulan: { [Op.in]: bulanNums },
+            tahun: { [Op.in]: tahunValues },
+          },
+          attributes: ['user_id', 'id_sub_kegiatan', 'id_sumber_anggaran', 'bulan', 'tahun', 'nilai'],
+          transaction,
+        });
+
+        for (const rec of angkasRecords) {
+          const key = `${rec.user_id}_${rec.id_sub_kegiatan}_${rec.id_sumber_anggaran}_${rec.bulan}_${rec.tahun}`;
+          angkasMap.set(key, (angkasMap.get(key) || 0) + Number(rec.nilai));
+        }
+      }
+
       for (const data of laporanArray) {
         try {
           if (!data.id_sub_kegiatan || !data.id_sumber_anggaran) {
@@ -227,8 +258,12 @@ export class LaporanService {
             continue;
           }
 
-          if (data.angkas > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > data.angkas) {
-            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi realisasi angkas (Rp ${data.angkas?.toLocaleString('id-ID')})`);
+          const bulanNum = BULAN_MAP[data.bulan] ?? 0;
+          const angkasKey = `${userId}_${data.id_sub_kegiatan}_${data.id_sumber_anggaran}_${bulanNum}_${data.tahun}`;
+          const angkasFromDB = angkasMap.get(angkasKey) ?? 0;
+
+          if (angkasFromDB > 0 && data.realisasi_rp !== undefined && data.realisasi_rp > angkasFromDB) {
+            results.errors.push(`Sub kegiatan ${data.id_sub_kegiatan}: Realisasi anggaran (Rp ${data.realisasi_rp?.toLocaleString('id-ID')}) melebihi angkas (Rp ${angkasFromDB.toLocaleString('id-ID')})`);
             results.skipped++;
             continue;
           }
@@ -239,6 +274,7 @@ export class LaporanService {
             user_id: userId,
             id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
             id_satuan: data.id_satuan || target.id_satuan,
+            angkas: angkasFromDB,   // always from DB, not payload
             status: 'tersimpan' as any,
           };
 

@@ -4,6 +4,7 @@ import SumberAnggaran from '../models/SumberAnggaran';
 import Kegiatan from '../models/Kegiatan';
 import SubKegiatan from '../models/SubKegiatan';
 import { authenticate } from '../middleware/auth';
+import { authorizeAdmin } from '../middleware/authorize';
 
 const router = Router();
 
@@ -37,13 +38,8 @@ router.get('/satuan/:id', authenticate, async (req, res, next) => {
 });
 
 // Create satuan (Admin only)
-router.post('/satuan', authenticate, async (req, res, next) => {
+router.post('/satuan', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    // Check admin role
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menambah satuan' });
-    }
-
     const { satuannya } = req.body;
 
     if (!satuannya) {
@@ -58,13 +54,8 @@ router.post('/satuan', authenticate, async (req, res, next) => {
 });
 
 // Update satuan (Admin only)
-router.put('/satuan/:id', authenticate, async (req, res, next) => {
+router.put('/satuan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    // Check admin role
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah satuan' });
-    }
-
     const satuan = await Satuan.findByPk(req.params.id);
     if (!satuan) {
       return res.status(404).json({ message: 'Satuan tidak ditemukan' });
@@ -83,13 +74,8 @@ router.put('/satuan/:id', authenticate, async (req, res, next) => {
 });
 
 // Delete satuan (Admin only)
-router.delete('/satuan/:id', authenticate, async (req, res, next) => {
+router.delete('/satuan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    // Check admin role
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus satuan' });
-    }
-
     const satuan = await Satuan.findByPk(req.params.id);
     if (!satuan) {
       return res.status(404).json({ message: 'Satuan tidak ditemukan' });
@@ -132,12 +118,8 @@ router.get('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
 });
 
 // Create sumber anggaran (Admin only)
-router.post('/sumber-anggaran', authenticate, async (req, res, next) => {
+router.post('/sumber-anggaran', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menambah sumber anggaran' });
-    }
-
     const { sumber } = req.body;
     if (!sumber) {
       return res.status(400).json({ message: 'Nama sumber anggaran harus diisi' });
@@ -151,12 +133,8 @@ router.post('/sumber-anggaran', authenticate, async (req, res, next) => {
 });
 
 // Update sumber anggaran (Admin only)
-router.put('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
+router.put('/sumber-anggaran/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah sumber anggaran' });
-    }
-
     const sumberAnggaran = await SumberAnggaran.findByPk(req.params.id);
     if (!sumberAnggaran) {
       return res.status(404).json({ message: 'Sumber anggaran tidak ditemukan' });
@@ -175,12 +153,8 @@ router.put('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
 });
 
 // Delete sumber anggaran (Admin only)
-router.delete('/sumber-anggaran/:id', authenticate, async (req, res, next) => {
+router.delete('/sumber-anggaran/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus sumber anggaran' });
-    }
-
     const sumberAnggaran = await SumberAnggaran.findByPk(req.params.id);
     if (!sumberAnggaran) {
       return res.status(404).json({ message: 'Sumber anggaran tidak ditemukan' });
@@ -242,12 +216,8 @@ router.get('/kegiatan/:id', authenticate, async (req, res, next) => {
 });
 
 // POST create new kegiatan (admin only)
-router.post('/kegiatan', authenticate, async (req, res, next) => {
+router.post('/kegiatan', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menambah kegiatan' });
-    }
-
     const { id_uraian, kode, kegiatan } = req.body;
 
     if (!id_uraian || !kode || !kegiatan) {
@@ -267,12 +237,8 @@ router.post('/kegiatan', authenticate, async (req, res, next) => {
 });
 
 // PUT update kegiatan (admin only)
-router.put('/kegiatan/:id', authenticate, async (req, res, next) => {
+router.put('/kegiatan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah kegiatan' });
-    }
-
     const { id } = req.params;
     const { id_uraian, kode, kegiatan } = req.body;
 
@@ -294,12 +260,8 @@ router.put('/kegiatan/:id', authenticate, async (req, res, next) => {
 });
 
 // DELETE kegiatan (admin only)
-router.delete('/kegiatan/:id', authenticate, async (req, res, next) => {
+router.delete('/kegiatan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus kegiatan' });
-    }
-
     const { id } = req.params;
 
     const kegiatan = await Kegiatan.findByPk(id);
@@ -374,12 +336,8 @@ router.get('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
 });
 
 // POST create new sub_kegiatan (admin only)
-router.post('/sub-kegiatan', authenticate, async (req, res, next) => {
+router.post('/sub-kegiatan', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menambah sub kegiatan' });
-    }
-
     const { id_kegiatan, kode_sub, kegiatan, indikator_kinerja } = req.body;
 
     if (!id_kegiatan || !kode_sub || !kegiatan || !indikator_kinerja) {
@@ -408,12 +366,8 @@ router.post('/sub-kegiatan', authenticate, async (req, res, next) => {
 });
 
 // PUT update sub_kegiatan (admin only)
-router.put('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
+router.put('/sub-kegiatan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah sub kegiatan' });
-    }
-
     const { id } = req.params;
     const { id_kegiatan, kode_sub, kegiatan, indikator_kinerja } = req.body;
 
@@ -444,12 +398,8 @@ router.put('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
 });
 
 // DELETE sub_kegiatan (admin only)
-router.delete('/sub-kegiatan/:id', authenticate, async (req, res, next) => {
+router.delete('/sub-kegiatan/:id', authenticate, authorizeAdmin, async (req, res, next) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus sub kegiatan' });
-    }
-
     const { id } = req.params;
 
     const subKegiatan = await SubKegiatan.findByPk(id);

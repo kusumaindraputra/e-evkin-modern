@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import type { Dayjs } from 'dayjs';
 import {
@@ -96,9 +96,44 @@ const historyColumns: ColumnsType<HistoryRow> = [
 
 const UploadDataPage: React.FC = () => {
   const token = useAuthStore(s => s.token);
-  const authHeader = { Authorization: `Bearer ${token}` };
+  const authHeader = useMemo(
+    () => ({ Authorization: `Bearer ${token}` }),
+    [token]
+  );
 
   const [tahun, setTahun] = useState<number>(new Date().getFullYear());
+
+  // ── History ──────────────────────────────────────────────────────────────
+  const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await axios.get<BatchRecord[]>(`${API_BASE_URL}/lra/batches`, { headers: authHeader });
+      const rows: HistoryRow[] = res.data.slice(0, 10).map(b => ({
+        id: b.id,
+        tanggal: b.created_at,
+        jenis: b.jenis ?? 'LRA',
+        tahun: b.tahun,
+        user: b.uploader?.nama ?? '—',
+        keterangan: b.keterangan ?? (b.bulan ? `Bulan ${BULAN_NAMES[b.bulan] ?? b.bulan}` : ''),
+      }));
+      setHistory(rows);
+    } catch {
+      // silently ignore history load errors
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [authHeader]);
+
+  const addHistoryRow = useCallback((row: HistoryRow) => {
+    setHistory(prev => [row, ...prev].slice(0, 10));
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   // ── Section 1 — Target Anggaran ──────────────────────────────────────────
   const targetDz = useDropZone({ accept: '.xlsx' });
@@ -125,8 +160,17 @@ const UploadDataPage: React.FC = () => {
       const res = await axios.post(`${API_BASE_URL}/target/upload`, fd, { headers: authHeader });
       targetDz.setProgress(100);
       targetDz.setOk();
-      setTargetResult(res.data);
+      const result = res.data as { inserted: number; updated: number; skipped: number; failed: number; errors?: string[] };
+      setTargetResult(result);
       message.success('Target Anggaran berhasil diupload');
+      addHistoryRow({
+        id: `target-${Date.now()}`,
+        jenis: 'Target',
+        tahun,
+        tanggal: new Date().toISOString(),
+        user: '-',
+        keterangan: `${result.inserted} ditambah, ${result.updated} diperbarui`,
+      });
       loadHistory();
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? (err.response?.data?.error ?? err.message) : 'Upload gagal';
@@ -135,7 +179,7 @@ const UploadDataPage: React.FC = () => {
     } finally {
       setTargetLoading(false);
     }
-  }, [targetDz, targetCatatan, tahun, targetBulanPenetapan, targetTanggalPenetapan, authHeader]);
+  }, [targetDz, targetCatatan, tahun, targetBulanPenetapan, targetTanggalPenetapan, authHeader, loadHistory, addHistoryRow]);
 
   // ── Section 2 — Angkas PDF ───────────────────────────────────────────────
   const angkasDz = useDropZone({ accept: '.pdf', maxSize: 20 * 1024 * 1024 });
@@ -156,8 +200,17 @@ const UploadDataPage: React.FC = () => {
       const res = await axios.post(`${API_BASE_URL}/angkas/upload`, fd, { headers: authHeader });
       angkasDz.setProgress(100);
       angkasDz.setOk();
-      setAngkasResult(res.data.result ?? res.data);
+      const result = (res.data.result ?? res.data) as { inserted: number; updated: number; skipped: number; unmatchedPuskesmas?: string[] };
+      setAngkasResult(result);
       message.success('Angkas PDF berhasil diupload');
+      addHistoryRow({
+        id: `angkas-${Date.now()}`,
+        jenis: 'Angkas',
+        tahun,
+        tanggal: new Date().toISOString(),
+        user: '-',
+        keterangan: `${result.inserted} ditambah, ${result.updated} diperbarui`,
+      });
       loadHistory();
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? (err.response?.data?.error ?? err.message) : 'Upload gagal';
@@ -166,7 +219,7 @@ const UploadDataPage: React.FC = () => {
     } finally {
       setAngkasLoading(false);
     }
-  }, [angkasDz, tahun, authHeader]);
+  }, [angkasDz, tahun, authHeader, loadHistory, addHistoryRow]);
 
   // ── Section 3 — LRA ──────────────────────────────────────────────────────
   const lraDz = useDropZone({ accept: '.xlsx' });
@@ -220,36 +273,7 @@ const UploadDataPage: React.FC = () => {
     } finally {
       setLraConfirming(false);
     }
-  }, [lraDz, lraPreview, authHeader]);
-
-  // ── History ──────────────────────────────────────────────────────────────
-  const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const res = await axios.get<BatchRecord[]>(`${API_BASE_URL}/lra/batches`, { headers: authHeader });
-      const rows: HistoryRow[] = res.data.slice(0, 10).map(b => ({
-        id: b.id,
-        tanggal: b.created_at,
-        jenis: b.jenis ?? 'LRA',
-        tahun: b.tahun,
-        user: b.uploader?.nama ?? '—',
-        keterangan: b.keterangan ?? (b.bulan ? `Bulan ${BULAN_NAMES[b.bulan] ?? b.bulan}` : ''),
-      }));
-      setHistory(rows);
-    } catch {
-      // silently ignore history load errors
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [authHeader]);
-
-  useEffect(() => {
-    loadHistory();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lraDz, lraPreview, authHeader, loadHistory]);
 
   // ── Shared year selector ─────────────────────────────────────────────────
   const YearSelector = (
@@ -270,7 +294,7 @@ const UploadDataPage: React.FC = () => {
       {/* Page header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Upload Data</h1>
-        <p style={{ margin: '4px 0 0', color: 'var(--text-secondary, #888)' }}>
+        <p style={{ margin: '4px 0 0', color: 'var(--c-txt-2)' }}>
           Upload file Target Anggaran, Angkas, dan LRA ke sistem.
         </p>
       </div>
@@ -492,7 +516,7 @@ const UploadDataPage: React.FC = () => {
                         Konfirmasi Import
                       </Button>
                       <Button
-                        onClick={() => { setLraPreview(null); lraDz.reset(); }}
+                        onClick={() => { setLraPreview(null); }}
                         disabled={lraConfirming}
                       >
                         Batal

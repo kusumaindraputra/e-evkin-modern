@@ -367,6 +367,9 @@ describe('Laporan Routes Security Tests', () => {
         target_rp: 1000000,
         realisasi_k: 5,
         realisasi_rp: null,
+        angkas: 0,
+        permasalahan: '',
+        upaya: '',
         status: 'tersimpan',
       } as any);
 
@@ -394,6 +397,9 @@ describe('Laporan Routes Security Tests', () => {
         target_rp: 1000000,
         realisasi_k: 0,
         realisasi_rp: 0,
+        angkas: 0,
+        permasalahan: '',
+        upaya: '',
         status: 'tersimpan',
       } as any);
 
@@ -577,7 +583,7 @@ describe('Laporan Routes Security Tests', () => {
               id_sub_kegiatan: testLaporan.id_sub_kegiatan,
               id_sumber_anggaran: testLaporan.id_sumber_anggaran,
               bulan: 'Oktober',
-              tahun: 2024,
+              tahun: testTahun,
               realisasi_k: 1,
               realisasi_rp: 100,
               angkas: 999999999,   // spoofed high value — should be ignored
@@ -594,7 +600,7 @@ describe('Laporan Routes Security Tests', () => {
               user_id: puskesmasUser.id,
               id_sub_kegiatan: testLaporan.id_sub_kegiatan,
               bulan: 'Oktober',
-              tahun: 2024,
+              tahun: testTahun,
             }
           });
           expect(saved?.angkas).not.toBe(999999999);

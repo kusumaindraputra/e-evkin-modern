@@ -161,7 +161,7 @@ export class LaporanController {
             invalidateDashboardCaches();
             res.json({ message: 'Laporan berhasil dikirim', updatedCount: count });
         } catch (error: any) {
-            if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id')) {
+            if (error.message.includes('sudah dikirim') || error.message.includes('Missing user_id') || error.message.includes('realisasi anggaran')) {
                 res.status(400).json({ error: 'Validasi gagal', message: error.message });
             } else if (error.message.includes('Tidak ada laporan')) {
                 res.status(404).json({ error: 'Tidak ada laporan ditemukan', message: error.message });

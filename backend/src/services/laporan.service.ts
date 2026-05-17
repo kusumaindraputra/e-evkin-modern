@@ -17,7 +17,7 @@ interface CreateLaporanParams {
   realisasi_k?: number;
   realisasi_rp?: number | null;
   angkas?: number;
-  status?: any;
+  status?: 'menunggu' | 'terkirim' | 'diverifikasi' | 'ditolak' | 'tersimpan';
   [key: string]: any;
 }
 
@@ -281,7 +281,7 @@ export class LaporanService {
             id_kegiatan: subKegiatan?.id_kegiatan || data.id_kegiatan || 0,
             id_satuan: data.id_satuan || target.id_satuan,
             angkas: angkasFromDB,   // always from DB, not payload
-            status: 'tersimpan' as any,
+            status: 'tersimpan' as const,
           };
 
           if (data.id) {

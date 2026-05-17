@@ -110,3 +110,20 @@ e2e/.auth/
 e2e/.env.test
 e2e/test-results/
 e2e/playwright-report/
+
+# Debug and test artifacts (not tracked)
+check_db.js
+debug_angkas.js
+laporan_test_result.txt
+replace_brand.js
+seed_kegiatan.js
+verify_build.ps1
+backend/debug_output.txt
+backend/test_output.txt
+backend/test-results.txt
+backend/test-api.js
+backend/tsc_errors.txt
+# E2E debug screenshots (not tracked)
+backend/e2e_*.png
+backend/test_*.png
+test_*.png

@@ -71,23 +71,17 @@ export const NAV_ITEMS: NavItem[] = [
         label: 'Konfigurasi Sub Kegiatan',
         roles: ['admin'],
     },
-    // NEW: Consolidated Target & Angkas
+    // NEW: Consolidated Upload
     {
-        key: '/admin/target-upload',
+        key: '/admin/upload',
         icon: <UploadOutlined />,
-        label: 'Upload Target & Angkas',
+        label: 'Upload Data',
         roles: ['admin'],
     },
     {
         key: '/admin/target-edit',
         icon: <EditOutlined />,
         label: 'Edit Target & Angkas',
-        roles: ['admin'],
-    },
-    {
-        key: '/admin/lra-upload',
-        icon: <UploadOutlined />,
-        label: 'Upload LRA',
         roles: ['admin'],
     },
     {

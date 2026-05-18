@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React, { useRef } from 'react';
 import type { UseDropZoneReturn, DropZoneState } from '../hooks/useDropZone';
 import './DropZone.css';
 
@@ -24,7 +24,7 @@ export const DropZone: React.FC<DropZoneProps> = ({
   accept, state, file, progress, errorMsg,
   handlers, onRetry, onUploadAgain,
 }) => {
-  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const modClass: Record<DropZoneState, string> = {
     idle:  '',
@@ -44,17 +44,17 @@ export const DropZone: React.FC<DropZoneProps> = ({
       onDragLeave={handlers.onDragLeave}
       onDragOver={handlers.onDragOver}
       onDrop={handlers.onDrop}
-      onClick={isClickable ? () => document.getElementById(inputId)?.click() : undefined}
+      onClick={isClickable ? () => inputRef.current?.click() : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={state === 'idle' ? 0 : undefined}
       onKeyDown={e => {
         if ((e.key === 'Enter' || e.key === ' ') && isClickable) {
-          document.getElementById(inputId)?.click();
+          inputRef.current?.click();
         }
       }}
     >
       <input
-        id={inputId}
+        ref={inputRef}
         className="dz__input"
         type="file"
         accept={accept}

@@ -45,8 +45,6 @@ interface LraPreviewResult {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const TAHUN_OPTIONS = [2024, 2025, 2026];
-
 const BULAN_NAMES: Record<number, string> = {
   1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April',
   5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus',
@@ -96,32 +94,48 @@ const historyColumns: ColumnsType<HistoryRow> = [
 
 const UploadDataPage: React.FC = () => {
   const token = useAuthStore(s => s.token);
+  const userName = useAuthStore(s => s.user?.nama ?? '—');
   const authHeader = useMemo(
     () => ({ Authorization: `Bearer ${token}` }),
     [token]
   );
 
-  const [tahun, setTahun] = useState<number>(new Date().getFullYear());
+  const tahunOptions = useMemo(() => {
+    const y = new Date().getFullYear();
+    return [y - 1, y, y + 1];
+  }, []);
+
+  const [tahun, setTahun] = useState<number>(() => new Date().getFullYear());
 
   // ── History ──────────────────────────────────────────────────────────────
+  // LRA history is fetched from backend (persisted). Target/Angkas rows are
+  // optimistic (session-only — no batch-history endpoint exists for those).
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(false);
 
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
+    setHistoryError(false);
     try {
       const res = await axios.get<BatchRecord[]>(`${API_BASE_URL}/lra/batches`, { headers: authHeader });
-      const rows: HistoryRow[] = res.data.slice(0, 10).map(b => ({
-        id: b.id,
-        tanggal: b.created_at,
-        jenis: b.jenis ?? 'LRA',
-        tahun: b.tahun,
-        user: b.uploader?.nama ?? '—',
-        keterangan: b.keterangan ?? (b.bulan ? `Bulan ${BULAN_NAMES[b.bulan] ?? b.bulan}` : ''),
-      }));
-      setHistory(rows);
+      setHistory(prev => {
+        // Keep any optimistic Target/Angkas rows; replace LRA rows with fresh data
+        const optimistic = prev.filter(r => r.jenis !== 'LRA');
+        const lraRows: HistoryRow[] = res.data.map(b => ({
+          id: b.id,
+          tanggal: b.created_at,
+          jenis: b.jenis ?? 'LRA',
+          tahun: b.tahun,
+          user: b.uploader?.nama ?? '—',
+          keterangan: b.keterangan ?? (b.bulan ? `Bulan ${BULAN_NAMES[b.bulan] ?? b.bulan}` : ''),
+        }));
+        return [...optimistic, ...lraRows]
+          .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+          .slice(0, 10);
+      });
     } catch {
-      // silently ignore history load errors
+      setHistoryError(true);
     } finally {
       setHistoryLoading(false);
     }
@@ -156,22 +170,26 @@ const UploadDataPage: React.FC = () => {
     if (targetTanggalPenetapan) fd.append('tanggal_penetapan', targetTanggalPenetapan.format('YYYY-MM-DD'));
 
     try {
-      targetDz.setProgress(30);
-      const res = await axios.post(`${API_BASE_URL}/target/upload`, fd, { headers: authHeader });
+      const res = await axios.post(`${API_BASE_URL}/target/upload`, fd, {
+        headers: authHeader,
+        onUploadProgress: (e) => {
+          if (e.total) targetDz.setProgress(Math.round((e.loaded / e.total) * 95));
+        },
+      });
       targetDz.setProgress(100);
       targetDz.setOk();
       const result = res.data as { inserted: number; updated: number; skipped: number; failed: number; errors?: string[] };
       setTargetResult(result);
       message.success('Target Anggaran berhasil diupload');
+      // Optimistic row — Target has no backend batch-history; session-only
       addHistoryRow({
         id: `target-${Date.now()}`,
         jenis: 'Target',
         tahun,
         tanggal: new Date().toISOString(),
-        user: '-',
+        user: userName,
         keterangan: `${result.inserted} ditambah, ${result.updated} diperbarui`,
       });
-      loadHistory();
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? (err.response?.data?.error ?? err.message) : 'Upload gagal';
       targetDz.setFail(msg);
@@ -179,7 +197,7 @@ const UploadDataPage: React.FC = () => {
     } finally {
       setTargetLoading(false);
     }
-  }, [targetDz, targetCatatan, tahun, targetBulanPenetapan, targetTanggalPenetapan, authHeader, loadHistory, addHistoryRow]);
+  }, [targetDz, targetCatatan, tahun, targetBulanPenetapan, targetTanggalPenetapan, authHeader, userName, addHistoryRow]);
 
   // ── Section 2 — Angkas PDF ───────────────────────────────────────────────
   const angkasDz = useDropZone({ accept: '.pdf', maxSize: 20 * 1024 * 1024 });
@@ -196,22 +214,26 @@ const UploadDataPage: React.FC = () => {
     fd.append('tahun', String(tahun));
 
     try {
-      angkasDz.setProgress(30);
-      const res = await axios.post(`${API_BASE_URL}/angkas/upload`, fd, { headers: authHeader });
+      const res = await axios.post(`${API_BASE_URL}/angkas/upload`, fd, {
+        headers: authHeader,
+        onUploadProgress: (e) => {
+          if (e.total) angkasDz.setProgress(Math.round((e.loaded / e.total) * 95));
+        },
+      });
       angkasDz.setProgress(100);
       angkasDz.setOk();
       const result = (res.data.result ?? res.data) as { inserted: number; updated: number; skipped: number; unmatchedPuskesmas?: string[] };
       setAngkasResult(result);
       message.success('Angkas PDF berhasil diupload');
+      // Optimistic row — Angkas has no backend batch-history; session-only
       addHistoryRow({
         id: `angkas-${Date.now()}`,
         jenis: 'Angkas',
         tahun,
         tanggal: new Date().toISOString(),
-        user: '-',
+        user: userName,
         keterangan: `${result.inserted} ditambah, ${result.updated} diperbarui`,
       });
-      loadHistory();
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? (err.response?.data?.error ?? err.message) : 'Upload gagal';
       angkasDz.setFail(msg);
@@ -219,7 +241,7 @@ const UploadDataPage: React.FC = () => {
     } finally {
       setAngkasLoading(false);
     }
-  }, [angkasDz, tahun, authHeader, loadHistory, addHistoryRow]);
+  }, [angkasDz, tahun, authHeader, userName, addHistoryRow]);
 
   // ── Section 3 — LRA ──────────────────────────────────────────────────────
   const lraDz = useDropZone({ accept: '.xlsx' });
@@ -260,11 +282,12 @@ const UploadDataPage: React.FC = () => {
     fd.append('tahun', String(lraPreview.tahun));
 
     try {
-      await axios.post(`${API_BASE_URL}/lra/confirm`, fd, { headers: authHeader });
+      const res = await axios.post(`${API_BASE_URL}/lra/confirm`, fd, { headers: authHeader });
       lraDz.setOk();
       setLraConfirmed(true);
       setLraPreview(null);
-      message.success('LRA berhasil diimport');
+      const rowCount = (res.data as { rowCount?: number }).rowCount;
+      message.success(rowCount != null ? `LRA berhasil diimport — ${rowCount} baris` : 'LRA berhasil diimport');
       loadHistory();
     } catch (err: unknown) {
       const msg = axios.isAxiosError(err) ? (err.response?.data?.error ?? err.message) : 'Konfirmasi gagal';
@@ -275,28 +298,26 @@ const UploadDataPage: React.FC = () => {
     }
   }, [lraDz, lraPreview, authHeader, loadHistory]);
 
-  // ── Shared year selector ─────────────────────────────────────────────────
-  const YearSelector = (
-    <div style={{ marginBottom: 16 }}>
-      <span style={{ marginRight: 8 }}>Tahun:</span>
-      <Select
-        value={tahun}
-        onChange={setTahun}
-        style={{ width: 100 }}
-        options={TAHUN_OPTIONS.map(y => ({ value: y, label: String(y) }))}
-      />
-    </div>
-  );
-
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
       {/* Page header */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Upload Data</h1>
         <p style={{ margin: '4px 0 0', color: 'var(--c-txt-2)' }}>
           Upload file Target Anggaran, Angkas, dan LRA ke sistem.
         </p>
+      </div>
+
+      {/* Year selector — single selector applies to all sections */}
+      <div style={{ marginBottom: 20 }}>
+        <span style={{ marginRight: 8 }}>Tahun:</span>
+        <Select
+          value={tahun}
+          onChange={setTahun}
+          style={{ width: 100 }}
+          options={tahunOptions.map(y => ({ value: y, label: String(y) }))}
+        />
       </div>
 
       {/* ── Section 1: Target Anggaran ── */}
@@ -306,7 +327,6 @@ const UploadDataPage: React.FC = () => {
         badge={<Tag color="#7C3AED" style={{ color: '#fff', marginLeft: 8 }}>XLSX</Tag>}
         defaultOpen={true}
       >
-        {YearSelector}
         <div className="uc-grid">
           <div>
             <Form layout="vertical" style={{ marginBottom: 16 }}>
@@ -393,18 +413,9 @@ const UploadDataPage: React.FC = () => {
         badge={<Tag color="#D97706" style={{ color: '#fff', marginLeft: 8 }}>PDF</Tag>}
         defaultOpen={false}
       >
-        <div style={{ marginBottom: 16 }}>
-          <span style={{ marginRight: 8 }}>Tahun:</span>
-          <Select
-            value={tahun}
-            disabled
-            style={{ width: 100 }}
-            options={TAHUN_OPTIONS.map(y => ({ value: y, label: String(y) }))}
-          />
-          <span style={{ marginLeft: 8, color: '#888', fontSize: 12 }}>
-            (Tahun dipilih di atas)
-          </span>
-        </div>
+        <p style={{ margin: '0 0 12px', color: 'var(--c-txt-2)', fontSize: 13 }}>
+          Tahun mengikuti pilihan di atas.
+        </p>
         <div className="uc-grid">
           <div>
             <DropZone
@@ -455,7 +466,6 @@ const UploadDataPage: React.FC = () => {
         badge={<Tag color="#0E6BA8" style={{ color: '#fff', marginLeft: 8 }}>XLSX</Tag>}
         defaultOpen={false}
       >
-        {YearSelector}
         <div className="uc-grid">
           <div>
             <DropZone
@@ -542,7 +552,15 @@ const UploadDataPage: React.FC = () => {
 
       {/* ── History Table ── */}
       <div style={{ marginTop: 32 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Riwayat Upload (10 Terakhir)</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Riwayat Upload (10 Terakhir)</h2>
+        <p style={{ fontSize: 12, color: 'var(--c-txt-2)', marginBottom: historyError ? 4 : 12 }}>
+          LRA: disimpan permanen. Target &amp; Angkas: hanya sesi ini.
+        </p>
+        {historyError && (
+          <p style={{ fontSize: 12, color: 'var(--c-err)', marginBottom: 12 }}>
+            Gagal memuat riwayat — periksa koneksi atau muat ulang halaman.
+          </p>
+        )}
         <Table<HistoryRow>
           columns={historyColumns}
           dataSource={history}

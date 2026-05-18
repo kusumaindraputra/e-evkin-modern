@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export type DropZoneState = 'idle' | 'over' | 'file' | 'busy' | 'ok' | 'fail';
 
@@ -31,6 +31,7 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgressState] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
+  const dragCounter = useRef(0);
 
   const acceptFile = useCallback((f: File) => {
     const ext = '.' + (f.name.split('.').pop() ?? '').toLowerCase();
@@ -59,12 +60,16 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
   const handlers = {
     onDragEnter: useCallback((e: React.DragEvent) => {
       e.preventDefault();
+      dragCounter.current += 1;
       setState(s => s === 'idle' ? 'over' : s);
     }, []),
 
     onDragLeave: useCallback((e: React.DragEvent) => {
       e.preventDefault();
-      setState(s => s === 'over' ? 'idle' : s);
+      dragCounter.current = Math.max(0, dragCounter.current - 1);
+      if (dragCounter.current === 0) {
+        setState(s => s === 'over' ? 'idle' : s);
+      }
     }, []),
 
     onDragOver: useCallback((e: React.DragEvent) => {
@@ -73,6 +78,7 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
 
     onDrop: useCallback((e: React.DragEvent) => {
       e.preventDefault();
+      dragCounter.current = 0;
       const f = e.dataTransfer?.files?.[0];
       if (f) acceptFile(f);
     }, [acceptFile]),
@@ -92,6 +98,7 @@ export function useDropZone({ accept, maxSize = 20 * 1024 * 1024 }: UseDropZoneO
   };
 
   const reset = useCallback(() => {
+    dragCounter.current = 0;
     setFile(null);
     setState('idle');
     setErrorMsg('');

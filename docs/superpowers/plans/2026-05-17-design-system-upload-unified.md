@@ -85,8 +85,9 @@
 | `--shadow-sm` | `--s-sm` |
 | `--shadow-md` | `--s-md` |
 | `--shadow-lg` | `--s-lg` |
+| `--bg-hover` | `--c-hover` |
 
-Tokens that do **not** change: `--color-accent`, `--color-success`, `--bg-hover`, `--bg-selected`, `--bg-selected-hover`, `--bg-success-subtle`, `--bg-warning-subtle`, `--bg-error-subtle`, `--bg-info-subtle`, `--border-success`, `--border-info`, `--gradient-*`, `--shadow-action-bar`, `--transition*`, `--text-2xs` through `--text-xl`, `--separator*`, `--code-bg`, `--breakpoint-mobile`.
+Tokens that do **not** change: `--color-accent`, `--color-success`, `--bg-selected`, `--bg-selected-hover`, `--bg-success-subtle`, `--bg-warning-subtle`, `--bg-error-subtle`, `--bg-info-subtle`, `--border-success`, `--border-info`, `--gradient-*`, `--shadow-action-bar`, `--transition*`, `--text-2xs` through `--text-xl`, `--separator*`, `--code-bg`, `--breakpoint-mobile`.
 
 ---
 

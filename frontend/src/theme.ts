@@ -51,7 +51,7 @@ export const brand = {
 
 // ── Layout constants ───────────────────────────────────────
 export const layout = {
-  siderWidth:          220,
+  siderWidth:          252,
   siderCollapsedWidth: 72,
   headerHeight:        64,
   contentPadding:      24,
@@ -234,25 +234,26 @@ export const statusTagColors: Record<string, string> = {
   // 'draft' intentionally omitted — falls back to 'default'
 };
 
-// ── Dark brand palette ────────────────────────────────
+// ── Dark brand palette — "Navy Dusk" ─────────────────
+// Desaturated +25%, navy-tinted backgrounds, sidebar gelap
 export const brandDark = {
   ...brand,
-  primary:      '#3D8DC5',
-  primaryLight: '#5BA3D9',
-  primaryDark:  '#0E6BA8',
-  accent:       '#22D3EE',
-  success:      '#4ADE80',
-  warning:      '#FBBF24',
-  error:        '#FB7185',
+  primary:      '#4F90BF',
+  primaryLight: '#6AA8CC',
+  primaryDark:  '#3A78A8',
+  accent:       '#3AAFC2',
+  success:      '#4FA87C',
+  warning:      '#C98B2C',
+  error:        '#C4596A',
 
-  textPrimary:   '#E5E7EB',
-  textSecondary: '#9CA3AF',
-  textTertiary:  '#6B7280',
-  border:        '#374151',
-  borderLight:   '#1F2937',
-  bgLayout:      '#111827',
-  bgCard:        '#1F2937',
-  bgElevated:    '#374151',
+  textPrimary:   '#D4DCE8',
+  textSecondary: '#8696A8',
+  textTertiary:  '#5C6B7C',
+  border:        '#253447',
+  borderLight:   '#1A2A3C',
+  bgLayout:      '#0D1421',
+  bgCard:        '#162030',
+  bgElevated:    '#253447',
 } as const;
 
 // ── Dark Ant Design theme config ──────────────────────
@@ -266,8 +267,8 @@ export const evkinThemeDark: ThemeConfig = {
     colorWarning:     brandDark.warning,
     colorError:       brandDark.error,
     colorInfo:        brandDark.accent,
-    colorBgBase:      '#111827',   // dark base → algorithm derives container/elevated/layout
-    colorTextBase:    '#E5E7EB',   // light text base → algorithm derives text hierarchy
+    colorBgBase:      '#0D1421',   // Navy Dusk base → algorithm derives container/elevated/layout
+    colorTextBase:    '#D4DCE8',   // Navy Dusk text base → algorithm derives text hierarchy
 
     // Typography (carry over from light theme)
     fontFamily: evkinTheme.token!.fontFamily,
@@ -292,9 +293,9 @@ export const evkinThemeDark: ThemeConfig = {
     marginLG:    24,
     marginXL:    32,
 
-    // Shadows (darker for dark mode)
-    boxShadow:          '0 2px 8px rgba(0, 0, 0, 0.4)',
-    boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.3)',
+    // Shadows (deeper for navy-dark backgrounds)
+    boxShadow:          '0 2px 8px rgba(0, 0, 0, 0.45)',
+    boxShadowSecondary: '0 1px 2px rgba(0, 0, 0, 0.35)',
 
     // Motion
     motionDurationFast: motion.fast,
@@ -329,11 +330,11 @@ export const evkinThemeDark: ThemeConfig = {
       borderRadiusLG: layout.borderRadiusLg,
     },
     Table: {
-      headerBg:       '#1a2332',
+      headerBg:       '#1A2A3C',
       headerColor:    brandDark.textPrimary,
-      rowHoverBg:     'rgba(59, 130, 246, 0.1)',
-      rowSelectedBg:  'rgba(59, 130, 246, 0.15)',
-      rowSelectedHoverBg: 'rgba(59, 130, 246, 0.2)',
+      rowHoverBg:     'rgba(79, 144, 191, 0.12)',
+      rowSelectedBg:  'rgba(79, 144, 191, 0.18)',
+      rowSelectedHoverBg: 'rgba(79, 144, 191, 0.24)',
       borderColor:    brandDark.borderLight,
     },
     Input: {

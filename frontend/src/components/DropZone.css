@@ -52,7 +52,7 @@
 }
 
 [data-theme="dark"] .dz--ok {
-  background: rgba(74, 222, 128, 0.08);
+  background: rgba(79, 168, 124, 0.08);
 }
 
 .dz--fail {
@@ -63,7 +63,7 @@
 }
 
 [data-theme="dark"] .dz--fail {
-  background: rgba(251, 113, 133, 0.08);
+  background: rgba(196, 89, 106, 0.08);
 }
 
 .dz__progress {
@@ -153,13 +153,13 @@
 }
 
 [data-theme="dark"] .fi-ico--xlsx {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ADE80;
+  background: rgba(79, 168, 124, 0.18);
+  color: #4FA87C;
 }
 
 [data-theme="dark"] .fi-ico--pdf {
-  background: rgba(251, 113, 133, 0.15);
-  color: #FB7185;
+  background: rgba(196, 89, 106, 0.18);
+  color: #C4596A;
 }
 
 .fi-name {

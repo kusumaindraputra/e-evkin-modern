@@ -1,5 +1,5 @@
 /* ── Google Fonts: Plus Jakarta Sans ─────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -54,6 +54,9 @@
   --gradient-warning: linear-gradient(90deg, #FBBF24, var(--c-warn));
   --gradient-error:   linear-gradient(90deg, #FCA5A5, var(--c-err));
 
+  /* ── Monospace ─────────────────────────────────────── */
+  --mono: 'JetBrains Mono', monospace;
+
   /* ── Shape ────────────────────────────────────────── */
   --r-sm: 4px;
   --r:    6px;
@@ -86,53 +89,54 @@
   --breakpoint-mobile: 768px;
 }
 
-/* ── Dark mode overrides ──────────────────────────────── */
+/* ── Dark mode overrides — "Navy Dusk" ───────────────── */
+/* Desaturated +25%, navy-tinted backgrounds               */
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --c-prim:    #3D8DC5;
-  --c-prim-l:  #5BA3D9;
-  --c-prim-d:  #0E6BA8;
-  --c-accent:  #22D3EE;
-  --c-success: #4ADE80;
-  --c-warn:    #FBBF24;
-  --c-err:     #FB7185;
-  --c-sider:   #0A1628;
+  --c-prim:    #4F90BF;
+  --c-prim-l:  #6AA8CC;
+  --c-prim-d:  #3A78A8;
+  --c-accent:  #3AAFC2;
+  --c-success: #4FA87C;
+  --c-warn:    #C98B2C;
+  --c-err:     #C4596A;
+  --c-sider:   #091525;
 
-  --c-txt:   #E5E7EB;
-  --c-txt-2: #9CA3AF;
-  --c-txt-3: #6B7280;
+  --c-txt:   #D4DCE8;
+  --c-txt-2: #8696A8;
+  --c-txt-3: #5C6B7C;
 
-  --c-bg:       #111827;
-  --c-surf:     #1F2937;
-  --c-border:   #374151;
-  --c-border-l: #1F2937;
-  --c-hover:    rgba(59, 130, 246, 0.1);
+  --c-bg:       #0D1421;
+  --c-surf:     #162030;
+  --c-border:   #253447;
+  --c-border-l: #1A2A3C;
+  --c-hover:    rgba(79, 144, 191, 0.12);
 
-  --c-subtle:          #1a2332;
-  --bg-selected:       rgba(59, 130, 246, 0.15);
-  --bg-selected-hover: rgba(59, 130, 246, 0.2);
-  --bg-success-subtle: rgba(74, 222, 128, 0.1);
-  --bg-warning-subtle: rgba(251, 191, 36, 0.1);
-  --bg-error-subtle:   rgba(251, 113, 133, 0.1);
-  --bg-info-subtle:    rgba(59, 130, 246, 0.1);
+  --c-subtle:          #1A2A3C;
+  --bg-selected:       rgba(79, 144, 191, 0.18);
+  --bg-selected-hover: rgba(79, 144, 191, 0.24);
+  --bg-success-subtle: rgba(79, 168, 124, 0.08);
+  --bg-warning-subtle: rgba(201, 139, 44, 0.08);
+  --bg-error-subtle:   rgba(196, 89, 106, 0.08);
+  --bg-info-subtle:    rgba(79, 144, 191, 0.08);
 
-  --border-success:      #166534;
-  --border-success-dark: #14532D;
-  --border-info:         #1E40AF;
+  --border-success:      rgba(79, 168, 124, 0.3);
+  --border-success-dark: rgba(79, 168, 124, 0.2);
+  --border-info:         rgba(79, 144, 191, 0.3);
 
-  --gradient-success: linear-gradient(90deg, #22C55E, #16A34A);
-  --gradient-warning: linear-gradient(90deg, #F59E0B, #D97706);
-  --gradient-error:   linear-gradient(90deg, #F87171, #EF4444);
+  --gradient-success: linear-gradient(90deg, #4FA87C, #3A8A64);
+  --gradient-warning: linear-gradient(90deg, #C98B2C, #A87324);
+  --gradient-error:   linear-gradient(90deg, #C4596A, #A84858);
 
-  --s-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --s-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --s-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-action-bar: 0 -2px 8px rgba(0, 0, 0, 0.3);
+  --s-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --s-md: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --s-lg: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-action-bar: 0 -2px 8px rgba(0, 0, 0, 0.35);
 
-  --separator:        rgba(255, 255, 255, 0.06);
-  --separator-dashed: rgba(255, 255, 255, 0.08);
-  --code-bg:          #1E293B;
+  --separator:        rgba(255, 255, 255, 0.05);
+  --separator-dashed: rgba(255, 255, 255, 0.07);
+  --code-bg:          #0A1525;
 
   /* Shape, Motion, Type scale — inherit from :root */
 }

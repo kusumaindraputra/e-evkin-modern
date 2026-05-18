@@ -95,6 +95,16 @@ describe('useDropZone', () => {
     expect(result.current.state).toBe('file');
   });
 
+  it('stays over when dragleave fires on child element (dragCounter > 0)', () => {
+    const { result } = renderHook(() => useDropZone({ accept: '.xlsx' }));
+    act(() => result.current.handlers.onDragEnter(dragEvent())); // enter parent
+    act(() => result.current.handlers.onDragEnter(dragEvent())); // enter child
+    act(() => result.current.handlers.onDragLeave(dragEvent())); // leave child
+    expect(result.current.state).toBe('over'); // still over parent
+    act(() => result.current.handlers.onDragLeave(dragEvent())); // leave parent
+    expect(result.current.state).toBe('idle');
+  });
+
   it('rejects file exceeding maxSize', () => {
     const { result } = renderHook(() => useDropZone({ accept: '.xlsx', maxSize: 100 }));
     const bigFile = new File([new ArrayBuffer(200)], 'big.xlsx');

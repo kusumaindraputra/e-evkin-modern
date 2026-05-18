@@ -62,7 +62,7 @@ export const LoginPage: React.FC = () => {
           >
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <img src={logoImg} alt="e-evkin logo" style={{ width: 80, height: 'auto', marginBottom: 12, filter: 'brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1038%) hue-rotate(178deg) brightness(91%) contrast(96%)' }} />
-              <Title level={2} style={{ marginBottom: 8, color: 'var(--color-primary)' }}>
+              <Title level={2} style={{ marginBottom: 8, color: 'var(--c-prim)' }}>
                 e-evkin
               </Title>
               <Text type="secondary">

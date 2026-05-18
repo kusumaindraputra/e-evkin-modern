@@ -41,10 +41,10 @@ const LaporanGroupCard: React.FC<LaporanGroupCardProps> = ({
   );
 
   const badgeColor = useMemo(() => {
-    if (allSubmitted) return 'var(--color-success)';
-    if (filledCount === rows.length) return 'var(--color-primary)';
-    if (filledCount > 0) return 'var(--color-warning)';
-    return 'var(--border-color)';
+    if (allSubmitted) return 'var(--c-success)';
+    if (filledCount === rows.length) return 'var(--c-prim)';
+    if (filledCount > 0) return 'var(--c-warn)';
+    return 'var(--c-border)';
   }, [allSubmitted, filledCount, rows.length]);
 
   return (

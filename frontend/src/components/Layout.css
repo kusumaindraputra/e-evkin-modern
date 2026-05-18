@@ -9,7 +9,7 @@
 
 /* ── Mobile Drawer ── */
 .mobile-drawer .ant-drawer-body {
-  background: var(--color-primary-dark) !important;
+  background: var(--c-prim-d) !important;
 }
 
 .drawer-close-row {
@@ -85,11 +85,11 @@
 /* ── Header ── */
 .layout-header {
   padding: 0 12px;
-  background: var(--bg-card) !important;
+  background: var(--c-surf) !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--s-sm);
   position: sticky;
   top: 0;
   z-index: 99;
@@ -107,7 +107,7 @@
   align-items: center;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: var(--radius);
+  border-radius: var(--r);
   transition: background-color var(--transition);
 }
 
@@ -141,9 +141,9 @@
   margin: 12px 8px;
   padding: 16px;
   min-height: 280px;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: var(--c-surf);
+  border-radius: var(--r-lg);
+  box-shadow: var(--s-sm);
 }
 
 /* ── Desktop overrides ── */

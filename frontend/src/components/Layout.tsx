@@ -108,7 +108,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           closable={false}
           className="mobile-drawer"
           styles={{
-            body: { padding: 0, background: 'var(--color-primary-dark)' },
+            body: { padding: 0, background: 'var(--c-prim-d)' },
             header: { display: 'none' },
           }}
         >

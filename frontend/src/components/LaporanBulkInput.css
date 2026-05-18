@@ -5,8 +5,8 @@
 
 /* Progress Header */
 .laporan-progress-header {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--c-prim) 0%, var(--c-prim-d) 100%);
+  border-radius: var(--r-lg);
   padding: 20px 24px;
   margin-bottom: 20px;
   color: #fff;
@@ -52,7 +52,7 @@
 .progress-stat-card {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
-  border-radius: var(--radius);
+  border-radius: var(--r);
   padding: 14px 16px;
   text-align: center;
   transition: background var(--transition-fast);
@@ -89,13 +89,13 @@
 .progress-bar-track {
   height: 8px;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
   background: var(--gradient-success);
   transition: width var(--transition-slow);
 }
@@ -129,22 +129,22 @@
 /* Group Card (Accordion per Kegiatan) */
 .laporan-group-card {
   margin-bottom: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
   overflow: hidden;
   transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .laporan-group-card:hover {
-  border-color: var(--color-primary-light);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--c-prim-l);
+  box-shadow: var(--s-sm);
 }
 
 .laporan-group-header {
   display: flex;
   align-items: center;
   padding: 14px 20px;
-  background: var(--bg-layout);
+  background: var(--c-bg);
   cursor: pointer;
   user-select: none;
   gap: 12px;
@@ -157,7 +157,7 @@
 
 .laporan-group-header .group-expand-icon {
   font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
   transition: transform var(--transition);
   flex-shrink: 0;
 }
@@ -170,7 +170,7 @@
   flex: 1;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--c-txt);
   line-height: 1.4;
 }
 
@@ -201,16 +201,16 @@
 
 /* Input Card (Per Sub Kegiatan Row) */
 .laporan-input-card {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r);
   padding: 16px 20px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-  background: var(--bg-card);
+  background: var(--c-surf);
 }
 
 .laporan-input-card:hover {
-  border-color: var(--color-primary-light);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--c-prim-l);
+  box-shadow: var(--s-sm);
 }
 
 .laporan-input-card.status-terkirim {
@@ -219,12 +219,12 @@
 }
 
 .laporan-input-card.status-tersimpan {
-  background: var(--bg-subtle);
-  border-color: var(--border-color);
+  background: var(--c-subtle);
+  border-color: var(--c-border);
 }
 
 .laporan-input-card.status-empty {
-  border-left: 3px solid var(--color-warning);
+  border-left: 3px solid var(--c-warn);
 }
 
 @media (max-width: 768px) {
@@ -245,7 +245,7 @@
 .input-card-meta .meta-title {
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--c-txt-2);
   flex: 1;
   min-width: 0;
   line-height: 1.4;
@@ -261,13 +261,13 @@
 
 .input-card-indikator {
   font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
   line-height: 1.4;
   margin-bottom: 14px;
   white-space: pre-wrap;
   padding: 8px 12px;
-  background: var(--bg-layout);
-  border-radius: var(--radius);
+  background: var(--c-bg);
+  border-radius: var(--r);
   display: none;
 }
 
@@ -291,7 +291,7 @@
 
 .data-section {
   padding: 12px 14px;
-  border-radius: var(--radius);
+  border-radius: var(--r);
 }
 
 .data-section.target-section {
@@ -313,11 +313,11 @@
 }
 
 .data-section.target-section .data-section-title {
-  color: var(--color-primary);
+  color: var(--c-prim);
 }
 
 .data-section.realisasi-section .data-section-title {
-  color: var(--color-success);
+  color: var(--c-success);
 }
 
 .data-row {
@@ -334,7 +334,7 @@
 
 .data-row .data-label {
   font-size: var(--text-sm);
-  color: var(--text-secondary);
+  color: var(--c-txt-2);
   flex-shrink: 0;
   min-width: 70px;
 }
@@ -342,7 +342,7 @@
 .data-row .data-value {
   font-size: var(--text-base);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--c-txt);
   text-align: right;
 }
 
@@ -353,7 +353,7 @@
 
 .data-row .data-input .ant-input-number {
   width: 100%;
-  border-radius: var(--radius);
+  border-radius: var(--r);
 }
 
 @media (max-width: 768px) {
@@ -382,14 +382,14 @@
 .capaian-bar {
   flex: 1;
   height: 6px;
-  background: var(--border-light);
-  border-radius: var(--radius-sm);
+  background: var(--c-border-l);
+  border-radius: var(--r-sm);
   overflow: hidden;
 }
 
 .capaian-bar-fill {
   height: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
   transition: width var(--transition-slow);
 }
 
@@ -398,7 +398,7 @@
 }
 
 .capaian-bar-fill.capaian-blue {
-  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  background: linear-gradient(90deg, var(--c-prim-l), var(--c-prim));
 }
 
 .capaian-bar-fill.capaian-orange {
@@ -420,12 +420,12 @@
 .input-card-extras {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--c-border-l);
 }
 
 .extras-toggle {
   font-size: var(--text-sm);
-  color: var(--color-primary);
+  color: var(--c-prim);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -434,7 +434,7 @@
 }
 
 .extras-toggle:hover {
-  color: var(--color-primary-light);
+  color: var(--c-prim-l);
 }
 
 .extras-fields {
@@ -453,21 +453,21 @@
 .extras-field label {
   display: block;
   font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
   margin-bottom: 4px;
   font-weight: 500;
 }
 
 .extras-field .ant-input {
-  border-radius: var(--radius);
+  border-radius: var(--r);
 }
 
 /* Sticky Action Bar */
 .laporan-action-bar {
   position: sticky;
   bottom: 0;
-  background: var(--bg-card);
-  border-top: 1px solid var(--border-color);
+  background: var(--c-surf);
+  border-top: 1px solid var(--c-border);
   padding: 12px 20px;
   margin: 0 -24px -24px;
   display: flex;
@@ -476,7 +476,7 @@
   gap: 12px;
   z-index: 10;
   box-shadow: var(--shadow-action-bar);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
 }
 
 @media (max-width: 768px) {
@@ -495,7 +495,7 @@
 
 .action-bar-info {
   font-size: var(--text-sm);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
 }
 
 .action-bar-buttons {
@@ -511,13 +511,13 @@
 
 .laporan-empty-state .empty-icon {
   font-size: 48px;
-  color: var(--border-color);
+  color: var(--c-border);
   margin-bottom: 16px;
 }
 
 .laporan-empty-state .empty-text {
   font-size: var(--text-md);
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
 }
 
 /* Loading state */
@@ -529,7 +529,7 @@
 .laporan-loading-state .loading-text {
   margin-top: 16px;
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--c-txt-3);
 }
 
 /* Smooth expand/collapse animation using CSS grid */
@@ -563,12 +563,12 @@
 }
 
 .warning-link a {
-  color: var(--color-primary);
+  color: var(--c-prim);
   text-decoration: underline;
   font-size: var(--text-xs);
 }
 
 .warning-link a:hover {
-  color: var(--color-primary-dark);
+  color: var(--c-prim-d);
 }
 

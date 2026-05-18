@@ -198,9 +198,9 @@ export const evkinTheme: ThemeConfig = {
       borderRadiusLG: layout.borderRadiusLg,
     },
     Table: {
-      headerBg:       '#F8FAFC',    // matches --bg-subtle
+      headerBg:       '#F8FAFC',    // matches --c-subtle
       headerColor:    brand.textPrimary,
-      rowHoverBg:     '#EFF6FF',    // matches --bg-hover
+      rowHoverBg:     '#EFF6FF',    // matches --c-hover
       rowSelectedBg:  '#DBEAFE',    // matches --bg-selected
       rowSelectedHoverBg: '#BFDBFE', // matches --bg-selected-hover
       borderColor:    brand.borderLight,

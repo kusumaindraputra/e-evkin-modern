@@ -1,0 +1,189 @@
+.dz {
+  border: 2px dashed var(--c-border);
+  background: var(--c-bg);
+  border-radius: var(--r-lg);
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.dz:focus-visible {
+  outline: 2px solid var(--c-prim);
+  outline-offset: 2px;
+}
+
+.dz--over {
+  border-style: solid;
+  border-color: var(--c-prim);
+  background: var(--c-hover);
+  transform: scale(1.003);
+}
+
+.dz--file {
+  border-style: solid;
+  border-width: 1.5px;
+  border-color: var(--c-prim);
+  background: var(--c-surf);
+  cursor: default;
+  align-items: flex-start;
+}
+
+.dz--busy {
+  border-style: solid;
+  border-color: var(--c-prim);
+  background: var(--c-surf);
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.dz--ok {
+  border-style: solid;
+  border-color: var(--c-success);
+  background: #F0FDF4;
+  cursor: default;
+}
+
+[data-theme="dark"] .dz--ok {
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.dz--fail {
+  border-style: solid;
+  border-color: var(--c-err);
+  background: #FFF1F0;
+  cursor: default;
+}
+
+[data-theme="dark"] .dz--fail {
+  background: rgba(251, 113, 133, 0.08);
+}
+
+.dz__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  border-radius: 0 0 0 var(--r-lg);
+  background: var(--gradient-success);
+  transition: width 0.3s ease;
+}
+
+.dz__input {
+  display: none;
+}
+
+.dz__icon {
+  font-size: 28px;
+  color: var(--c-txt-3);
+}
+
+.dz__hint {
+  font-size: var(--text-sm);
+  color: var(--c-txt-2);
+}
+
+.dz__hint strong {
+  color: var(--c-prim);
+}
+
+.dz__ok-msg {
+  color: var(--c-success);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.dz__fail-msg {
+  color: var(--c-err);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.dz__retry {
+  margin-top: 8px;
+  font-size: var(--text-sm);
+  color: var(--c-prim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* File item */
+.fi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--c-surf);
+  border-radius: var(--r);
+  width: 100%;
+}
+
+.fi-ico {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: var(--r-sm);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.fi-ico--xlsx {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.fi-ico--pdf {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.fi-ico--other {
+  background: var(--c-border);
+  color: var(--c-txt-2);
+}
+
+[data-theme="dark"] .fi-ico--xlsx {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ADE80;
+}
+
+[data-theme="dark"] .fi-ico--pdf {
+  background: rgba(251, 113, 133, 0.15);
+  color: #FB7185;
+}
+
+.fi-name {
+  flex: 1;
+  font-size: var(--text-base);
+  color: var(--c-txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fi-rm {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-txt-2);
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  font-size: 16px;
+  line-height: 1;
+  transition: all var(--transition-fast);
+}
+
+.fi-rm:hover {
+  background: var(--c-hover);
+  color: var(--c-err);
+}

@@ -50,10 +50,10 @@ const getCapaianColor = (pct: number): string => {
 };
 
 const getCapaianTextColor = (pct: number): string => {
-  if (pct >= 90) return 'var(--color-success)';
-  if (pct >= 70) return 'var(--color-primary)';
-  if (pct >= 50) return 'var(--color-warning)';
-  return 'var(--color-error)';
+  if (pct >= 90) return 'var(--c-success)';
+  if (pct >= 70) return 'var(--c-prim)';
+  if (pct >= 50) return 'var(--c-warn)';
+  return 'var(--c-err)';
 };
 
 const numberFormatter = (val: number | string | undefined) => {
@@ -150,7 +150,7 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
         
         <Tooltip title="Lihat indikator kinerja">
           <InfoCircleOutlined
-            style={{ color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 14 }}
+            style={{ color: 'var(--c-txt-3)', cursor: 'pointer', fontSize: 14 }}
             onClick={() => setShowIndikator((v) => !v)}
           />
         </Tooltip>
@@ -176,8 +176,8 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
               Rp {formatNumber(row.angkas || 0)}
               {row.isManualAngkas && row.angkas == null && (
                 <span className="warning-link">
-                  <WarningOutlined style={{ color: 'var(--color-warning)' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>Angkas belum diinput —</span>
+                  <WarningOutlined style={{ color: 'var(--c-warn)' }} />
+                  <span style={{ color: 'var(--c-txt-2)' }}>Angkas belum diinput —</span>
                   <Link to={`/target?tab=angkas&highlight=sub:${row.id_sub_kegiatan}-sa:${row.id_sumber_anggaran}`}>
                     Ubah di sini
                   </Link>
@@ -191,8 +191,8 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
               {formatNumber(row.target_k || 0)} {satuanLabel || ''}
               {(!row.target_k || row.target_k === 0) && (
                 <span className="warning-link">
-                  <WarningOutlined style={{ color: 'var(--color-warning)' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>Target belum diisi —</span>
+                  <WarningOutlined style={{ color: 'var(--c-warn)' }} />
+                  <span style={{ color: 'var(--c-txt-2)' }}>Target belum diisi —</span>
                   <Link to={`/target?tab=target-kinerja&highlight=sub:${row.id_sub_kegiatan}`}>
                     Ubah di sini
                   </Link>
@@ -215,11 +215,11 @@ const LaporanInputCard: React.FC<LaporanInputCardProps> = ({
                   Rp {formatNumber(row.realisasi_rp_lra ?? row.realisasi_rp ?? 0)}
                 </span>
                 {row.lra_available ? (
-                  <div style={{ fontSize: 11, color: 'var(--color-success)', marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--c-success)', marginTop: 1 }}>
                     Dari LRA
                   </div>
                 ) : (
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
+                  <div style={{ fontSize: 11, color: 'var(--c-txt-2)', marginTop: 1 }}>
                     LRA belum diupload
                   </div>
                 )}

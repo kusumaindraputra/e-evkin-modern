@@ -468,7 +468,7 @@ const AdminTargetEditPage: React.FC = () => {
     { title: 'Tahun', dataIndex: 'tahun', key: 'tahun', width: 70 },
     {
       title: 'Target (K)', dataIndex: 'target_k', key: 'target_k', width: 100, align: 'right' as const,
-      render: (value: number) => <span style={{ color: value === 0 ? 'var(--color-warning)' : undefined }}>{formatNumber(value)}</span>,
+      render: (value: number) => <span style={{ color: value === 0 ? 'var(--c-warn)' : undefined }}>{formatNumber(value)}</span>,
     },
     {
       title: 'Satuan', key: 'satuan', width: 120,
@@ -501,7 +501,7 @@ const AdminTargetEditPage: React.FC = () => {
     {
       title: 'Total Angkas', dataIndex: 'total', key: 'total', width: 130, align: 'right' as const,
       render: (value: number, record: AngkasData) => (
-        <span style={{ color: value === 0 ? 'var(--color-warning)' : undefined }}>
+        <span style={{ color: value === 0 ? 'var(--c-warn)' : undefined }}>
           {formatNumber(value)}
           {record.hasAngkas && <Tag color="green" style={{ marginLeft: 4 }}>✓</Tag>}
         </span>
@@ -627,7 +627,7 @@ const AdminTargetEditPage: React.FC = () => {
             children: (
               <>
                 <PermissionConfigCard scope="angkas" form={permFormAngkas} saving={savingPermAngkas} loadingStatus={loadingPermAngkasStatus} />
-                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', marginBottom: 16 }}>
+                <p style={{ color: 'var(--c-txt-3)', fontSize: '12px', marginBottom: 16 }}>
                   * <Tag color="purple">Multi-Sumber</Tag> = Puskesmas dapat input manual | Admin dapat edit semua data
                 </p>
                 <Table columns={angkasColumns} dataSource={angkasData} rowKey={(r) => `${r.user_id}-${r.id_sub_kegiatan}-${r.id_sumber_anggaran}`}
@@ -645,7 +645,7 @@ const AdminTargetEditPage: React.FC = () => {
         onCancel={() => { setTargetEditModalVisible(false); targetForm.resetFields(); }}
         onOk={handleSaveTarget} okText="Simpan" cancelText="Batal" confirmLoading={targetSaving} width={modalWidths.md}>
         {selectedTarget && (
-          <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg-layout)', borderRadius: 6 }}>
+          <div style={{ marginBottom: 16, padding: 12, background: 'var(--c-bg)', borderRadius: 6 }}>
             <p style={{ margin: 0 }}><strong>Puskesmas:</strong> {selectedTarget.puskesmas?.nama}</p>
             <p style={{ margin: '4px 0' }}><strong>Sub Kegiatan:</strong> {selectedTarget.subKegiatan?.kode_sub} - {selectedTarget.subKegiatan?.kegiatan}</p>
             <p style={{ margin: '4px 0' }}><strong>Sumber Anggaran:</strong> {selectedTarget.sumberAnggaran?.sumber}</p>
@@ -680,10 +680,10 @@ const AdminTargetEditPage: React.FC = () => {
             <div>
               <div style={{ fontWeight: 'bold' }}>{formatDateTime(record.created_at)}</div>
               <div style={{ marginTop: 8 }}>Target (K): <strong>{formatNumber(record.target_k)}</strong></div>
-              <div>Satuan: <strong>{record.satuan?.satuannya || <i style={{ color: 'var(--text-tertiary)' }}>Belum dipilih</i>}</strong></div>
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Target Anggaran (Rp): {formatNumber(record.target_rp)}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
-              {record.catatan && <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--bg-layout)', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.catatan}</div>}
+              <div>Satuan: <strong>{record.satuan?.satuannya || <i style={{ color: 'var(--c-txt-3)' }}>Belum dipilih</i>}</strong></div>
+              <div style={{ fontSize: '12px', color: 'var(--c-txt-3)' }}>Target Anggaran (Rp): {formatNumber(record.target_rp)}</div>
+              <div style={{ fontSize: '12px', color: 'var(--c-txt-3)' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
+              {record.catatan && <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--c-bg)', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.catatan}</div>}
             </div>
           ),
         }))} />
@@ -694,7 +694,7 @@ const AdminTargetEditPage: React.FC = () => {
         onCancel={() => { setAngkasEditModalVisible(false); angkasForm.resetFields(); setAngkasFormTotal(0); }}
         onOk={handleSaveAngkas} okText="Simpan" cancelText="Batal" confirmLoading={angkasSaving} okButtonProps={{ disabled: !isValidAngkasTotal() }} width={modalWidths.md}>
         {selectedAngkas && (
-          <div style={{ marginBottom: 16, padding: 12, background: 'var(--bg-layout)', borderRadius: 6 }}>
+          <div style={{ marginBottom: 16, padding: 12, background: 'var(--c-bg)', borderRadius: 6 }}>
             <p style={{ margin: 0 }}><strong>Puskesmas:</strong> {selectedAngkas.puskesmas?.nama}</p>
             <p style={{ margin: '4px 0' }}><strong>Sub Kegiatan:</strong> {selectedAngkas.subKegiatan?.kode_sub} - {selectedAngkas.subKegiatan?.kegiatan}</p>
             <p style={{ margin: '4px 0' }}><strong>Sumber Anggaran:</strong> {selectedAngkas.sumberAnggaran?.sumber}</p>
@@ -706,29 +706,29 @@ const AdminTargetEditPage: React.FC = () => {
             marginBottom: 16,
             padding: 12,
             background: isValidAngkasTotal() ? 'var(--bg-success-subtle)' : 'var(--bg-warning-subtle)',
-            border: `1px solid ${isValidAngkasTotal() ? 'var(--color-success)' : 'var(--color-error)'}`,
+            border: `1px solid ${isValidAngkasTotal() ? 'var(--c-success)' : 'var(--c-err)'}`,
             borderRadius: 6
           }}>
             <Row gutter={16}>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Total Angkas</div>
+                  <div style={{ color: 'var(--c-txt-3)', fontSize: 12 }}>Total Angkas</div>
                   <div style={{ fontSize: 16, fontWeight: 'bold' }}>{formatNumber(angkasFormTotal)}</div>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Target Anggaran</div>
+                  <div style={{ color: 'var(--c-txt-3)', fontSize: 12 }}>Target Anggaran</div>
                   <div style={{ fontSize: 16, fontWeight: 'bold' }}>{formatNumber(selectedAngkas.target_rp)}</div>
                 </div>
               </Col>
               <Col span={8}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Selisih</div>
+                  <div style={{ color: 'var(--c-txt-3)', fontSize: 12 }}>Selisih</div>
                   <div style={{
                     fontSize: 16,
                     fontWeight: 'bold',
-                    color: getAngkasSelisih() === 0 ? 'var(--color-success)' : 'var(--color-error)'
+                    color: getAngkasSelisih() === 0 ? 'var(--c-success)' : 'var(--c-err)'
                   }}>
                     {getAngkasSelisih() > 0 ? '+' : ''}{formatNumber(getAngkasSelisih())}
                   </div>
@@ -736,8 +736,8 @@ const AdminTargetEditPage: React.FC = () => {
               </Col>
             </Row>
             {!isValidAngkasTotal() && (
-              <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bg-warning-subtle)', border: `1px solid var(--color-warning)`, borderRadius: 4 }}>
-                <span style={{ color: 'var(--color-warning)' }}>⚠️ Total angkas harus sama dengan target anggaran untuk dapat menyimpan</span>
+              <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bg-warning-subtle)', border: `1px solid var(--c-warn)`, borderRadius: 4 }}>
+                <span style={{ color: 'var(--c-warn)' }}>⚠️ Total angkas harus sama dengan target anggaran untuk dapat menyimpan</span>
               </div>
             )}
           </div>
@@ -768,7 +768,7 @@ const AdminTargetEditPage: React.FC = () => {
           </div>
         )}
         {angkasHistoryData.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-tertiary)' }}>Belum ada history perubahan</p>
+          <p style={{ textAlign: 'center', color: 'var(--c-txt-3)' }}>Belum ada history perubahan</p>
         ) : (
           <Timeline mode="left" items={angkasHistoryData.map((record) => ({
             color: 'blue',
@@ -779,8 +779,8 @@ const AdminTargetEditPage: React.FC = () => {
                 <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {record.bulanan.map((item) => <Tag key={item.bulan} color="blue">{BULAN_NAMES[item.bulan - 1]}: Rp {formatNumber(item.nilai)}</Tag>)}
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
-                {record.uraian && <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--bg-layout)', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.uraian}</div>}
+                <div style={{ fontSize: '12px', color: 'var(--c-txt-3)' }}>Dibuat oleh: {record.creator?.nama || 'N/A'}</div>
+                {record.uraian && <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--c-bg)', borderRadius: 4, fontSize: '12px' }}><strong>Catatan:</strong> {record.uraian}</div>}
               </div>
             ),
           }))} />
